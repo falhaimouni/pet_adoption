@@ -1,0 +1,13 @@
+export const MEDICAL_STATUS = {
+  VACCINATED: "VACCINATED",
+  PENDING: "PENDING",
+  OVERDUE: "OVERDUE",
+};
+
+export const VACCINE_TYPES = {
+  RABIES: "RABIES",
+  DHPP: "DHPP",
+  FVRCP: "FVRCP",
+  LEUKEMIA: "LEUKEMIA",
+  OTHER: "OTHER",
+};

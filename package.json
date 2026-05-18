@@ -1,0 +1,14 @@
+{
+  "name": "pet-adoption",
+  "version": "1.0.0",
+  "description": "Pet adoption system",
+  "private": true,
+  "workspaces": [
+    "Backend",
+    "Frontend",
+    "shared"
+  ],
+  "scripts": {
+    "install:all": "npm install && npm install --workspace=Backend && npm install --workspace=Frontend"
+  }
+}
