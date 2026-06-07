@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   postgres:
     container_name: pet_adoption_postgres
@@ -9,7 +7,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
       POSTGRES_DB: ${POSTGRES_DB:-pet_adoption}
     env_file:
-      - ${ENV_FILE:-.env.development}
+      - ${ENV_FILE:-env.development}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -23,7 +21,7 @@ services:
     ports:
       - "${PORT:-3000}:3000"
     env_file:
-      - ${ENV_FILE:-.env.development}
+      - ${ENV_FILE:-env.development}
     depends_on:
       - postgres
 
@@ -35,7 +33,7 @@ services:
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
     env_file:
-      - ${ENV_FILE:-.env.development}
+      - ${ENV_FILE:-env.development}
     stdin_open: true
     tty: true
 

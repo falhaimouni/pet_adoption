@@ -1,33 +1,102 @@
-export interface LoginDto {
-  email: string;
-  password: string;
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+  ValidationArguments,
+  ValidationOptions,
+  registerDecorator,
+} from 'class-validator';
+
+function Match(property: string, validationOptions?: ValidationOptions) {
+  return (object: object, propertyName: string) => {
+    registerDecorator({
+      name: 'Match',
+      target: object.constructor,
+      propertyName,
+      constraints: [property],
+      options: validationOptions,
+      validator: {
+        validate(value: unknown, args: ValidationArguments) {
+          const [relatedPropertyName] = args.constraints;
+          return (args.object as Record<string, unknown>)[relatedPropertyName] === value;
+        },
+      },
+    });
+  };
 }
 
-export interface RegisterDto {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
+export class LoginDto {
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @MinLength(8)
+  @MaxLength(255)
+  password!: string;
+}
+
+export class RegisterDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(80)
+  firstName!: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(80)
+  lastName!: string;
+
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @MinLength(8)
+  @MaxLength(255)
+  password!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
   phone?: string;
-  roleId?: string;
 }
 
-export interface SignupDto extends RegisterDto {
-  confirmPassword: string;
+export class SignupDto extends RegisterDto {
+  @IsString()
+  @MinLength(8)
+  @MaxLength(255)
+  @Match('password', { message: 'confirmPassword must match password' })
+  confirmPassword!: string;
 }
 
-export interface PasswordResetDto {
-  email: string;
+export class PasswordResetDto {
+  @IsEmail()
+  email!: string;
 }
 
-export interface PasswordResetConfirmDto {
-  token: string;
-  newPassword: string;
-  confirmPassword: string;
+export class PasswordResetConfirmDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(255)
+  token!: string;
+
+  @IsString()
+  @MinLength(8)
+  @MaxLength(255)
+  newPassword!: string;
+
+  @IsString()
+  @MinLength(8)
+  @MaxLength(255)
+  @Match('newPassword', { message: 'confirmPassword must match newPassword' })
+  confirmPassword!: string;
 }
 
-export interface RefreshTokenDto {
-  refreshToken: string;
+export class RefreshTokenDto {
+  @IsString()
+  @MinLength(1)
+  refreshToken!: string;
 }
 
 export interface AuthResponseDto {
@@ -38,6 +107,6 @@ export interface AuthResponseDto {
     email: string;
     firstName: string;
     lastName: string;
-    role: string;
+    roleName: string;
   };
 }

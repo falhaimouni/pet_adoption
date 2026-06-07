@@ -1,7 +1,11 @@
-export interface SendMessageDto {
-  conversationId: string;
+import { IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
 
-  senderId: string;
+export class SendMessageDto {
+  @IsUUID()
+  conversationId!: string;
 
-  message: string;
+  @IsString()
+  @MinLength(1)
+  @MaxLength(5000)
+  message!: string;
 }

@@ -1,13 +1,26 @@
-export interface CreateDepartmentDto {
-  name: string;
-  location: string;
-  managerId?: string;
+import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+
+export class CreateDepartmentDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(120)
+  departmentName!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
   description?: string;
 }
 
-export interface UpdateDepartmentDto {
-  name?: string;
-  location?: string;
-  managerId?: string;
+export class UpdateDepartmentDto {
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(120)
+  departmentName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
   description?: string;
 }
