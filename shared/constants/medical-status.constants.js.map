@@ -1,0 +1,1 @@
+{"version":3,"file":"medical-status.constants.js","sourceRoot":"","sources":["medical-status.constants.ts"],"names":[],"mappings":";;;AAAa,QAAA,cAAc,GAAG;IAC5B,UAAU,EAAE,YAAY;IACxB,OAAO,EAAE,SAAS;IAClB,OAAO,EAAE,SAAS;CACnB,CAAC;AAEW,QAAA,aAAa,GAAG;IAC3B,MAAM,EAAE,QAAQ;IAChB,IAAI,EAAE,MAAM;IACZ,KAAK,EAAE,OAAO;IACd,QAAQ,EAAE,UAAU;IACpB,KAAK,EAAE,OAAO;CACf,CAAC"}

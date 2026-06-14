@@ -1,0 +1,27 @@
+export declare const ERROR_MESSAGES: {
+    INVALID_CREDENTIALS: string;
+    EMAIL_ALREADY_EXISTS: string;
+    USER_NOT_FOUND: string;
+    UNAUTHORIZED: string;
+    FORBIDDEN: string;
+    TOKEN_EXPIRED: string;
+    INVALID_TOKEN: string;
+    PET_NOT_FOUND: string;
+    INVALID_PET_STATUS: string;
+    ADOPTION_REQUEST_NOT_FOUND: string;
+    INVALID_ADOPTION_STATUS: string;
+    PET_NOT_AVAILABLE: string;
+    DUPLICATE_REQUEST: string;
+    MEDICAL_RECORD_NOT_FOUND: string;
+    VACCINATION_NOT_FOUND: string;
+    SUPPLY_NOT_FOUND: string;
+    SUPPLIER_NOT_FOUND: string;
+    LOW_STOCK: string;
+    CONVERSATION_NOT_FOUND: string;
+    MESSAGE_NOT_FOUND: string;
+    VALIDATION_ERROR: string;
+    INTERNAL_SERVER_ERROR: string;
+    NOT_FOUND: string;
+    BAD_REQUEST: string;
+    CONFLICT: string;
+};

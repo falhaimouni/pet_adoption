@@ -1,4 +1,5 @@
 import { DataSource } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 
 import { User } from '../../entities/user.entity';
 import { Role } from '../../entities/role.entity';
@@ -19,6 +20,20 @@ export async function seedUsers(
       },
     });
 
+  const managerRole =
+    await roleRepo.findOne({
+      where: {
+        roleName: 'MANAGER',
+      },
+    });
+
+  const vetRole =
+    await roleRepo.findOne({
+      where: {
+        roleName: 'VET',
+      },
+    });
+
   const employeeRole =
     await roleRepo.findOne({
       where: {
@@ -35,6 +50,8 @@ export async function seedUsers(
 
   if (
     !adminRole ||
+    !managerRole ||
+    !vetRole ||
     !employeeRole ||
     !adopterRole
   ) {
@@ -58,7 +75,7 @@ export async function seedUsers(
       lastName: 'Vet',
       email: 'vet@test.com',
       password: '123456',
-      role: employeeRole,
+      role: vetRole,
       status: 'active',
     },
 
@@ -76,7 +93,7 @@ export async function seedUsers(
       lastName: 'Manager',
       email: 'manager@test.com',
       password: '123456',
-      role: employeeRole,
+      role: managerRole,
       status: 'active',
     },
 
@@ -135,8 +152,18 @@ export async function seedUsers(
       });
 
     if (!exists) {
+      const hashedPassword =
+        await bcrypt.hash(
+          user.password,
+          10,
+        );
+
       await userRepo.save(
-        userRepo.create(user),
+        userRepo.create({
+          ...user,
+          password:
+            hashedPassword,
+        }),
       );
     }
   }
