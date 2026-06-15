@@ -1,16 +1,8 @@
-import { Body, Controller, Post, Get, UseGuards, Request } from '@nestjs/common';
+import { Body, Controller, Post, Get, UseGuards, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
-
 import { LoginDto, SignupDto } from '@shared/dto/auth.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
-
-interface RequestWithUser extends Request {
-  user: {
-    userId: string;
-    email: string;
-    role: string;
-  };
-}
+import { RequestWithUser } from '@shared/types/auth.types';
 
 @Controller('auth')
 export class AuthController {
@@ -26,9 +18,10 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  //protected route, only request that pass JWT auth check
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  getProfile(@Request() req: RequestWithUser) {
+  getProfile(@Req() req: RequestWithUser) {
     return this.authService.getProfile(req.user.userId);
   }
 }

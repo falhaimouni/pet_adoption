@@ -11,11 +11,11 @@ const isProd = process.env.NODE_ENV === 'production';
 const rootDir = process.cwd();
 
 //manually load environment variables based on the current environment
-let envPath = resolve(rootDir, `env.${process.env.NODE_ENV ?? 'development'}`);
+let envPath = resolve(rootDir, `.env.${process.env.NODE_ENV ?? 'development'}`);
 
 //fallback for monorepo structure: check one level up if not found in current directory
 if (!require('fs').existsSync(envPath)) {
-  envPath = resolve(rootDir, '..', `env.${process.env.NODE_ENV ?? 'development'}`);
+  envPath = resolve(rootDir, '..', `.env.${process.env.NODE_ENV ?? 'development'}`);
 }
 
 dotenv.config({ path: envPath });

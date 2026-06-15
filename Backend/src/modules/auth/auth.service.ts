@@ -113,6 +113,7 @@ export class AuthService implements OnModuleInit {
     };
   }
 
+  //take the user type and remove the password field before returning
   async getProfile(userId: string): Promise<Omit<User, 'password'>> {
     const user = await this.userRepo.findOne({
       where: { userId },
@@ -123,7 +124,8 @@ export class AuthService implements OnModuleInit {
       throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
     }
 
-    // Remove password before returning
+    //JS obj destructuring
+    //remove password before returning
     const { password: _, ...result } = user;
     return result;
   }

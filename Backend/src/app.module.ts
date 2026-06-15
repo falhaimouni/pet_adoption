@@ -6,6 +6,7 @@ import { appConfig, dbConfig } from './config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 import { Db } from 'typeorm';
 
 @Module({
@@ -15,12 +16,13 @@ import { Db } from 'typeorm';
       cache: true,
       load: [appConfig, dbConfig],
       envFilePath: [
-        resolve(process.cwd(), '..', `env.${process.env.NODE_ENV ?? 'development'}`),
-        resolve(process.cwd(), `env.${process.env.NODE_ENV ?? 'development'}`),
+        resolve(process.cwd(), '..', `.env.${process.env.NODE_ENV ?? 'development'}`),
+        resolve(process.cwd(), `.env.${process.env.NODE_ENV ?? 'development'}`),
       ],
     }),
     DatabaseModule,
     AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

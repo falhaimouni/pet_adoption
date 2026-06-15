@@ -74,7 +74,7 @@ export async function seedUsers(
       firstName: 'Farah',
       lastName: 'Vet',
       email: 'vet@test.com',
-      password: '123456',
+      password: '12345678',
       role: vetRole,
       status: 'active',
     },
@@ -83,7 +83,7 @@ export async function seedUsers(
       firstName: 'Lubna',
       lastName: 'Support',
       email: 'support@test.com',
-      password: '123456',
+      password: '12345678',
       role: employeeRole,
       status: 'active',
     },
@@ -92,7 +92,7 @@ export async function seedUsers(
       firstName: 'Roaa',
       lastName: 'Manager',
       email: 'manager@test.com',
-      password: '123456',
+      password: '12345678',
       role: managerRole,
       status: 'active',
     },
@@ -101,7 +101,7 @@ export async function seedUsers(
       firstName: 'Joud',
       lastName: 'Adopter',
       email: 'adopter1@test.com',
-      password: '123456',
+      password: '12345678',
       role: adopterRole,
       status: 'active',
     },
@@ -110,7 +110,7 @@ export async function seedUsers(
       firstName: 'Maya',
       lastName: 'Adopter',
       email: 'adopter2@test.com',
-      password: '123456',
+      password: '12345678',
       role: adopterRole,
       status: 'active',
     },
@@ -119,7 +119,7 @@ export async function seedUsers(
       firstName: 'Noor',
       lastName: 'Adopter',
       email: 'adopter3@test.com',
-      password: '123456',
+      password: '12345678',
       role: adopterRole,
       status: 'active',
     },
@@ -128,7 +128,7 @@ export async function seedUsers(
       firstName: 'Yousef',
       lastName: 'Adopter',
       email: 'adopter4@test.com',
-      password: '123456',
+      password: '12345678',
       role: adopterRole,
       status: 'active',
     },
@@ -137,7 +137,7 @@ export async function seedUsers(
       firstName: 'Leen',
       lastName: 'Adopter',
       email: 'adopter5@test.com',
-      password: '123456',
+      password: '12345678',
       role: adopterRole,
       status: 'active',
     },
@@ -151,20 +151,18 @@ export async function seedUsers(
         },
       });
 
-    if (!exists) {
-      const hashedPassword =
-        await bcrypt.hash(
-          user.password,
-          10,
-        );
+    const hashedPassword = await bcrypt.hash(user.password, 10);
+    const userData = {
+      ...user,
+      password: hashedPassword,
+    };
 
-      await userRepo.save(
-        userRepo.create({
-          ...user,
-          password:
-            hashedPassword,
-        }),
-      );
+    if (exists) {
+      // Update existing user with new data from seed
+      await userRepo.update(exists.userId, userData);
+    } else {
+      // Create user if they don't exist
+      await userRepo.save(userRepo.create(userData));
     }
   }
 

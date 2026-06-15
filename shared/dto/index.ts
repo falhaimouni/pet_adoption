@@ -1,5 +1,6 @@
 // DTOs exports
 export * from './auth.dto';
+export * from './user.dto';
 export * from './pet.dto';
 export * from './adoption.dto';
 export * from './adoption-request.dto';
