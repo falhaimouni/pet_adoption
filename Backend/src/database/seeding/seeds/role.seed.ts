@@ -8,6 +8,8 @@ export async function seedRoles(
 
   const roles = [
     'ADMIN',
+    'MANAGER',
+    'VET',
     'EMPLOYEE',
     'ADOPTER',
   ];

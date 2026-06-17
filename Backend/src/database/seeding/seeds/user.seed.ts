@@ -1,4 +1,5 @@
 import { DataSource } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 
 import { User } from '../../entities/user.entity';
 import { Role } from '../../entities/role.entity';
@@ -19,6 +20,20 @@ export async function seedUsers(
       },
     });
 
+  const managerRole =
+    await roleRepo.findOne({
+      where: {
+        roleName: 'MANAGER',
+      },
+    });
+
+  const vetRole =
+    await roleRepo.findOne({
+      where: {
+        roleName: 'VET',
+      },
+    });
+
   const employeeRole =
     await roleRepo.findOne({
       where: {
@@ -35,6 +50,8 @@ export async function seedUsers(
 
   if (
     !adminRole ||
+    !managerRole ||
+    !vetRole ||
     !employeeRole ||
     !adopterRole
   ) {
@@ -57,8 +74,8 @@ export async function seedUsers(
       firstName: 'Farah',
       lastName: 'Vet',
       email: 'vet@test.com',
-      password: '123456',
-      role: employeeRole,
+      password: '12345678',
+      role: vetRole,
       status: 'active',
     },
 
@@ -66,7 +83,7 @@ export async function seedUsers(
       firstName: 'Lubna',
       lastName: 'Support',
       email: 'support@test.com',
-      password: '123456',
+      password: '12345678',
       role: employeeRole,
       status: 'active',
     },
@@ -75,8 +92,8 @@ export async function seedUsers(
       firstName: 'Roaa',
       lastName: 'Manager',
       email: 'manager@test.com',
-      password: '123456',
-      role: employeeRole,
+      password: '12345678',
+      role: managerRole,
       status: 'active',
     },
 
@@ -84,7 +101,7 @@ export async function seedUsers(
       firstName: 'Joud',
       lastName: 'Adopter',
       email: 'adopter1@test.com',
-      password: '123456',
+      password: '12345678',
       role: adopterRole,
       status: 'active',
     },
@@ -93,7 +110,7 @@ export async function seedUsers(
       firstName: 'Maya',
       lastName: 'Adopter',
       email: 'adopter2@test.com',
-      password: '123456',
+      password: '12345678',
       role: adopterRole,
       status: 'active',
     },
@@ -102,7 +119,7 @@ export async function seedUsers(
       firstName: 'Noor',
       lastName: 'Adopter',
       email: 'adopter3@test.com',
-      password: '123456',
+      password: '12345678',
       role: adopterRole,
       status: 'active',
     },
@@ -111,7 +128,7 @@ export async function seedUsers(
       firstName: 'Yousef',
       lastName: 'Adopter',
       email: 'adopter4@test.com',
-      password: '123456',
+      password: '12345678',
       role: adopterRole,
       status: 'active',
     },
@@ -120,7 +137,7 @@ export async function seedUsers(
       firstName: 'Leen',
       lastName: 'Adopter',
       email: 'adopter5@test.com',
-      password: '123456',
+      password: '12345678',
       role: adopterRole,
       status: 'active',
     },
@@ -134,10 +151,18 @@ export async function seedUsers(
         },
       });
 
-    if (!exists) {
-      await userRepo.save(
-        userRepo.create(user),
-      );
+    const hashedPassword = await bcrypt.hash(user.password, 10);
+    const userData = {
+      ...user,
+      password: hashedPassword,
+    };
+
+    if (exists) {
+      // Update existing user with new data from seed
+      await userRepo.update(exists.userId, userData);
+    } else {
+      // Create user if they don't exist
+      await userRepo.save(userRepo.create(userData));
     }
   }
 
