@@ -52,7 +52,9 @@ export async function seedSupplies(
       },
     });
 
-    if (!exists) {
+    if (exists) {
+      await repo.save(repo.merge(exists, supply));
+    } else {
       await repo.save(repo.create(supply));
     }
   }

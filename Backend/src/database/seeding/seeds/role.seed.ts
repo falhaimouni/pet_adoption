@@ -19,11 +19,15 @@ export async function seedRoles(
       where: { roleName },
     });
 
-    if (!exists) {
+    const roleData = { roleName };
+
+    if (exists) {
       await repo.save(
-        repo.create({
-          roleName,
-        }),
+        repo.merge(exists, roleData),
+      );
+    } else {
+      await repo.save(
+        repo.create(roleData),
       );
     }
   }

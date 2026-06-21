@@ -24,15 +24,21 @@ export async function seedAdoptionRequests(dataSource: DataSource) {
       },
     });
 
-    if (!exists) {
+    const requestData = {
+      adopter,
+      pet,
+      status: statusCycle[i % 3],
+      requestDate: new Date().toISOString().split('T')[0],
+      notes: 'Seed request',
+    };
+
+    if (exists) {
       await repo.save(
-        repo.create({
-          adopter,
-          pet,
-          status: statusCycle[i % 3],
-          requestDate: new Date().toISOString().split('T')[0],
-          notes: 'Seed request',
-        }),
+        repo.merge(exists, requestData),
+      );
+    } else {
+      await repo.save(
+        repo.create(requestData),
       );
     }
 

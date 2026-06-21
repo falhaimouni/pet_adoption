@@ -13,12 +13,18 @@ export async function seedConversations(dataSource: DataSource) {
       where: { adopterId: adopter.adopterId },
     });
 
-    if (!exists) {
+    const conversationData = {
+      adopter,
+      status: 'open',
+    };
+
+    if (exists) {
       await repo.save(
-        repo.create({
-          adopter,
-          status: 'open',
-        }),
+        repo.merge(exists, conversationData),
+      );
+    } else {
+      await repo.save(
+        repo.create(conversationData),
       );
     }
   }

@@ -2,6 +2,7 @@ import {
   IsEmail,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   MinLength,
   ValidationArguments,
@@ -25,6 +26,15 @@ function Match(property: string, validationOptions?: ValidationOptions) {
       },
     });
   };
+}
+
+const STRONG_PASSWORD_MESSAGE =
+  'password must contain at least one uppercase letter, one lowercase letter, one number, and one symbol';
+
+function StrongPassword() {
+  return Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/, {
+    message: STRONG_PASSWORD_MESSAGE,
+  });
 }
 
 export class LoginDto {
@@ -54,6 +64,7 @@ export class RegisterDto {
   @IsString()
   @MinLength(8)
   @MaxLength(255)
+  @StrongPassword()
   password!: string;
 
   @IsOptional()
@@ -84,6 +95,7 @@ export class PasswordResetConfirmDto {
   @IsString()
   @MinLength(8)
   @MaxLength(255)
+  @StrongPassword()
   newPassword!: string;
 
   @IsString()

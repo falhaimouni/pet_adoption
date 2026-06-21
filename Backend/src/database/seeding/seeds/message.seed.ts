@@ -23,13 +23,19 @@ export async function seedMessages(dataSource: DataSource) {
       where: { conversationId: conv.conversationId },
     });
 
-    if (!exists) {
+    const messageData = {
+      sender: user,
+      conversation: conv,
+      messageText: 'Hello, how can we help you?',
+    };
+
+    if (exists) {
       await repo.save(
-        repo.create({
-          sender: user,
-          conversation: conv,
-          messageText: 'Hello, how can we help you?',
-        }),
+        repo.merge(exists, messageData),
+      );
+    } else {
+      await repo.save(
+        repo.create(messageData),
       );
     }
   }

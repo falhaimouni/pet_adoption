@@ -109,7 +109,11 @@ export async function seedEmployees(
         },
       });
 
-    if (!exists) {
+    if (exists) {
+      await employeeRepo.save(
+        employeeRepo.merge(exists, employee),
+      );
+    } else {
       await employeeRepo.save(
         employeeRepo.create(employee),
       );

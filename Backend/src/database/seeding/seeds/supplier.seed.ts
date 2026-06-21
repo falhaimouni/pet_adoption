@@ -37,7 +37,9 @@ export async function seedSuppliers(
       },
     });
 
-    if (!exists) {
+    if (exists) {
+      await repo.save(repo.merge(exists, supplier));
+    } else {
       await repo.save(repo.create(supplier));
     }
   }

@@ -1,5 +1,5 @@
-.env
-.env.*
+#.env
+#.env.*
 !.env.example
 
 node_modules/
@@ -10,3 +10,7 @@ coverage/
 
 *.log
 *.tsbuildinfo
+
+shared/**/*.js
+shared/**/*.d.ts
+shared/**/*.js.map
