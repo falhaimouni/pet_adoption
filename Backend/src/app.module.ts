@@ -7,7 +7,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
-import { Db } from 'typeorm';
+import { MedicalModule } from './modules/medical/medical.module';
+import { PetsModule } from './modules/pets/pets.module';
 
 @Module({
   imports: [
@@ -23,6 +24,8 @@ import { Db } from 'typeorm';
     DatabaseModule,
     AuthModule,
     UsersModule,
+    PetsModule,
+    MedicalModule,
   ],
   controllers: [AppController],
   providers: [AppService],
