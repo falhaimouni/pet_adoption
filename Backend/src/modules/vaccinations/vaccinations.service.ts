@@ -60,11 +60,11 @@ export class VaccinationsService {
   }
 
   async remove(vaccinationId: string) {
-    const vaccination = await this.findOne(vaccinationId);
-    await this.vaccinationRepo.remove(vaccination);
+    await this.findOne(vaccinationId);
+    await this.vaccinationRepo.softDelete(vaccinationId);
 
     return {
-      message: 'Vaccination deleted successfully',
+      message: 'Vaccination archived successfully',
     };
   }
 

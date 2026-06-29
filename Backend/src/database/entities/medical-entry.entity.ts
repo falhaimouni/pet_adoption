@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  DeleteDateColumn,
+} from 'typeorm';
 import { MedicalRecord } from './medical-record.entity';
 import { User } from './user.entity';
 
@@ -30,6 +38,9 @@ export class MedicalEntry {
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt!: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp', nullable: true })
+  deletedAt?: Date | null;
 
   @ManyToOne(() => MedicalRecord, (record) => record.entries, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'record_id' })

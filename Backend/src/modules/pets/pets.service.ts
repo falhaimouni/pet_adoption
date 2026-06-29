@@ -5,6 +5,9 @@ import { Repository } from 'typeorm';
 import { CreatePetDto, UpdatePetDto } from '@shared/dto/pet.dto';
 import { Pet } from '../../database/entities/pet.entity';
 import { PetImage } from '../../database/entities/pet-image.entity';
+import { MedicalEntry } from '../../database/entities/medical-entry.entity';
+import { MedicalRecord } from '../../database/entities/medical-record.entity';
+import { Vaccination } from '../../database/entities/vaccination.entity';
 
 export interface FindPetsQuery {
   search?: string;
@@ -24,6 +27,15 @@ export class PetsService {
 
     @InjectRepository(PetImage)
     private readonly petImageRepo: Repository<PetImage>,
+
+    @InjectRepository(MedicalRecord)
+    private readonly medicalRecordRepo: Repository<MedicalRecord>,
+
+    @InjectRepository(MedicalEntry)
+    private readonly medicalEntryRepo: Repository<MedicalEntry>,
+
+    @InjectRepository(Vaccination)
+    private readonly vaccinationRepo: Repository<Vaccination>,
   ) {}
 
   async create(dto: CreatePetDto, createdBy?: string) {
@@ -127,11 +139,24 @@ export class PetsService {
   }
 
   async remove(id: string) {
-    const pet = await this.findOne(id);
-    await this.petRepo.remove(pet);
+    await this.findOne(id);
+
+    const medicalRecord = await this.medicalRecordRepo.findOne({
+      where: { petId: id },
+      select: {
+        recordId: true,
+      },
+    });
+
+    if (medicalRecord) {
+      await this.medicalEntryRepo.softDelete({ recordId: medicalRecord.recordId });
+    }
+
+    await this.vaccinationRepo.softDelete({ petId: id });
+    await this.petRepo.softDelete(id);
 
     return {
-      message: 'Pet deleted successfully',
+      message: 'Pet archived successfully',
     };
   }
 }

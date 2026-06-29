@@ -81,11 +81,11 @@ export class MedicalService {
   }
 
   async removeEntry(entryId: string) {
-    const entry = await this.findEntry(entryId);
-    await this.medicalEntryRepo.remove(entry);
+    await this.findEntry(entryId);
+    await this.medicalEntryRepo.softDelete(entryId);
 
     return {
-      message: 'Medical entry deleted successfully',
+      message: 'Medical entry archived successfully',
     };
   }
 

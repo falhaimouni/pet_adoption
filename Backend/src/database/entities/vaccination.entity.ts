@@ -1,4 +1,11 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  DeleteDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Pet } from './pet.entity';
 import { User } from './user.entity';
 
@@ -21,6 +28,9 @@ export class Vaccination {
 
   @Column({ name: 'veterinarian_id', type: 'uuid' })
   veterinarianId!: string;
+
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp', nullable: true })
+  deletedAt?: Date | null;
 
   @ManyToOne(() => Pet, (pet) => pet.vaccinations, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'pet_id' })

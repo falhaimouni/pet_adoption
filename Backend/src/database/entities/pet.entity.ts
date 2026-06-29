@@ -1,6 +1,7 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   Index,
   JoinColumn,
@@ -60,6 +61,9 @@ export class Pet {
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt!: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp', nullable: true })
+  deletedAt?: Date | null;
 
   @ManyToOne(() => User, (user) => user.createdPets, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'created_by' })
