@@ -3,6 +3,6 @@ export interface AdoptionDto {
   requestId: string;
   adoptionDate: string;
   adoptionFee?: number;
-  contractStatus: "PENDING" | "SIGNED" | "CANCELLED";
+  contractStatus: "PENDING" | "SIGNED" | "CANCELED";
   completedAt?: string;
 }

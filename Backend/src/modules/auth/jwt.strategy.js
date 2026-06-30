@@ -1,0 +1,65 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.JwtStrategy = void 0;
+const common_1 = require("@nestjs/common");
+const passport_1 = require("@nestjs/passport");
+const passport_jwt_1 = require("passport-jwt");
+const config_1 = require("@nestjs/config");
+const typeorm_1 = require("@nestjs/typeorm");
+const typeorm_2 = require("typeorm");
+const user_entity_1 = require("../../database/entities/user.entity");
+let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(passport_jwt_1.Strategy) {
+    constructor(configService, userRepo) {
+        const secret = configService.get('JWT_SECRET');
+        if (!secret) {
+            throw new common_1.InternalServerErrorException('JWT_SECRET is not defined in environment variables');
+        }
+        super({
+            //inside request header, the token should be in the format "Bearer <token>"
+            jwtFromRequest: passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
+            ignoreExpiration: false,
+            secretOrKey: secret,
+        });
+        this.configService = configService;
+        this.userRepo = userRepo;
+    }
+    async validate(payload) {
+        if (payload.typ === 'refresh') {
+            throw new common_1.UnauthorizedException('Invalid token type');
+        }
+        const user = await this.userRepo.findOne({
+            where: { userId: payload.sub },
+            relations: ['role'],
+        });
+        if (!user || user.status !== 'active' || !user.role) {
+            throw new common_1.UnauthorizedException('Inactive or invalid account');
+        }
+        if (payload.tokenVersion !== user.refreshTokenVersion) {
+            throw new common_1.UnauthorizedException('Invalid token');
+        }
+        return {
+            userId: user.userId,
+            email: user.email,
+            role: user.role.roleName,
+        };
+    }
+};
+exports.JwtStrategy = JwtStrategy;
+exports.JwtStrategy = JwtStrategy = __decorate([
+    (0, common_1.Injectable)(),
+    __param(1, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
+    __metadata("design:paramtypes", [config_1.ConfigService,
+        typeorm_2.Repository])
+], JwtStrategy);

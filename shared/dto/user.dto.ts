@@ -32,15 +32,6 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
-  @MinLength(8)
-  @MaxLength(255)
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/, {
-    message: STRONG_PASSWORD_MESSAGE,
-  })
-  password?: string;
-
-  @IsOptional()
-  @IsString()
   @MaxLength(30)
   phone?: string;
 

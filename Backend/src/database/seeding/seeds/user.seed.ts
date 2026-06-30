@@ -64,7 +64,7 @@ export async function seedUsers(
     {
       firstName: 'Shahd',
       lastName: 'Admin',
-      email: 'admin@test.com',
+      email: 'shahd.shawish@gmail.com',
       password: 'Admin@123',
       role: adminRole,
       status: 'active',

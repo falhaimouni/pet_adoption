@@ -33,7 +33,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: { sub: string; email: string; role: string }) {
+  async validate(payload: {
+    sub: string;
+    email: string;
+    role: string;
+    tokenVersion: number;
+    typ?: 'access' | 'refresh';
+  }) {
+    if (payload.typ === 'refresh') {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
     const user = await this.userRepo.findOne({
       where: { userId: payload.sub },
       relations: ['role'],
@@ -41,6 +51,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!user || user.status !== 'active' || !user.role) {
       throw new UnauthorizedException('Inactive or invalid account');
+    }
+
+    if (payload.tokenVersion !== user.refreshTokenVersion) {
+      throw new UnauthorizedException('Invalid token');
     }
 
     return {

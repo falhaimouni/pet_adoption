@@ -5,5 +5,5 @@ export enum AdoptionStatusEnum {
 
   REJECTED = "REJECTED",
 
-  CANCELLED = "CANCELLED",
+  CANCELED = "CANCELED",
 }

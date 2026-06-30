@@ -47,6 +47,13 @@ export class User {
   @Column({ type: 'text', nullable: true })
   avatar?: string | null;
 
+  @Column({
+    type: 'enum',
+    enum: ['LOCAL', 'GOOGLE'],
+    default: 'LOCAL',
+  })
+  provider!: 'LOCAL' | 'GOOGLE';
+
   @Column({ name: 'role_id', type: 'uuid' })
   roleId!: string;
 
@@ -55,6 +62,9 @@ export class User {
 
   @Column({ type: 'varchar', length: 40, default: 'active' })
   status!: string;
+
+  @Column({ name: 'refresh_token_version', type: 'integer', default: 0 })
+  refreshTokenVersion!: number;
 
   @Column({ name: 'oauth_provider', type: 'varchar', length: 80, nullable: true })
   oauthProvider?: string | null;

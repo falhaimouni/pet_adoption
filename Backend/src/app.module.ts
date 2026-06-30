@@ -6,8 +6,8 @@ import { appConfig, dbConfig } from './config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { UsersModule } from './modules/users/users.module';
-import { Db } from 'typeorm';
 
 @Module({
   imports: [
@@ -22,6 +22,7 @@ import { Db } from 'typeorm';
     }),
     DatabaseModule,
     AuthModule,
+    DashboardModule,
     UsersModule,
   ],
   controllers: [AppController],

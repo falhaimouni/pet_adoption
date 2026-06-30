@@ -47,7 +47,6 @@ const BASIC_PROFILE_FIELDS: Array<keyof UpdateUserDto> = [
   'firstName',
   'lastName',
   'email',
-  'password',
   'phone',
   'avatar',
 ];
@@ -232,17 +231,23 @@ export class UsersService {
   }
 
   async updateProfile(id: string, data: UpdateProfileDto) {
-    const updateData = { ...data };
+    const updateData: Partial<
+      Pick<User, 'firstName' | 'lastName' | 'email' | 'phone' | 'avatar'>
+    > = {};
+
+    if (data.firstName !== undefined) updateData.firstName = data.firstName;
+    if (data.lastName !== undefined) updateData.lastName = data.lastName;
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.avatar !== undefined) updateData.avatar = data.avatar;
 
     if (updateData.email) {
       await this.ensureEmailAvailable(updateData.email, id);
     }
 
-    if (updateData.password) {
-      updateData.password = await bcrypt.hash(updateData.password, 10);
+    if (Object.keys(updateData).length > 0) {
+      await this.userRepo.update(id, updateData);
     }
-
-    await this.userRepo.update(id, updateData);
 
     return this.findProfile(id);
   }
@@ -307,9 +312,6 @@ export class UsersService {
     if (data.phone !== undefined) userData.phone = data.phone;
     if (data.avatar !== undefined) userData.avatar = data.avatar;
     if (data.status !== undefined) userData.status = data.status;
-    if (data.password !== undefined) {
-      userData.password = await bcrypt.hash(data.password, 10);
-    }
     if (data.roleId !== undefined) {
       userData.role = nextRole;
     }

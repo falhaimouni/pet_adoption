@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity('password_reset_tokens')
@@ -9,8 +9,9 @@ export class PasswordResetToken {
   @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
 
-  @Column({ type: 'varchar', length: 255, unique: true })
-  token!: string;
+  @Index()
+  @Column({ name: 'token_hash', type: 'varchar', length: 255, unique: true })
+  tokenHash!: string;
 
   @Index()
   @Column({ name: 'expires_at', type: 'timestamp' })
@@ -18,6 +19,9 @@ export class PasswordResetToken {
 
   @Column({ name: 'used_at', type: 'timestamp', nullable: true })
   usedAt?: Date | null;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
+  createdAt!: Date;
 
   @ManyToOne(() => User, (user) => user.passwordResetTokens, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
