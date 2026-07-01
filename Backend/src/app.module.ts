@@ -10,6 +10,7 @@ import { UsersModule } from './modules/users/users.module';
 import { MedicalModule } from './modules/medical/medical.module';
 import { PetsModule } from './modules/pets/pets.module';
 import { VaccinationsModule } from './modules/vaccinations/vaccinations.module';
+import { AdoptionsModule } from './modules/adoptions/adoptions.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { VaccinationsModule } from './modules/vaccinations/vaccinations.module';
     PetsModule,
     MedicalModule,
     VaccinationsModule,
+    AdoptionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
