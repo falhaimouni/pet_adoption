@@ -33,13 +33,13 @@ export class MedicalController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'MANAGER', 'EMPLOYEE', 'VET')
-  @Get('pets/:petId/medical-record/entries')
-  findEntriesByPet(@Param('petId') petId: string) {
-    return this.medicalService.findEntriesByPet(petId);
+  @Get('medical-entries/:entryId')
+  findEntry(@Param('entryId') entryId: string) {
+    return this.medicalService.findEntry(entryId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'MANAGER', 'VET')
+  @Roles('VET')
   @Post('pets/:petId/medical-record/entries')
   addEntry(
     @Param('petId') petId: string,
@@ -50,7 +50,7 @@ export class MedicalController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'MANAGER', 'VET')
+  @Roles('VET')
   @Patch('medical-entries/:entryId')
   updateEntry(
     @Param('entryId') entryId: string,
@@ -60,7 +60,7 @@ export class MedicalController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'MANAGER', 'VET')
+  @Roles('VET')
   @Delete('medical-entries/:entryId')
   removeEntry(@Param('entryId') entryId: string) {
     return this.medicalService.removeEntry(entryId);

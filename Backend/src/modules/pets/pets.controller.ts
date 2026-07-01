@@ -27,6 +27,11 @@ export class PetsController {
     return this.petsService.findAll(query);
   }
 
+  @Get(':id/full')
+  findFull(@Param('id') id: string) {
+    return this.petsService.findFull(id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.petsService.findOne(id);

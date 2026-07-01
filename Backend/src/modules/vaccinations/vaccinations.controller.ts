@@ -32,7 +32,7 @@ export class VaccinationsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'MANAGER', 'VET')
+  @Roles('VET')
   @Post('pets/:petId/vaccinations')
   create(
     @Param('petId') petId: string,
@@ -43,7 +43,7 @@ export class VaccinationsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'MANAGER', 'VET')
+  @Roles('VET')
   @Patch('vaccinations/:vaccinationId')
   update(
     @Param('vaccinationId') vaccinationId: string,
@@ -53,7 +53,7 @@ export class VaccinationsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'MANAGER', 'VET')
+  @Roles('VET')
   @Delete('vaccinations/:vaccinationId')
   remove(@Param('vaccinationId') vaccinationId: string) {
     return this.vaccinationsService.remove(vaccinationId);

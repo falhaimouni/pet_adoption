@@ -19,6 +19,41 @@ export interface FindPetsQuery {
   maxAge?: number;
 }
 
+interface PetImageResponse {
+  imageId: string;
+  imageUrl: string;
+  uploadedAt: Date;
+}
+
+interface PetResponse {
+  petId: string;
+  name: string;
+  species: string;
+  breed?: string | null;
+  age?: number | null;
+  gender?: string | null;
+  color?: string | null;
+  weight?: number | null;
+  description?: string | null;
+  healthStatus?: string | null;
+  adoptionStatus: string;
+  arrivalDate?: string | null;
+  images: PetImageResponse[];
+}
+
+interface PetFullResponse extends PetResponse {
+  medicalRecord?: {
+    recordId: string;
+    createdAt: Date;
+  };
+  vaccinations: {
+    vaccinationId: string;
+    vaccineName: string;
+    vaccinationDate: string;
+    nextDueDate?: string | null;
+  }[];
+}
+
 @Injectable()
 export class PetsService {
   constructor(
@@ -38,7 +73,7 @@ export class PetsService {
     private readonly vaccinationRepo: Repository<Vaccination>,
   ) {}
 
-  async create(dto: CreatePetDto, createdBy?: string) {
+  async create(dto: CreatePetDto, createdBy?: string): Promise<PetResponse> {
     const pet = this.petRepo.create({
       petName: dto.name,
       species: dto.species,
@@ -65,7 +100,7 @@ export class PetsService {
     return this.findOne(savedPet.petId);
   }
 
-  findAll(query: FindPetsQuery) {
+  async findAll(query: FindPetsQuery): Promise<PetResponse[]> {
     const qb = this.petRepo
       .createQueryBuilder('pet')
       .leftJoinAndSelect('pet.images', 'images')
@@ -104,24 +139,46 @@ export class PetsService {
       qb.andWhere('pet.age <= :maxAge', { maxAge: query.maxAge });
     }
 
-    return qb.getMany();
+    const pets = await qb.getMany();
+    return pets.map((pet) => this.mapPetResponse(pet));
   }
 
-  async findOne(id: string) {
-    const pet = await this.petRepo.findOne({
-      where: { petId: id },
-      relations: ['images', 'medicalRecord', 'vaccinations'],
-    });
+  async findOne(id: string): Promise<PetResponse> {
+    const pet = await this.petRepo
+      .createQueryBuilder('pet')
+      .leftJoinAndSelect('pet.images', 'images')
+      .where('pet.petId = :id', { id })
+      .getOne();
 
     if (!pet) {
       throw new NotFoundException('Pet not found');
     }
 
-    return pet;
+    return this.mapPetResponse(pet);
   }
 
-  async update(id: string, dto: UpdatePetDto) {
-    const pet = await this.findOne(id);
+  async findFull(id: string): Promise<PetFullResponse> {
+    const pet = await this.petRepo
+      .createQueryBuilder('pet')
+      .leftJoinAndSelect('pet.images', 'images')
+      .leftJoinAndSelect('pet.medicalRecord', 'medicalRecord')
+      .leftJoinAndSelect(
+        'pet.vaccinations',
+        'vaccinations',
+        'vaccinations.deletedAt IS NULL',
+      )
+      .where('pet.petId = :id', { id })
+      .getOne();
+
+    if (!pet) {
+      throw new NotFoundException('Pet not found');
+    }
+
+    return this.mapPetFullResponse(pet);
+  }
+
+  async update(id: string, dto: UpdatePetDto): Promise<PetResponse> {
+    const pet = await this.getPetEntity(id);
 
     if (dto.name !== undefined) pet.petName = dto.name;
     if (dto.species !== undefined) pet.species = dto.species;
@@ -138,8 +195,8 @@ export class PetsService {
     return this.findOne(id);
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string): Promise<{ message: string }> {
+    await this.getPetEntity(id);
 
     const medicalRecord = await this.medicalRecordRepo.findOne({
       where: { petId: id },
@@ -153,10 +210,71 @@ export class PetsService {
     }
 
     await this.vaccinationRepo.softDelete({ petId: id });
+    await this.petImageRepo.delete({ petId: id });
     await this.petRepo.softDelete(id);
 
     return {
       message: 'Pet archived successfully',
     };
+  }
+
+  private async getPetEntity(id: string): Promise<Pet> {
+    const pet = await this.petRepo.findOne({
+      where: { petId: id },
+    });
+
+    if (!pet) {
+      throw new NotFoundException('Pet not found');
+    }
+
+    return pet;
+  }
+
+  private mapPetResponse(pet: Pet): PetResponse {
+    return {
+      petId: pet.petId,
+      name: pet.petName,
+      species: pet.species,
+      breed: pet.breed,
+      age: pet.age,
+      gender: pet.gender,
+      color: pet.color,
+      weight: this.mapWeight(pet.weight),
+      description: pet.description,
+      healthStatus: pet.healthStatus,
+      adoptionStatus: pet.adoptionStatus,
+      arrivalDate: pet.arrivalDate,
+      images: (pet.images ?? []).map((image) => this.mapPetImageResponse(image)),
+    };
+  }
+
+  private mapPetFullResponse(pet: Pet): PetFullResponse {
+    return {
+      ...this.mapPetResponse(pet),
+      medicalRecord: pet.medicalRecord
+        ? {
+            recordId: pet.medicalRecord.recordId,
+            createdAt: pet.medicalRecord.createdAt,
+          }
+        : undefined,
+      vaccinations: (pet.vaccinations ?? []).map((vaccination) => ({
+        vaccinationId: vaccination.vaccinationId,
+        vaccineName: vaccination.vaccineName,
+        vaccinationDate: vaccination.vaccinationDate,
+        nextDueDate: vaccination.nextDueDate,
+      })),
+    };
+  }
+
+  private mapPetImageResponse(image: PetImage): PetImageResponse {
+    return {
+      imageId: image.imageId,
+      imageUrl: image.imageUrl,
+      uploadedAt: image.uploadedAt,
+    };
+  }
+
+  private mapWeight(weight?: string | null): number | null {
+    return weight === undefined || weight === null ? null : Number(weight);
   }
 }
