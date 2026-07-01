@@ -32,7 +32,7 @@ export class Conversation {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
   updatedAt!: Date;
 
-  @ManyToOne(() => Adopter, (adopter) => adopter.conversations, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Adopter, (adopter) => adopter.conversations, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'adopter_id' })
   adopter!: Adopter;
 

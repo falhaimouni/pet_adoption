@@ -17,6 +17,7 @@ export async function seedUsers(
     await roleRepo.findOne({
       where: {
         roleName: 'ADMIN',
+        isActive: true,
       },
     });
 
@@ -24,6 +25,7 @@ export async function seedUsers(
     await roleRepo.findOne({
       where: {
         roleName: 'MANAGER',
+        isActive: true,
       },
     });
 
@@ -31,6 +33,7 @@ export async function seedUsers(
     await roleRepo.findOne({
       where: {
         roleName: 'VET',
+        isActive: true,
       },
     });
 
@@ -38,6 +41,7 @@ export async function seedUsers(
     await roleRepo.findOne({
       where: {
         roleName: 'EMPLOYEE',
+        isActive: true,
       },
     });
 
@@ -45,6 +49,7 @@ export async function seedUsers(
     await roleRepo.findOne({
       where: {
         roleName: 'ADOPTER',
+        isActive: true,
       },
     });
 

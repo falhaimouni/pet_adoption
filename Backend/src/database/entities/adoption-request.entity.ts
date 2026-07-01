@@ -28,11 +28,11 @@ export class AdoptionRequest {
   @Column({ name: 'reviewed_by', type: 'uuid', nullable: true })
   reviewedBy?: string | null;
 
-  @ManyToOne(() => Adopter, (adopter) => adopter.adoptionRequests, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Adopter, (adopter) => adopter.adoptionRequests, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'adopter_id' })
   adopter!: Adopter;
 
-  @ManyToOne(() => Pet, (pet) => pet.adoptionRequests, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Pet, (pet) => pet.adoptionRequests, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'pet_id' })
   pet!: Pet;
 

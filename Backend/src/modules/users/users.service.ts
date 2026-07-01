@@ -171,7 +171,7 @@ export class UsersService {
     }
 
     const role = await this.roleRepo.findOne({
-      where: { roleId: dto.roleId },
+      where: { roleId: dto.roleId, isActive: true },
     });
 
     if (!role) {
@@ -187,7 +187,7 @@ export class UsersService {
     }
 
     const department = await this.departmentRepo.findOne({
-      where: { departmentId: dto.departmentId },
+      where: { departmentId: dto.departmentId, isActive: true },
     });
 
     if (!department) {
@@ -272,7 +272,7 @@ export class UsersService {
 
     if (data.roleId) {
       const requestedRole = await this.roleRepo.findOne({
-        where: { roleId: data.roleId },
+        where: { roleId: data.roleId, isActive: true },
       });
 
       if (!requestedRole) {
@@ -334,7 +334,7 @@ export class UsersService {
 
         if (data.departmentId) {
           const department = await manager.findOne(Department, {
-            where: { departmentId: data.departmentId },
+            where: { departmentId: data.departmentId, isActive: true },
           });
 
           if (!department) {

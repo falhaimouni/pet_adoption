@@ -58,7 +58,7 @@ export class AuthService implements OnModuleInit {
 
   async onModuleInit() {
     const role = await this.roleRepo.findOne({
-      where: { roleName: 'ADOPTER' },
+      where: { roleName: 'ADOPTER', isActive: true },
     });
 
     if (!role) {
@@ -111,7 +111,7 @@ export class AuthService implements OnModuleInit {
       relations: ['role'],
     });
 
-    if (!user) {
+    if (!user || !user.role || user.role.isActive === false) {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
@@ -343,14 +343,14 @@ export class AuthService implements OnModuleInit {
     return {
       accessToken: this.jwtService.sign(
         { ...basePayload, typ: 'access' },
-        { expiresIn: accessTokenExpiry },
+        ({ expiresIn: accessTokenExpiry } as unknown) as any,
       ),
       refreshToken: this.jwtService.sign(
         { ...basePayload, typ: 'refresh' },
-        {
+        ({
           secret: this.getRefreshTokenSecret(),
           expiresIn: refreshTokenExpiry,
-        },
+        } as unknown) as any,
       ),
     };
   }

@@ -14,18 +14,20 @@
     "seed": "ts-node src/database/seeding/main.seed.ts"
   },
   "dependencies": {
-    "@nestjs-modules/mailer": "^2.3.7",
+    "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/common": "^11.1.21",
     "@nestjs/config": "^4.0.4",
-    "@nestjs/core": "^11.1.21",
+    "@nestjs/core": "^11.1.27",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.1.21",
-    "@nestjs/typeorm": "^11.0.1",
+    "@nestjs/typeorm": "^11.0.3",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "nodemailer": "^9.0.1",
+    "uuid": "^11.1.1",
+    "multer": "^2.2.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.13.1",
@@ -43,5 +45,11 @@
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.7.3"
+  }
+  ,
+  "overrides": {
+    "nodemailer": "^9.0.1",
+    "uuid": "^11.1.1",
+    "multer": "^2.2.0"
   }
 }

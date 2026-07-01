@@ -128,6 +128,10 @@ export class DashboardService {
       this.userRepo
       //to write sql as typeORM
         .createQueryBuilder('user')
+        //only active users should contribute to role counts
+        .where('user.status = :status', {
+          status: USER_STATUS.ACTIVE,
+        })
         //join user table with role table to get role name
         .innerJoin('user.role', 'role')
         //get role name
@@ -163,9 +167,15 @@ export class DashboardService {
       .innerJoin('user.role', 'role')
       .select('role.roleName', 'roleName')
       .addSelect('COUNT(user.userId)', 'count')
+      //only active users should appear in current dashboard counts
+      .where('user.status = :status', {
+        status: USER_STATUS.ACTIVE,
+      })
+      //only active roles should be counted for manager stats
+      .andWhere('role.isActive = true')
       //filter only employee, vet and adopter roles
       //typeORM istead of WHERE role IN (...) in sql
-      .where('role.roleName IN (:...roles)', {
+      .andWhere('role.roleName IN (:...roles)', {
         roles: [ROLES.EMPLOYEE, ROLES.VET, ROLES.ADOPTER],
       })
       .groupBy('role.roleName')
@@ -210,9 +220,8 @@ export class DashboardService {
   }
 
   private async getAdoptionRequestStats() {
-    const [totalRequests, pending, approved, rejectedOrCanceled] =
+    const [pending, approved, rejectedOrCanceled] =
       await Promise.all([
-        this.adoptionRequestRepo.count(),
         this.adoptionRequestRepo.count({
           where: { status: REQUEST_STATUS.PENDING },
         }),
@@ -228,6 +237,8 @@ export class DashboardService {
           },
         }),
       ]);
+
+    const totalRequests = pending + approved + rejectedOrCanceled;
 
     return {
       totalRequests,
@@ -269,9 +280,9 @@ export class DashboardService {
   private async getAdminSupplyStats() {
     const [totalSupplies, lowStockSupplies, totalSuppliers] =
       await Promise.all([
-        this.supplyRepo.count(),
+        this.supplyRepo.count({ where: { isActive: true } }),
         this.getLowStockSupplyCount(),
-        this.supplierRepo.count(),
+        this.supplierRepo.count({ where: { isActive: true } }),
       ]);
 
     return {
@@ -287,9 +298,10 @@ export class DashboardService {
         this.supplyRepo
           .createQueryBuilder('supply')
           .where('supply.quantity > 0')
+          .andWhere('supply.isActive = true')
           .getCount(),
         this.getLowStockSupplyCount(),
-        this.supplierRepo.count(),
+        this.supplierRepo.count({ where: { isActive: true } }),
       ]);
 
     return {
@@ -303,10 +315,12 @@ export class DashboardService {
     return this.supplyRepo
       .createQueryBuilder('supply')
       .where('supply.quantity <= supply.lowStockLimit')
+      .andWhere('supply.isActive = true')
       .getCount();
   }
 
   private async getRecentActivityLogs(): Promise<DashboardActivityLogDto[]> {
+    const since = this.daysAgo(30);
     const logs = await this.activityLogRepo
       .createQueryBuilder('log')
       //get the user who performed the action
@@ -322,6 +336,7 @@ export class DashboardService {
         'user.lastName',
         'user.email',
       ])
+      .where('log.createdAt >= :since', { since })
       //newsest first
       .orderBy('log.createdAt', 'DESC')
       //limit to 10
