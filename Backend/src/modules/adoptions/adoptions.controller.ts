@@ -28,6 +28,12 @@ export class AdoptionsController {
   }
 
   @Roles('ADMIN', 'MANAGER', 'EMPLOYEE', 'ADOPTER')
+  @Get('adoptions')
+  findAdoptions(@Req() req: RequestWithUser) {
+    return this.adoptionsService.findAdoptions(req.user);
+  }
+
+  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE', 'ADOPTER')
   @Get('requests/:requestId')
   findRequest(
     @Param('requestId') requestId: string,

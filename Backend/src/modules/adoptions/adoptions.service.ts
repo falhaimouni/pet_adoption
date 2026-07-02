@@ -9,10 +9,12 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { CreateAdoptionRequestDto } from '@shared/dto/adoption-request.dto';
 import { DataSource, Repository } from 'typeorm';
 
+import { ActivityLog } from '../../database/entities/activity-log.entity';
 import { AdoptionRequest } from '../../database/entities/adoption-request.entity';
 import { Adoption } from '../../database/entities/adoption.entity';
 import { Adopter } from '../../database/entities/adopter.entity';
 import { Pet } from '../../database/entities/pet.entity';
+import { User } from '../../database/entities/user.entity';
 
 const ADOPTION_REQUEST_STATUS = {
   PENDING: 'PENDING',
@@ -31,6 +33,21 @@ const CONTRACT_STATUS = {
   PENDING: 'PENDING',
 } as const;
 
+const ACTIVITY_ENTITY = {
+  ADOPTION_REQUEST: 'ADOPTION_REQUEST',
+  ADOPTION: 'ADOPTION',
+  PET: 'PET',
+} as const;
+
+const ACTIVITY_ACTION = {
+  REQUEST_CREATED: 'ADOPTION_REQUEST_CREATED',
+  REQUEST_APPROVED: 'ADOPTION_REQUEST_APPROVED',
+  REQUEST_REJECTED: 'ADOPTION_REQUEST_REJECTED',
+  REQUEST_CANCELLED: 'ADOPTION_REQUEST_CANCELLED',
+  ADOPTION_CREATED: 'ADOPTION_CREATED',
+  PET_STATUS_CHANGED: 'PET_STATUS_CHANGED',
+} as const;
+
 type RequestUser = {
   userId: string;
   email: string;
@@ -43,6 +60,12 @@ interface AdoptionRequestResponse {
   notes?: string | null;
   requestDate: string;
   reviewedBy?: string | null;
+  reviewer?: {
+    userId: string;
+    firstName: string;
+    lastName: string;
+    avatar?: string | null;
+  } | null;
   adopter: {
     adopterId: string;
     userId: string;
@@ -63,6 +86,38 @@ interface AdoptionRequestResponse {
   };
 }
 
+interface AdoptionResponse {
+  adoptionId: string;
+  requestId: string;
+  adoptionDate: string;
+  adoptionFee?: number | null;
+  contractStatus: string;
+  request: {
+    requestId: string;
+    status: string;
+    requestDate: string;
+    reviewedBy?: string | null;
+    reviewer?: {
+      userId: string;
+      firstName: string;
+      lastName: string;
+      avatar?: string | null;
+    } | null;
+  };
+  adopter: {
+    adopterId: string;
+    userId: string;
+    firstName: string;
+    lastName: string;
+  };
+  pet: {
+    petId: string;
+    name: string;
+    species: string;
+    adoptionStatus: string;
+  };
+}
+
 @Injectable()
 export class AdoptionsService {
   constructor(
@@ -71,6 +126,9 @@ export class AdoptionsService {
 
     @InjectRepository(AdoptionRequest)
     private readonly adoptionRequestRepo: Repository<AdoptionRequest>,
+
+    @InjectRepository(Adoption)
+    private readonly adoptionRepo: Repository<Adoption>,
 
     @InjectRepository(Adopter)
     private readonly adopterRepo: Repository<Adopter>,
@@ -87,13 +145,31 @@ export class AdoptionsService {
 
     const requests = await this.adoptionRequestRepo.find({
       where,
-      relations: ['adopter', 'adopter.user', 'pet', 'adoption'],
+      relations: ['adopter', 'adopter.user', 'pet', 'adoption', 'reviewer'],
       order: {
         requestDate: 'DESC',
       },
     });
 
     return requests.map((request) => this.mapRequestResponse(request));
+  }
+
+  async findAdoptions(user: RequestUser): Promise<AdoptionResponse[]> {
+    const qb = this.adoptionRepo
+      .createQueryBuilder('adoption')
+      .leftJoinAndSelect('adoption.request', 'request')
+      .leftJoinAndSelect('request.adopter', 'adopter')
+      .leftJoinAndSelect('adopter.user', 'adopterUser')
+      .leftJoinAndSelect('request.pet', 'pet')
+      .leftJoinAndSelect('request.reviewer', 'reviewer')
+      .orderBy('adoption.adoptionDate', 'DESC');
+
+    if (user.role === 'ADOPTER') {
+      qb.where('adopter.userId = :userId', { userId: user.userId });
+    }
+
+    const adoptions = await qb.getMany();
+    return adoptions.map((adoption) => this.mapAdoptionResponse(adoption));
   }
 
   async findRequest(
@@ -113,12 +189,11 @@ export class AdoptionsService {
     userId: string,
     dto: CreateAdoptionRequestDto,
   ): Promise<AdoptionRequestResponse> {
-    let requestId = '';
-
-    await this.dataSource.transaction(async (manager) => {
+    const requestId = await this.dataSource.transaction(async (manager) => {
       const adopterRepo = manager.getRepository(Adopter);
       const petRepo = manager.getRepository(Pet);
       const requestRepo = manager.getRepository(AdoptionRequest);
+      const logRepo = manager.getRepository(ActivityLog);
 
       const adopter = await adopterRepo.findOne({
         where: { userId },
@@ -128,9 +203,11 @@ export class AdoptionsService {
         throw new NotFoundException('Adopter profile not found');
       }
 
-      const pet = await petRepo.findOne({
-        where: { petId: dto.petId },
-      });
+      const pet = await petRepo
+        .createQueryBuilder('pet')
+        .setLock('pessimistic_write')
+        .where('pet.petId = :petId', { petId: dto.petId })
+        .getOne();
 
       if (!pet) {
         throw new NotFoundException('Pet not found');
@@ -178,7 +255,23 @@ export class AdoptionsService {
 
       const savedRequest = await requestRepo.save(request);
       await petRepo.save(pet);
-      requestId = savedRequest.requestId;
+
+      await this.logActivity(
+        logRepo,
+        userId,
+        ACTIVITY_ACTION.REQUEST_CREATED,
+        ACTIVITY_ENTITY.ADOPTION_REQUEST,
+        savedRequest.requestId,
+      );
+      await this.logActivity(
+        logRepo,
+        userId,
+        ACTIVITY_ACTION.PET_STATUS_CHANGED,
+        ACTIVITY_ENTITY.ADOPTION_REQUEST,
+        savedRequest.requestId,
+      );
+
+      return savedRequest.requestId;
     });
 
     return this.findRequest(requestId, {
@@ -196,11 +289,13 @@ export class AdoptionsService {
       const requestRepo = manager.getRepository(AdoptionRequest);
       const adoptionRepo = manager.getRepository(Adoption);
       const petRepo = manager.getRepository(Pet);
+      const logRepo = manager.getRepository(ActivityLog);
 
-      const request = await requestRepo.findOne({
-        where: { requestId },
-        relations: ['pet'],
-      });
+      const request = await requestRepo
+        .createQueryBuilder('request')
+        .setLock('pessimistic_write')
+        .where('request.requestId = :requestId', { requestId })
+        .getOne();
 
       if (!request) {
         throw new NotFoundException('Adoption request not found');
@@ -210,7 +305,17 @@ export class AdoptionsService {
         throw new BadRequestException('Only pending requests can be approved');
       }
 
-      if (this.isStatus(request.pet.adoptionStatus, PET_ADOPTION_STATUS.ADOPTED)) {
+      const pet = await petRepo
+        .createQueryBuilder('pet')
+        .setLock('pessimistic_write')
+        .where('pet.petId = :petId', { petId: request.petId })
+        .getOne();
+
+      if (!pet) {
+        throw new NotFoundException('Pet not found');
+      }
+
+      if (this.isStatus(pet.adoptionStatus, PET_ADOPTION_STATUS.ADOPTED)) {
         throw new BadRequestException('Pet is already adopted');
       }
 
@@ -223,17 +328,32 @@ export class AdoptionsService {
       });
 
       if (!existingAdoption) {
-        await adoptionRepo.save(
+        const adoption = await adoptionRepo.save(
           adoptionRepo.create({
             requestId,
             adoptionDate: this.today(),
             contractStatus: CONTRACT_STATUS.PENDING,
           }),
         );
+
+        await this.logActivity(
+          logRepo,
+          reviewerId,
+          ACTIVITY_ACTION.ADOPTION_CREATED,
+          ACTIVITY_ENTITY.ADOPTION_REQUEST,
+          requestId,
+        );
+        await this.logActivity(
+          logRepo,
+          reviewerId,
+          ACTIVITY_ACTION.ADOPTION_CREATED,
+          ACTIVITY_ENTITY.ADOPTION,
+          adoption.adoptionId,
+        );
       }
 
-      request.pet.adoptionStatus = PET_ADOPTION_STATUS.ADOPTED;
-      await petRepo.save(request.pet);
+      pet.adoptionStatus = PET_ADOPTION_STATUS.ADOPTED;
+      await petRepo.save(pet);
 
       await requestRepo
         .createQueryBuilder()
@@ -246,6 +366,21 @@ export class AdoptionsService {
         .andWhere('request_id != :requestId', { requestId })
         .andWhere('LOWER(status) = :status', { status: 'pending' })
         .execute();
+
+      await this.logActivity(
+        logRepo,
+        reviewerId,
+        ACTIVITY_ACTION.REQUEST_APPROVED,
+        ACTIVITY_ENTITY.ADOPTION_REQUEST,
+        requestId,
+      );
+      await this.logActivity(
+        logRepo,
+        reviewerId,
+        ACTIVITY_ACTION.PET_STATUS_CHANGED,
+        ACTIVITY_ENTITY.ADOPTION_REQUEST,
+        requestId,
+      );
     });
 
     return this.findRequest(requestId, {
@@ -262,11 +397,14 @@ export class AdoptionsService {
     await this.dataSource.transaction(async (manager) => {
       const requestRepo = manager.getRepository(AdoptionRequest);
       const petRepo = manager.getRepository(Pet);
+      const logRepo = manager.getRepository(ActivityLog);
 
-      const request = await requestRepo.findOne({
-        where: { requestId },
-        relations: ['adopter', 'pet'],
-      });
+      const request = await requestRepo
+        .createQueryBuilder('request')
+        .leftJoinAndSelect('request.adopter', 'adopter')
+        .setLock('pessimistic_write')
+        .where('request.requestId = :requestId', { requestId })
+        .getOne();
 
       if (!request) {
         throw new NotFoundException('Adoption request not found');
@@ -280,13 +418,30 @@ export class AdoptionsService {
         throw new BadRequestException('Only pending requests can be cancelled');
       }
 
+      const pet = await petRepo
+        .createQueryBuilder('pet')
+        .setLock('pessimistic_write')
+        .where('pet.petId = :petId', { petId: request.petId })
+        .getOne();
+
+      if (!pet) {
+        throw new NotFoundException('Pet not found');
+      }
+
       request.status = ADOPTION_REQUEST_STATUS.CANCELLED;
       await requestRepo.save(request);
-
       await this.updatePetAvailabilityIfNoPendingRequests(
         requestRepo,
         petRepo,
-        request.pet,
+        pet,
+      );
+
+      await this.logActivity(
+        logRepo,
+        userId,
+        ACTIVITY_ACTION.REQUEST_CANCELLED,
+        ACTIVITY_ENTITY.ADOPTION_REQUEST,
+        requestId,
       );
     });
 
@@ -304,11 +459,13 @@ export class AdoptionsService {
     await this.dataSource.transaction(async (manager) => {
       const requestRepo = manager.getRepository(AdoptionRequest);
       const petRepo = manager.getRepository(Pet);
+      const logRepo = manager.getRepository(ActivityLog);
 
-      const request = await requestRepo.findOne({
-        where: { requestId },
-        relations: ['pet'],
-      });
+      const request = await requestRepo
+        .createQueryBuilder('request')
+        .setLock('pessimistic_write')
+        .where('request.requestId = :requestId', { requestId })
+        .getOne();
 
       if (!request) {
         throw new NotFoundException('Adoption request not found');
@@ -318,14 +475,31 @@ export class AdoptionsService {
         throw new BadRequestException('Only pending requests can be rejected');
       }
 
+      const pet = await petRepo
+        .createQueryBuilder('pet')
+        .setLock('pessimistic_write')
+        .where('pet.petId = :petId', { petId: request.petId })
+        .getOne();
+
+      if (!pet) {
+        throw new NotFoundException('Pet not found');
+      }
+
       request.status = ADOPTION_REQUEST_STATUS.REJECTED;
       request.reviewedBy = reviewerId;
       await requestRepo.save(request);
-
       await this.updatePetAvailabilityIfNoPendingRequests(
         requestRepo,
         petRepo,
-        request.pet,
+        pet,
+      );
+
+      await this.logActivity(
+        logRepo,
+        reviewerId,
+        ACTIVITY_ACTION.REQUEST_REJECTED,
+        ACTIVITY_ENTITY.ADOPTION_REQUEST,
+        requestId,
       );
     });
 
@@ -339,7 +513,7 @@ export class AdoptionsService {
   private async getRequestEntity(requestId: string): Promise<AdoptionRequest> {
     const request = await this.adoptionRequestRepo.findOne({
       where: { requestId },
-      relations: ['adopter', 'adopter.user', 'pet', 'adoption'],
+      relations: ['adopter', 'adopter.user', 'pet', 'adoption', 'reviewer'],
     });
 
     if (!request) {
@@ -358,6 +532,9 @@ export class AdoptionsService {
       notes: request.notes,
       requestDate: request.requestDate,
       reviewedBy: request.reviewedBy,
+      reviewer: request.reviewer
+        ? this.mapReviewerResponse(request.reviewer)
+        : null,
       adopter: {
         adopterId: request.adopter.adopterId,
         userId: request.adopter.userId,
@@ -379,6 +556,63 @@ export class AdoptionsService {
           }
         : undefined,
     };
+  }
+
+  private mapAdoptionResponse(adoption: Adoption): AdoptionResponse {
+    return {
+      adoptionId: adoption.adoptionId,
+      requestId: adoption.requestId,
+      adoptionDate: adoption.adoptionDate,
+      adoptionFee: this.mapDecimal(adoption.adoptionFee),
+      contractStatus: adoption.contractStatus,
+      request: {
+        requestId: adoption.request.requestId,
+        status: adoption.request.status,
+        requestDate: adoption.request.requestDate,
+        reviewedBy: adoption.request.reviewedBy,
+        reviewer: adoption.request.reviewer
+          ? this.mapReviewerResponse(adoption.request.reviewer)
+          : null,
+      },
+      adopter: {
+        adopterId: adoption.request.adopter.adopterId,
+        userId: adoption.request.adopter.userId,
+        firstName: adoption.request.adopter.user.firstName,
+        lastName: adoption.request.adopter.user.lastName,
+      },
+      pet: {
+        petId: adoption.request.pet.petId,
+        name: adoption.request.pet.petName,
+        species: adoption.request.pet.species,
+        adoptionStatus: adoption.request.pet.adoptionStatus,
+      },
+    };
+  }
+
+  private mapReviewerResponse(reviewer: User) {
+    return {
+      userId: reviewer.userId,
+      firstName: reviewer.firstName,
+      lastName: reviewer.lastName,
+      avatar: reviewer.avatar,
+    };
+  }
+
+  private async logActivity(
+    logRepo: Repository<ActivityLog>,
+    userId: string | null,
+    action: string,
+    entityType: string,
+    entityId: string,
+  ): Promise<void> {
+    await logRepo.save(
+      logRepo.create({
+        userId,
+        action,
+        entityType,
+        entityId,
+      }),
+    );
   }
 
   private async updatePetAvailabilityIfNoPendingRequests(
