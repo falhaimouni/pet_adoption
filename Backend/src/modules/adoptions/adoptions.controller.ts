@@ -66,7 +66,7 @@ export class AdoptionsController {
     @Param('requestId') requestId: string,
     @Req() req: RequestWithUser,
   ) {
-    return this.adoptionsService.approveRequest(requestId, req.user.userId);
+    return this.adoptionsService.approveRequest(requestId, req.user);
   }
 
   @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
@@ -75,6 +75,6 @@ export class AdoptionsController {
     @Param('requestId') requestId: string,
     @Req() req: RequestWithUser,
   ) {
-    return this.adoptionsService.rejectRequest(requestId, req.user.userId);
+    return this.adoptionsService.rejectRequest(requestId, req.user);
   }
 }

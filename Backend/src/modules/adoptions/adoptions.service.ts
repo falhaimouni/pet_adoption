@@ -178,9 +178,7 @@ export class AdoptionsService {
   ): Promise<AdoptionRequestResponse> {
     const request = await this.getRequestEntity(requestId);
 
-    if (user.role === 'ADOPTER' && request.adopter.userId !== user.userId) {
-      throw new ForbiddenException('You can only view your own adoption requests');
-    }
+    this.assertCanAccessRequest(request, user);
 
     return this.mapRequestResponse(request);
   }
@@ -189,7 +187,7 @@ export class AdoptionsService {
     userId: string,
     dto: CreateAdoptionRequestDto,
   ): Promise<AdoptionRequestResponse> {
-    const requestId = await this.dataSource.transaction(async (manager) => {
+    return this.dataSource.transaction(async (manager) => {
       const adopterRepo = manager.getRepository(Adopter);
       const petRepo = manager.getRepository(Pet);
       const requestRepo = manager.getRepository(AdoptionRequest);
@@ -197,6 +195,7 @@ export class AdoptionsService {
 
       const adopter = await adopterRepo.findOne({
         where: { userId },
+        relations: ['user'],
       });
 
       if (!adopter) {
@@ -213,16 +212,22 @@ export class AdoptionsService {
         throw new NotFoundException('Pet not found');
       }
 
+      if (this.isStatus(pet.adoptionStatus, PET_ADOPTION_STATUS.ADOPTED)) {
+        throw new BadRequestException('Pet is already adopted');
+      }
+
       if (!this.isStatus(pet.adoptionStatus, PET_ADOPTION_STATUS.AVAILABLE)) {
         throw new BadRequestException('Pet is not available for adoption');
       }
 
-      const existingRequest = await requestRepo.findOne({
-        where: {
+      const existingRequest = await requestRepo
+        .createQueryBuilder('request')
+        .setLock('pessimistic_write')
+        .where('request.adopterId = :adopterId', {
           adopterId: adopter.adopterId,
-          petId: pet.petId,
-        },
-      });
+        })
+        .andWhere('request.petId = :petId', { petId: pet.petId })
+        .getOne();
 
       if (
         existingRequest &&
@@ -267,24 +272,25 @@ export class AdoptionsService {
         logRepo,
         userId,
         ACTIVITY_ACTION.PET_STATUS_CHANGED,
-        ACTIVITY_ENTITY.ADOPTION_REQUEST,
-        savedRequest.requestId,
+        ACTIVITY_ENTITY.PET,
+        pet.petId,
       );
 
-      return savedRequest.requestId;
-    });
+      savedRequest.adopter = adopter;
+      savedRequest.pet = pet;
+      savedRequest.reviewer = null;
+      savedRequest.adoption = undefined;
 
-    return this.findRequest(requestId, {
-      userId,
-      email: '',
-      role: 'ADOPTER',
+      return this.mapRequestResponse(savedRequest);
     });
   }
 
   async approveRequest(
     requestId: string,
-    reviewerId: string,
+    reviewer: RequestUser,
   ): Promise<AdoptionRequestResponse> {
+    this.assertCanReviewRequests(reviewer);
+
     await this.dataSource.transaction(async (manager) => {
       const requestRepo = manager.getRepository(AdoptionRequest);
       const adoptionRepo = manager.getRepository(Adoption);
@@ -319,8 +325,17 @@ export class AdoptionsService {
         throw new BadRequestException('Pet is already adopted');
       }
 
+      const pendingRequestsForPet = await requestRepo
+        .createQueryBuilder('pendingRequest')
+        .setLock('pessimistic_write')
+        .where('pendingRequest.petId = :petId', { petId: request.petId })
+        .andWhere('LOWER(pendingRequest.status) = :status', {
+          status: 'pending',
+        })
+        .getMany();
+
       request.status = ADOPTION_REQUEST_STATUS.APPROVED;
-      request.reviewedBy = reviewerId;
+      request.reviewedBy = reviewer.userId;
       await requestRepo.save(request);
 
       const existingAdoption = await adoptionRepo.findOne({
@@ -332,20 +347,21 @@ export class AdoptionsService {
           adoptionRepo.create({
             requestId,
             adoptionDate: this.today(),
+            adoptionFee: null,
             contractStatus: CONTRACT_STATUS.PENDING,
           }),
         );
 
         await this.logActivity(
           logRepo,
-          reviewerId,
+          reviewer.userId,
           ACTIVITY_ACTION.ADOPTION_CREATED,
           ACTIVITY_ENTITY.ADOPTION_REQUEST,
           requestId,
         );
         await this.logActivity(
           logRepo,
-          reviewerId,
+          reviewer.userId,
           ACTIVITY_ACTION.ADOPTION_CREATED,
           ACTIVITY_ENTITY.ADOPTION,
           adoption.adoptionId,
@@ -355,38 +371,39 @@ export class AdoptionsService {
       pet.adoptionStatus = PET_ADOPTION_STATUS.ADOPTED;
       await petRepo.save(pet);
 
-      await requestRepo
-        .createQueryBuilder()
-        .update(AdoptionRequest)
-        .set({
-          status: ADOPTION_REQUEST_STATUS.REJECTED,
-          reviewedBy: reviewerId,
-        })
-        .where('pet_id = :petId', { petId: request.petId })
-        .andWhere('request_id != :requestId', { requestId })
-        .andWhere('LOWER(status) = :status', { status: 'pending' })
-        .execute();
+      const competingRequests = pendingRequestsForPet.filter(
+        (pendingRequest) => pendingRequest.requestId !== requestId,
+      );
+
+      for (const competingRequest of competingRequests) {
+        competingRequest.status = ADOPTION_REQUEST_STATUS.REJECTED;
+        competingRequest.reviewedBy = reviewer.userId;
+      }
+
+      if (competingRequests.length > 0) {
+        await requestRepo.save(competingRequests);
+      }
 
       await this.logActivity(
         logRepo,
-        reviewerId,
+        reviewer.userId,
         ACTIVITY_ACTION.REQUEST_APPROVED,
         ACTIVITY_ENTITY.ADOPTION_REQUEST,
         requestId,
       );
       await this.logActivity(
         logRepo,
-        reviewerId,
+        reviewer.userId,
         ACTIVITY_ACTION.PET_STATUS_CHANGED,
-        ACTIVITY_ENTITY.ADOPTION_REQUEST,
-        requestId,
+        ACTIVITY_ENTITY.PET,
+        pet.petId,
       );
     });
 
     return this.findRequest(requestId, {
-      userId: reviewerId,
-      email: '',
-      role: 'ADMIN',
+      userId: reviewer.userId,
+      email: reviewer.email,
+      role: reviewer.role,
     });
   }
 
@@ -396,12 +413,12 @@ export class AdoptionsService {
   ): Promise<AdoptionRequestResponse> {
     await this.dataSource.transaction(async (manager) => {
       const requestRepo = manager.getRepository(AdoptionRequest);
+      const adopterRepo = manager.getRepository(Adopter);
       const petRepo = manager.getRepository(Pet);
       const logRepo = manager.getRepository(ActivityLog);
 
       const request = await requestRepo
         .createQueryBuilder('request')
-        .leftJoinAndSelect('request.adopter', 'adopter')
         .setLock('pessimistic_write')
         .where('request.requestId = :requestId', { requestId })
         .getOne();
@@ -410,7 +427,19 @@ export class AdoptionsService {
         throw new NotFoundException('Adoption request not found');
       }
 
-      if (request.adopter.userId !== userId) {
+      const adopter = await adopterRepo.findOne({
+        where: { adopterId: request.adopterId },
+        select: {
+          adopterId: true,
+          userId: true,
+        },
+      });
+
+      if (!adopter) {
+        throw new NotFoundException('Adopter profile not found');
+      }
+
+      if (adopter.userId !== userId) {
         throw new ForbiddenException('You can only cancel your own adoption requests');
       }
 
@@ -454,8 +483,10 @@ export class AdoptionsService {
 
   async rejectRequest(
     requestId: string,
-    reviewerId: string,
+    reviewer: RequestUser,
   ): Promise<AdoptionRequestResponse> {
+    this.assertCanReviewRequests(reviewer);
+
     await this.dataSource.transaction(async (manager) => {
       const requestRepo = manager.getRepository(AdoptionRequest);
       const petRepo = manager.getRepository(Pet);
@@ -486,7 +517,7 @@ export class AdoptionsService {
       }
 
       request.status = ADOPTION_REQUEST_STATUS.REJECTED;
-      request.reviewedBy = reviewerId;
+      request.reviewedBy = reviewer.userId;
       await requestRepo.save(request);
       await this.updatePetAvailabilityIfNoPendingRequests(
         requestRepo,
@@ -496,7 +527,7 @@ export class AdoptionsService {
 
       await this.logActivity(
         logRepo,
-        reviewerId,
+        reviewer.userId,
         ACTIVITY_ACTION.REQUEST_REJECTED,
         ACTIVITY_ENTITY.ADOPTION_REQUEST,
         requestId,
@@ -504,9 +535,9 @@ export class AdoptionsService {
     });
 
     return this.findRequest(requestId, {
-      userId: reviewerId,
-      email: '',
-      role: 'ADMIN',
+      userId: reviewer.userId,
+      email: reviewer.email,
+      role: reviewer.role,
     });
   }
 
@@ -596,6 +627,21 @@ export class AdoptionsService {
       lastName: reviewer.lastName,
       avatar: reviewer.avatar,
     };
+  }
+
+  private assertCanAccessRequest(
+    request: AdoptionRequest,
+    user: RequestUser,
+  ): void {
+    if (user.role === 'ADOPTER' && request.adopter.userId !== user.userId) {
+      throw new ForbiddenException('You can only view your own adoption requests');
+    }
+  }
+
+  private assertCanReviewRequests(user: RequestUser): void {
+    if (!['ADMIN', 'MANAGER', 'EMPLOYEE'].includes(user.role)) {
+      throw new ForbiddenException('You cannot review adoption requests');
+    }
   }
 
   private async logActivity(
