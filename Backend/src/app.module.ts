@@ -9,6 +9,9 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CartModule } from './modules/cart/cart.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { UsersModule } from './modules/users/users.module';
+import { MedicalModule } from './modules/medical/medical.module';
+import { PetsModule } from './modules/pets/pets.module';
+import { VaccinationsModule } from './modules/vaccinations/vaccinations.module';
 
 @Module({
   imports: [
@@ -23,9 +26,12 @@ import { UsersModule } from './modules/users/users.module';
     }),
     DatabaseModule,
     AuthModule,
+    UsersModule,
     CartModule,
     DashboardModule,
-    UsersModule,
+    PetsModule,
+    MedicalModule,
+    VaccinationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
