@@ -3,6 +3,7 @@
 //when running migration commands from the terminal.
 
 import 'reflect-metadata';
+import 'tsconfig-paths/register';
 import { join, resolve } from 'path';
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';

@@ -19,3 +19,8 @@ export * from './supplier.dto';
 export * from './vaccination.dto';
 export * from './department.dto';
 export * from './dashboard.dto';
+export * from './cart-item.dto';
+export * from './cart.dto';
+export * from './order-item.dto';
+export * from './order.dto';
+export * from './payment.dto';

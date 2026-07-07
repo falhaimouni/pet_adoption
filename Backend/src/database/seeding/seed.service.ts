@@ -20,6 +20,12 @@ import { seedMessages } from './seeds/message.seed';
 import { seedSuppliers } from './seeds/supplier.seed';
 import { seedSupplies } from './seeds/supply.seed';
 import { seedSupplierSupplies } from './seeds/supplier-supply.seed';
+import { seedProducts } from './seeds/product.seed';
+import { seedCarts } from './seeds/cart.seed';
+import { seedCartItems } from './seeds/cart-item.seed';
+import { seedOrders } from './seeds/order.seed';
+import { seedOrderItems } from './seeds/order-item.seed';
+import { seedPayments } from './seeds/payment.seed';
 
 export class SeedService {
   constructor(private readonly dataSource: DataSource) {}
@@ -52,5 +58,13 @@ export class SeedService {
     await seedSuppliers(this.dataSource);
     await seedSupplies(this.dataSource);
     await seedSupplierSupplies(this.dataSource);
+
+    //commerce system
+    await seedProducts(this.dataSource);
+    await seedCarts(this.dataSource);
+    await seedCartItems(this.dataSource);
+    await seedOrders(this.dataSource);
+    await seedOrderItems(this.dataSource);
+    await seedPayments(this.dataSource);
   }
 }

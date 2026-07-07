@@ -6,6 +6,7 @@ import { appConfig, dbConfig } from './config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
+import { CartModule } from './modules/cart/cart.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -22,6 +23,7 @@ import { UsersModule } from './modules/users/users.module';
     }),
     DatabaseModule,
     AuthModule,
+    CartModule,
     DashboardModule,
     UsersModule,
   ],
