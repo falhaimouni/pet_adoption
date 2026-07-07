@@ -13,6 +13,9 @@ export class Employee {
   @Column({ name: 'department_id', type: 'uuid' })
   departmentId!: string;
 
+  @Column({ type: 'varchar', length: 40, default: 'active' })
+  status!: string;
+
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   salary?: string | null;
 
@@ -22,7 +25,7 @@ export class Employee {
   @Column({ type: 'text', nullable: true })
   address?: string | null;
 
-  @OneToOne(() => User, (user) => user.employeeProfile, { onDelete: 'CASCADE' })
+  @OneToOne(() => User, (user) => user.employeeProfile, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'user_id' })
   user!: User;
 

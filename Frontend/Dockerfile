@@ -1,10 +1,14 @@
 FROM node:20
 
 WORKDIR /app
-# Copy dependency manifests first for layer caching
-COPY package*.json ./
+
+COPY Frontend/package*.json ./
 RUN npm install
 
-COPY src ./src
+COPY Frontend/src ./src
+COPY Frontend/index.html ./index.html
+COPY Frontend/vite.config.js ./vite.config.js
+COPY Frontend/tsconfig.json ./tsconfig.json
+COPY Frontend/package.json ./package.json
 
 CMD ["npm", "run", "dev"]

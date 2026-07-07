@@ -13,7 +13,7 @@ export class MedicalRecord {
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt!: Date;
 
-  @OneToOne(() => Pet, (pet) => pet.medicalRecord, { onDelete: 'CASCADE' })
+  @OneToOne(() => Pet, (pet) => pet.medicalRecord, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'pet_id' })
   pet!: Pet;
 

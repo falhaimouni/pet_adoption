@@ -2,7 +2,7 @@ export interface AdoptionRequest {
   id: string;
   petId: string;
   adopterId: string;
-  status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+  status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELED";
   notes?: string;
   reviewedBy?: string;
   createdAt: string;

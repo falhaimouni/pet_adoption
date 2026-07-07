@@ -20,7 +20,7 @@ export class Adopter {
   @Column({ name: 'registration_date', type: 'date' })
   registrationDate!: string;
 
-  @OneToOne(() => User, (user) => user.adopterProfile, { onDelete: 'CASCADE' })
+  @OneToOne(() => User, (user) => user.adopterProfile, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'user_id' })
   user!: User;
 

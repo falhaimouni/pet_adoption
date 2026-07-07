@@ -13,12 +13,18 @@ export async function seedPetImages(dataSource: DataSource) {
       where: { petId: pet.petId },
     });
 
-    if (!exists) {
+    const imageData = {
+      pet,
+      imageUrl: `https://placehold.co/600x400?text=${pet.petName}`,
+    };
+
+    if (exists) {
       await imageRepo.save(
-        imageRepo.create({
-          pet,
-          imageUrl: `https://placehold.co/600x400?text=${pet.petName}`,
-        }),
+        imageRepo.merge(exists, imageData),
+      );
+    } else {
+      await imageRepo.save(
+        imageRepo.create(imageData),
       );
     }
   }

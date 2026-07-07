@@ -1,5 +1,8 @@
 // DTOs exports
 export * from './auth.dto';
+export * from './change-password.dto';
+export * from './forgot-password.dto';
+export * from './reset-password.dto';
 export * from './user.dto';
 export * from './pet.dto';
 export * from './adoption.dto';
@@ -15,3 +18,9 @@ export * from './file-upload.dto';
 export * from './supplier.dto';
 export * from './vaccination.dto';
 export * from './department.dto';
+export * from './dashboard.dto';
+export * from './cart-item.dto';
+export * from './cart.dto';
+export * from './order-item.dto';
+export * from './order.dto';
+export * from './payment.dto';

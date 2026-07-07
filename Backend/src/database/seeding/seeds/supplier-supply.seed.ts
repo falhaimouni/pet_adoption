@@ -72,15 +72,21 @@ export async function seedSupplierSupplies(
       },
     });
 
-    if (!exists) {
+    const supplierSupplyData = {
+      supplier: relation.supplier,
+      supply: relation.supply,
+      supplyPrice: relation.supplyPrice,
+      deliveryTime: '3 days',
+      minimumOrderQuantity: 5,
+    };
+
+    if (exists) {
       await repo.save(
-        repo.create({
-          supplier: relation.supplier,
-          supply: relation.supply,
-          supplyPrice: relation.supplyPrice,
-          deliveryTime: '3 days',
-          minimumOrderQuantity: 5,
-        }),
+        repo.merge(exists, supplierSupplyData),
+      );
+    } else {
+      await repo.save(
+        repo.create(supplierSupplyData),
       );
     }
   }

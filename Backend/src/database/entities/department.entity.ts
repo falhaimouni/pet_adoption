@@ -13,6 +13,9 @@ export class Department {
   @Column({ name: 'manager_id', type: 'uuid', nullable: true })
   managerId?: string | null;
 
+  @Column({ name: 'is_active', type: 'boolean', default: true })
+  isActive!: boolean;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

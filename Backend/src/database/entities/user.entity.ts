@@ -13,6 +13,7 @@ import {
 import { ActivityLog } from './activity-log.entity';
 import { AdoptionRequest } from './adoption-request.entity';
 import { Adopter } from './adopter.entity';
+import { Cart } from './cart.entity';
 import { Conversation } from './conversation.entity';
 import { Department } from './department.entity';
 import { Employee } from './employee.entity';
@@ -21,6 +22,7 @@ import { MedicalEntry } from './medical-entry.entity';
 import { Message } from './message.entity';
 import { Notification } from './notification.entity';
 import { OAuthAccount } from './oauth-account.entity';
+import { Order } from './order.entity';
 import { PasswordResetToken } from './password-reset-token.entity';
 import { Pet } from './pet.entity';
 import { Role } from './role.entity';
@@ -47,6 +49,13 @@ export class User {
   @Column({ type: 'text', nullable: true })
   avatar?: string | null;
 
+  @Column({
+    type: 'enum',
+    enum: ['LOCAL', 'GOOGLE'],
+    default: 'LOCAL',
+  })
+  provider!: 'LOCAL' | 'GOOGLE';
+
   @Column({ name: 'role_id', type: 'uuid' })
   roleId!: string;
 
@@ -55,6 +64,9 @@ export class User {
 
   @Column({ type: 'varchar', length: 40, default: 'active' })
   status!: string;
+
+  @Column({ name: 'refresh_token_version', type: 'integer', default: 0 })
+  refreshTokenVersion!: number;
 
   @Column({ name: 'oauth_provider', type: 'varchar', length: 80, nullable: true })
   oauthProvider?: string | null;
@@ -101,6 +113,12 @@ export class User {
 
   @OneToMany(() => ActivityLog, (log) => log.user)
   activityLogs!: ActivityLog[];
+
+  @OneToOne(() => Cart, (cart) => cart.user)
+  cart?: Cart;
+
+  @OneToMany(() => Order, (order) => order.user)
+  orders!: Order[];
 
   @OneToMany(() => PasswordResetToken, (token) => token.user)
   passwordResetTokens!: PasswordResetToken[];

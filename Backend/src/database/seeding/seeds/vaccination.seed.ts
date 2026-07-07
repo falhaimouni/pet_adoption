@@ -42,13 +42,19 @@ export async function seedVaccinations(dataSource: DataSource) {
         },
       });
 
-      if (!exists) {
+      const vaccinationData = {
+        ...data,
+        pet,
+        veterinarian: vet,
+      };
+
+      if (exists) {
         await repo.save(
-          repo.create({
-            ...data,
-            pet,
-            veterinarian: vet,
-          }),
+          repo.merge(exists, vaccinationData),
+        );
+      } else {
+        await repo.save(
+          repo.create(vaccinationData),
         );
       }
     }

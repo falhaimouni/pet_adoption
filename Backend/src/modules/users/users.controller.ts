@@ -3,8 +3,10 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Delete,
   Body,
+  Query,
   UseGuards,
   Req,
 } from '@nestjs/common';
@@ -14,6 +16,7 @@ import { RolesGuard } from '../roles/roles.guard';
 import { Roles } from '../roles/roles.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
+  CreateEmployeeUserDto,
   UpdateProfileDto,
   UpdateUserDto,
 } from '@shared/dto/user.dto';
@@ -47,31 +50,48 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'MANAGER')
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(
+    @Req() req: RequestWithUser,
+    @Query('status') status?: string,
+  ) {
+    return this.usersService.findAll(req.user, status);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Post('employees')
+  createEmployeeUser(@Body() dto: CreateEmployeeUserDto) {
+    return this.usersService.createEmployeeUser(dto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'MANAGER')
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  findOne(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+  ) {
+    return this.usersService.findOne(id, req.user);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'MANAGER')
   @Patch(':id')
   updateUser(
+    @Req() req: RequestWithUser,
     @Param('id') id: string,
     @Body() dto: UpdateUserDto,
   ) {
-    return this.usersService.updateUser(id, dto);
+    return this.usersService.updateUser(id, dto, req.user);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'MANAGER')
+  @Roles('ADMIN')
   @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.usersService.delete(id);
+  delete(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+  ) {
+    return this.usersService.delete(id, req.user);
   }
 }

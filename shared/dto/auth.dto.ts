@@ -1,31 +1,6 @@
-import {
-  IsEmail,
-  IsOptional,
-  IsString,
-  MaxLength,
-  MinLength,
-  ValidationArguments,
-  ValidationOptions,
-  registerDecorator,
-} from 'class-validator';
-
-function Match(property: string, validationOptions?: ValidationOptions) {
-  return (object: object, propertyName: string) => {
-    registerDecorator({
-      name: 'Match',
-      target: object.constructor,
-      propertyName,
-      constraints: [property],
-      options: validationOptions,
-      validator: {
-        validate(value: unknown, args: ValidationArguments) {
-          const [relatedPropertyName] = args.constraints;
-          return (args.object as Record<string, unknown>)[relatedPropertyName] === value;
-        },
-      },
-    });
-  };
-}
+import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { StrongPassword } from '../validators/strong-password.validator';
+import { Match } from '../validators/match.validator';
 
 export class LoginDto {
   @IsEmail()
@@ -54,6 +29,7 @@ export class RegisterDto {
   @IsString()
   @MinLength(8)
   @MaxLength(255)
+  @StrongPassword()
   password!: string;
 
   @IsOptional()
@@ -67,29 +43,6 @@ export class SignupDto extends RegisterDto {
   @MinLength(8)
   @MaxLength(255)
   @Match('password', { message: 'confirmPassword must match password' })
-  confirmPassword!: string;
-}
-
-export class PasswordResetDto {
-  @IsEmail()
-  email!: string;
-}
-
-export class PasswordResetConfirmDto {
-  @IsString()
-  @MinLength(1)
-  @MaxLength(255)
-  token!: string;
-
-  @IsString()
-  @MinLength(8)
-  @MaxLength(255)
-  newPassword!: string;
-
-  @IsString()
-  @MinLength(8)
-  @MaxLength(255)
-  @Match('newPassword', { message: 'confirmPassword must match newPassword' })
   confirmPassword!: string;
 }
 
