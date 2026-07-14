@@ -1,7 +1,7 @@
 import { Controller, Delete, Get, Patch, Post, Query} from "@nestjs/common";
 // import { TypeOrmModule } from "@nestjs/typeorm";
 import {InventoryService} from './inventory.service'
-import { InventoryQueryDto } from "./DTOs/inventory-query.dto";
+import { InventoryQueryDto } from "../../../../shared/dto/inventory-query.dto";
 
 @Controller('inventory')
 export class InventoryController{

@@ -2,7 +2,7 @@ import { Injectable,} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Supplier, SupplierSupply, Supply } from "src/database/entities";
 import { Repository } from "typeorm";
-import { InventoryQueryDto } from "./DTOs/inventory-query.dto";
+import { InventoryQueryDto } from "../../../../shared/dto/inventory-query.dto";
 // import { TypeOrmModule } from "@nestjs/typeorm";
 
 @Injectable()
