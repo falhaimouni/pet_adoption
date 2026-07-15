@@ -3,21 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { CreatePetDto, UpdatePetDto } from '@shared/dto/pet.dto';
+import { FindPetsQueryDto } from './dto/find-pets-query.dto';
 import { Pet } from '../../database/entities/pet.entity';
 import { PetImage } from '../../database/entities/pet-image.entity';
 import { MedicalEntry } from '../../database/entities/medical-entry.entity';
 import { MedicalRecord } from '../../database/entities/medical-record.entity';
 import { Vaccination } from '../../database/entities/vaccination.entity';
-
-export interface FindPetsQuery {
-  search?: string;
-  species?: string;
-  breed?: string;
-  status?: string;
-  health?: string;
-  minAge?: number;
-  maxAge?: number;
-}
 
 interface PetImageResponse {
   imageId: string;
@@ -100,7 +91,7 @@ export class PetsService {
     return this.findOne(savedPet.petId);
   }
 
-  async findAll(query: FindPetsQuery): Promise<PetResponse[]> {
+  async findAll(query: FindPetsQueryDto): Promise<PetResponse[]> {
     const qb = this.petRepo
       .createQueryBuilder('pet')
       .leftJoinAndSelect('pet.images', 'images')

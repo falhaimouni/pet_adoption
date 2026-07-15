@@ -16,14 +16,15 @@ import { RequestWithUser } from '@shared/types/auth.types';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../roles/roles.decorator';
 import { RolesGuard } from '../roles/roles.guard';
-import { FindPetsQuery, PetsService } from './pets.service';
+import { FindPetsQueryDto } from './dto/find-pets-query.dto';
+import { PetsService } from './pets.service';
 
 @Controller('pets')
 export class PetsController {
   constructor(private readonly petsService: PetsService) {}
 
   @Get()
-  findAll(@Query() query: FindPetsQuery) {
+  findAll(@Query() query: FindPetsQueryDto) {
     return this.petsService.findAll(query);
   }
 
