@@ -1,6 +1,34 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+  Validate,
+  ValidationArguments,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+} from 'class-validator';
 
+@ValidatorConstraint({ name: 'isValidAgeRange', async: false })
+export class IsValidAgeRangeConstraint
+  implements ValidatorConstraintInterface
+{
+  validate(maxAge: number | undefined, args: ValidationArguments): boolean {
+    const object = args.object as FindPetsQueryDto;
+
+    if (maxAge === undefined || object.minAge === undefined) {
+      return true;
+    }
+
+    return maxAge >= object.minAge;
+  }
+
+  defaultMessage(): string {
+    return 'maxAge must be greater than or equal to minAge';
+  }
+}
 export class FindPetsQueryDto {
   @IsOptional()
   @IsString()
@@ -37,5 +65,6 @@ export class FindPetsQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(0)
+  @Validate(IsValidAgeRangeConstraint)
   maxAge?: number;
 }
