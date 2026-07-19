@@ -77,17 +77,23 @@ export async function seedPets(
         },
       });
 
-    if (!exists) {
+    const petData = {
+      ...pet,
+      adoptionStatus:
+        'available',
+      healthStatus:
+        'Healthy',
+      createdByUser:
+        creator ?? undefined,
+    };
+
+    if (exists) {
       await petRepo.save(
-        petRepo.create({
-          ...pet,
-          adoptionStatus:
-            'available',
-          healthStatus:
-            'Healthy',
-          createdByUser:
-            creator ?? undefined,
-        }),
+        petRepo.merge(exists, petData),
+      );
+    } else {
+      await petRepo.save(
+        petRepo.create(petData),
       );
     }
   }

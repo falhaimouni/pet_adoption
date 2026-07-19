@@ -23,7 +23,7 @@ export class Message {
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt!: Date;
 
-  @ManyToOne(() => User, (user) => user.sentMessages, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.sentMessages, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'sender_id' })
   sender!: User;
 

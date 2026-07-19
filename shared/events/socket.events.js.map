@@ -1,1 +1,0 @@
-{"version":3,"file":"socket.events.js","sourceRoot":"","sources":["socket.events.ts"],"names":[],"mappings":";;;AAAa,QAAA,aAAa,GAAG;IAC3B,YAAY,EAAE,cAAc;IAC5B,eAAe,EAAE,iBAAiB;IAElC,gBAAgB,EAAE,kBAAkB;IAEpC,WAAW,EAAE,aAAa;IAE1B,gBAAgB,EAAE,kBAAkB;IAEpC,iBAAiB,EAAE,mBAAmB;IAEtC,kBAAkB,EAAE,oBAAoB;CACzC,CAAC"}

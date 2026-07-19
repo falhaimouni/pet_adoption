@@ -24,6 +24,9 @@ export class Supplier {
   @Column({ type: 'varchar', length: 100, nullable: true })
   country?: string | null;
 
+  @Column({ name: 'is_active', type: 'boolean', default: true })
+  isActive!: boolean;
+
   @OneToMany(() => SupplierSupply, (supplierSupply) => supplierSupply.supplier)
   supplierSupplies!: SupplierSupply[];
 }

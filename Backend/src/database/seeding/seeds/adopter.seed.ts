@@ -33,15 +33,21 @@ export async function seedAdopters(
         },
       });
 
-    if (!exists) {
+    const adopterData = {
+      user,
+      address: 'Amman',
+      city: 'Amman',
+      registrationDate:
+        '2025-01-01',
+    };
+
+    if (exists) {
       await adopterRepo.save(
-        adopterRepo.create({
-          user,
-          address: 'Amman',
-          city: 'Amman',
-          registrationDate:
-            '2025-01-01',
-        }),
+        adopterRepo.merge(exists, adopterData),
+      );
+    } else {
+      await adopterRepo.save(
+        adopterRepo.create(adopterData),
       );
     }
   }

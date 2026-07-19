@@ -15,6 +15,7 @@ async function runSeed() {
     console.log('Seeding completed successfully');
   } catch (error) {
     console.error('Seeding failed:', error);
+    throw error;
   }
   //always disconnect from the DB 
   finally {

@@ -54,9 +54,19 @@ export async function seedMedicalRecords(dataSource: DataSource) {
         },
       });
 
-      if (!entryExists) {
+      const entry = {
+        ...entryData,
+        medicalRecord: record,
+        veterinarian: vet,
+      };
+
+      if (entryExists) {
         await entryRepo.save(
-          entryRepo.create({ ...entryData, medicalRecord: record, veterinarian: vet }),
+          entryRepo.merge(entryExists, entry),
+        );
+      } else {
+        await entryRepo.save(
+          entryRepo.create(entry),
         );
       }
     }

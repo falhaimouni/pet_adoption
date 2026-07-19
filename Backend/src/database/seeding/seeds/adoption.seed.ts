@@ -16,14 +16,20 @@ export async function seedAdoptions(dataSource: DataSource) {
       where: { requestId: req.requestId },
     });
 
-    if (!exists) {
+    const adoptionData = {
+      request: req,
+      adoptionDate: new Date().toISOString().split('T')[0],
+      adoptionFee: '100',
+      contractStatus: 'signed',
+    };
+
+    if (exists) {
       await repo.save(
-        repo.create({
-            request: req,
-            adoptionDate: new Date().toISOString().split('T')[0],
-            adoptionFee: '100',
-            contractStatus: 'signed',
-            }),
+        repo.merge(exists, adoptionData),
+      );
+    } else {
+      await repo.save(
+        repo.create(adoptionData),
       );
     }
   }

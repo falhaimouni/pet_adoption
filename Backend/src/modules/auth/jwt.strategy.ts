@@ -1,11 +1,24 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+
+import { User } from '../../database/entities/user.entity';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+  ) {
     const secret = configService.get<string>('JWT_SECRET');
 
     if (!secret) {
@@ -20,11 +33,34 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: { sub: string; email: string; role: string }) {
+  async validate(payload: {
+    sub: string;
+    email: string;
+    role: string;
+    tokenVersion: number;
+    typ?: 'access' | 'refresh';
+  }) {
+    if (payload.typ === 'refresh') {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
+    const user = await this.userRepo.findOne({
+      where: { userId: payload.sub },
+      relations: ['role'],
+    });
+
+    if (!user || user.status !== 'active' || !user.role || user.role.isActive === false) {
+      throw new UnauthorizedException('Inactive or invalid account');
+    }
+
+    if (payload.tokenVersion !== user.refreshTokenVersion) {
+      throw new UnauthorizedException('Invalid token');
+    }
+
     return {
-      userId: payload.sub,
-      email: payload.email,
-      role: payload.role,
+      userId: user.userId,
+      email: user.email,
+      role: user.role.roleName,
     };
   }
 }

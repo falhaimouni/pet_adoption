@@ -6,11 +6,14 @@ import { appConfig, dbConfig } from './config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
+import { CartModule } from './modules/cart/cart.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { UsersModule } from './modules/users/users.module';
 import { MedicalModule } from './modules/medical/medical.module';
 import { PetsModule } from './modules/pets/pets.module';
 import { VaccinationsModule } from './modules/vaccinations/vaccinations.module';
 import { AdoptionsModule } from './modules/adoptions/adoptions.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 
 @Module({
   imports: [
@@ -26,10 +29,13 @@ import { AdoptionsModule } from './modules/adoptions/adoptions.module';
     DatabaseModule,
     AuthModule,
     UsersModule,
+    CartModule,
+    DashboardModule,
     PetsModule,
     MedicalModule,
     VaccinationsModule,
     AdoptionsModule,
+    InventoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

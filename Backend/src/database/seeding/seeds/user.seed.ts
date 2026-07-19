@@ -17,6 +17,7 @@ export async function seedUsers(
     await roleRepo.findOne({
       where: {
         roleName: 'ADMIN',
+        isActive: true,
       },
     });
 
@@ -24,6 +25,7 @@ export async function seedUsers(
     await roleRepo.findOne({
       where: {
         roleName: 'MANAGER',
+        isActive: true,
       },
     });
 
@@ -31,6 +33,7 @@ export async function seedUsers(
     await roleRepo.findOne({
       where: {
         roleName: 'VET',
+        isActive: true,
       },
     });
 
@@ -38,6 +41,7 @@ export async function seedUsers(
     await roleRepo.findOne({
       where: {
         roleName: 'EMPLOYEE',
+        isActive: true,
       },
     });
 
@@ -45,6 +49,7 @@ export async function seedUsers(
     await roleRepo.findOne({
       where: {
         roleName: 'ADOPTER',
+        isActive: true,
       },
     });
 
@@ -64,8 +69,8 @@ export async function seedUsers(
     {
       firstName: 'Shahd',
       lastName: 'Admin',
-      email: 'admin@test.com',
-      password: 'admin123',
+      email: 'shahd.shawish@gmail.com',
+      password: 'Admin@123',
       role: adminRole,
       status: 'active',
     },
@@ -74,7 +79,7 @@ export async function seedUsers(
       firstName: 'Farah',
       lastName: 'Vet',
       email: 'vet@test.com',
-      password: '12345678',
+      password: 'Vet@1234',
       role: vetRole,
       status: 'active',
     },
@@ -83,7 +88,7 @@ export async function seedUsers(
       firstName: 'Lubna',
       lastName: 'Support',
       email: 'support@test.com',
-      password: '12345678',
+      password: 'Support@123',
       role: employeeRole,
       status: 'active',
     },
@@ -92,7 +97,7 @@ export async function seedUsers(
       firstName: 'Roaa',
       lastName: 'Manager',
       email: 'manager@test.com',
-      password: '12345678',
+      password: 'Manager@123',
       role: managerRole,
       status: 'active',
     },
@@ -101,7 +106,7 @@ export async function seedUsers(
       firstName: 'Joud',
       lastName: 'Adopter',
       email: 'adopter1@test.com',
-      password: '12345678',
+      password: 'Adopter@123',
       role: adopterRole,
       status: 'active',
     },
@@ -110,7 +115,7 @@ export async function seedUsers(
       firstName: 'Maya',
       lastName: 'Adopter',
       email: 'adopter2@test.com',
-      password: '12345678',
+      password: 'Adopter@123',
       role: adopterRole,
       status: 'active',
     },
@@ -119,7 +124,7 @@ export async function seedUsers(
       firstName: 'Noor',
       lastName: 'Adopter',
       email: 'adopter3@test.com',
-      password: '12345678',
+      password: 'Adopter@123',
       role: adopterRole,
       status: 'active',
     },
@@ -128,7 +133,7 @@ export async function seedUsers(
       firstName: 'Yousef',
       lastName: 'Adopter',
       email: 'adopter4@test.com',
-      password: '12345678',
+      password: 'Adopter@123',
       role: adopterRole,
       status: 'active',
     },
@@ -137,7 +142,7 @@ export async function seedUsers(
       firstName: 'Leen',
       lastName: 'Adopter',
       email: 'adopter5@test.com',
-      password: '12345678',
+      password: 'Adopter@123',
       role: adopterRole,
       status: 'active',
     },

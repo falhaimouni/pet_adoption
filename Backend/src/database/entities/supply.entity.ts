@@ -18,6 +18,9 @@ export class Supply {
   @Column({ name: 'unit_price', type: 'decimal', precision: 10, scale: 2, default: 0 })
   unitPrice!: string;
 
+  @Column({ name: 'is_active', type: 'boolean', default: true })
+  isActive!: boolean;
+
   @Column({ name: 'low_stock_limit', type: 'integer', default: 0 })
   lowStockLimit!: number;
 

@@ -18,7 +18,10 @@ export class Adoption {
   @Column({ name: 'contract_status', type: 'varchar', length: 80, default: 'pending' })
   contractStatus!: string;
 
-  @OneToOne(() => AdoptionRequest, (request) => request.adoption, { onDelete: 'CASCADE' })
+  @Column({ name: 'is_active', type: 'boolean', default: true })
+  isActive!: boolean;
+
+  @OneToOne(() => AdoptionRequest, (request) => request.adoption, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'request_id' })
   request!: AdoptionRequest;
 }

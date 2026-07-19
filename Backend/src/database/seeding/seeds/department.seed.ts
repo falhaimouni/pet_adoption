@@ -26,7 +26,11 @@ export async function seedDepartments(
       },
     });
 
-    if (!exists) {
+    if (exists) {
+      await repo.save(
+        repo.merge(exists, department),
+      );
+    } else {
       await repo.save(
         repo.create(department),
       );
