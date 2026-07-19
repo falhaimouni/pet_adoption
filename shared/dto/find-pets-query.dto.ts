@@ -1,5 +1,6 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -10,6 +11,9 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
+
+import { PET_SPECIES } from '../constants/pet-species.constants';
+import { PET_STATUS } from '../constants/pet-status.constants';
 
 @ValidatorConstraint({ name: 'isValidAgeRange', async: false })
 export class IsValidAgeRangeConstraint
@@ -36,8 +40,7 @@ export class FindPetsQueryDto {
   search?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(80)
+  @IsIn(Object.values(PET_SPECIES))
   species?: string;
 
   @IsOptional()
@@ -46,8 +49,10 @@ export class FindPetsQueryDto {
   breed?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(80)
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toUpperCase() : value,
+  )
+  @IsIn(Object.values(PET_STATUS))
   status?: string;
 
   @IsOptional()

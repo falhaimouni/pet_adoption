@@ -2,6 +2,7 @@
 export * from './auth.dto';
 export * from './user.dto';
 export * from './pet.dto';
+export * from './find-pets-query.dto';
 export * from './adoption.dto';
 export * from './adoption-request.dto';
 export * from './message.dto';

@@ -12,11 +12,11 @@ import {
 } from '@nestjs/common';
 
 import { CreatePetDto, UpdatePetDto } from '@shared/dto/pet.dto';
+import { FindPetsQueryDto } from '@shared/dto/find-pets-query.dto';
 import { RequestWithUser } from '@shared/types/auth.types';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../roles/roles.decorator';
 import { RolesGuard } from '../roles/roles.guard';
-import { FindPetsQueryDto } from './dto/find-pets-query.dto';
 import { PetsService } from './pets.service';
 
 @Controller('pets')
