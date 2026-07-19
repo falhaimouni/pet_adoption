@@ -12,6 +12,7 @@ import { UsersModule } from './modules/users/users.module';
 import { MedicalModule } from './modules/medical/medical.module';
 import { PetsModule } from './modules/pets/pets.module';
 import { VaccinationsModule } from './modules/vaccinations/vaccinations.module';
+import { AdoptionsModule } from './modules/adoptions/adoptions.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 
 @Module({
@@ -33,6 +34,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
     PetsModule,
     MedicalModule,
     VaccinationsModule,
+    AdoptionsModule,
     InventoryModule,
   ],
   controllers: [AppController],

@@ -12,29 +12,32 @@ import {
 } from '@nestjs/common';
 
 import { CreatePetDto, UpdatePetDto } from '@shared/dto/pet.dto';
+import { FindPetsQueryDto } from '@shared/dto/find-pets-query.dto';
 import { RequestWithUser } from '@shared/types/auth.types';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../roles/roles.decorator';
 import { RolesGuard } from '../roles/roles.guard';
-import { FindPetsQuery, PetsService } from './pets.service';
+import { PetsService } from './pets.service';
 
 @Controller('pets')
 export class PetsController {
   constructor(private readonly petsService: PetsService) {}
 
   @Get()
-  findAll(@Query() query: FindPetsQuery) {
+  findAll(@Query() query: FindPetsQueryDto) {
     return this.petsService.findAll(query);
-  }
-
-  @Get(':id/full')
-  findFull(@Param('id') id: string) {
-    return this.petsService.findFull(id);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.petsService.findOne(id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE', 'VET')
+  @Get(':id/full')
+  findFull(@Param('id') id: string) {
+    return this.petsService.findFull(id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
