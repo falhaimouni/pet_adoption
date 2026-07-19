@@ -1,7 +1,9 @@
-import { Controller, Delete, Get, Patch, Post, Query} from "@nestjs/common";
+import { Controller, Delete, Get, Param, Patch, Post, Query} from "@nestjs/common";
 // import { TypeOrmModule } from "@nestjs/typeorm";
 import {InventoryService} from './inventory.service'
-import { InventoryQueryDto } from "../../../../shared/dto/inventory-query.dto";
+import {InventoryQueryDto} from "../../../../shared/dto/inventory-query.dto";
+// import {CreateSupplyDto, UpdateSupplyDto} from "../../../../shared/dto/supply.dto.ts"
+// import {CreateSupplierDto, UpdateSupplierDto} from "../../../../shared/dto/supplier.dto.ts"
 
 @Controller('inventory')
 export class InventoryController{
@@ -10,7 +12,7 @@ export class InventoryController{
   ){}
 
   @Get('supplies')
-  getSupplies( @Query() query: InventoryQueryDto,)
+  getSupplies(@Query() query: InventoryQueryDto)
   { 
     return this.invService.getSupplies(query);
   }
@@ -22,9 +24,9 @@ export class InventoryController{
   }
 
   @Get('supplies/:id')
-  getSupplyById()
+  getSupplyByID(@Param('id') id: string)
   {
-
+    return this.invService.getSupplyByID(id);
   }
 
   @Post('supplies')
@@ -69,28 +71,11 @@ export class InventoryController{
 
   }
 
-  @Delete('suppliers/:id')
-  deleteSupplier()
-  {
+  // @Delete('suppliers/:id')
+  // deleteSupplier()
+  // {
 
-  }
+  // }
 
 
-  @Get('supplies/:id/suppliers')
-  getSuppliersForSupply()
-  {
-
-  }
-
-  @Post('supplies/:id/suppliers')
-  addSupplierToSupply()
-  {
-
-  }
-
-  @Delete('supplies/:id/suppliers/:supplierId')
-  removeSupplierFromSupply()
-  {
-
-  }
 }

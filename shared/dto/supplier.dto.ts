@@ -4,7 +4,7 @@ export class CreateSupplierDto {
   @IsString()
   @MinLength(1)
   @MaxLength(160)
-  name!: string;
+  supplierName!: string;
 
   @IsString()
   @MinLength(1)
@@ -36,7 +36,7 @@ export class UpdateSupplierDto {
   @IsString()
   @MinLength(1)
   @MaxLength(160)
-  name?: string;
+  supplierName?: string;
 
   @IsOptional()
   @IsString()

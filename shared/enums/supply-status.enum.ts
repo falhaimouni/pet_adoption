@@ -1,0 +1,7 @@
+export enum SupplyStatusEnum {
+  AVAILABLE = "AVAILABLE",
+  EXPIRED = "EXPIRED",
+  DAMAGED = "DAMAGED",
+  DISCONTINUED = "DISCONTINUED",
+  OUT_OF_STOCK = "OUT_OF_STOCK",
+}

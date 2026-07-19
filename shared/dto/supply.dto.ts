@@ -5,7 +5,7 @@ export class CreateSupplyDto {
   @IsString()
   @Min(1)
   @MaxLength(160)
-  name!: string;
+  supplyName!: string;
 
   @IsIn(Object.values(SUPPLY_CATEGORIES))
   category!: string;
@@ -21,6 +21,23 @@ export class CreateSupplyDto {
   @IsNumber({ maxDecimalPlaces: 0 })
   @Min(0)
   lowStockLimit!: number;
+
+  @IsString()
+  supplierId!: string;
+
+  @IsNumber({maxDecimalPlaces:2})
+  @Min(0)
+  supplyPrice!: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  deliveryTime?: string
+
+  @IsNumber({maxDecimalPlaces: 0})
+  @Min(1)
+  minimumOrderQuantity!: number;
+  
 }
 
 export class UpdateSupplyDto {
@@ -28,7 +45,7 @@ export class UpdateSupplyDto {
   @IsString()
   @Min(1)
   @MaxLength(160)
-  name?: string;
+  supplyName?: string;
 
   @IsOptional()
   @IsIn(Object.values(SUPPLY_CATEGORIES))

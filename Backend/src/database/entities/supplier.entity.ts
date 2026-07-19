@@ -1,5 +1,5 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { SupplierSupply } from './supplier-supply.entity';
+import { Supply } from './supply.entity';
 
 @Entity('suppliers')
 export class Supplier {
@@ -27,6 +27,6 @@ export class Supplier {
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 
-  @OneToMany(() => SupplierSupply, (supplierSupply) => supplierSupply.supplier)
-  supplierSupplies!: SupplierSupply[];
+  @OneToMany(() => Supply, (supply) => supply.supplier)
+  supplies!: Supply[];
 }

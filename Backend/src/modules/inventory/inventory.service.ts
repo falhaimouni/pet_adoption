@@ -1,9 +1,11 @@
-import { Injectable,} from "@nestjs/common";
+import { Injectable, NotFoundException} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Supplier, SupplierSupply, Supply } from "src/database/entities";
 import { Repository } from "typeorm";
 import { InventoryQueryDto } from "../../../../shared/dto/inventory-query.dto";
 // import { TypeOrmModule } from "@nestjs/typeorm";
+// import {CreateSupplyDto, UpdateSupplyDto} from "../../../../shared/dto/supply.dto.ts"
+// import {CreateSupplierDto, UpdateSupplierDto} from "../../../../shared/dto/supplier.dto.ts"
 
 @Injectable()
 export class InventoryService{
@@ -56,9 +58,23 @@ export class InventoryService{
         query.order ?? 'ASC',
       );
     }
-      queryBuilder
-        .skip(skip)
-        .take(limit);
-      return queryBuilder.getMany();//here TypeORM sends the query
+    queryBuilder
+      .skip(skip)
+      .take(limit);
+    return queryBuilder.getMany();//here TypeORM sends the query
+   }
+
+   async getSupplyByID(id: string)
+   {
+      const supply = await this.supplyRepo.findOne(
+      {
+        where: {supplyId: id} 
+      });
+      if (!supply)
+      {
+        throw new NotFoundException('Supply not found');
+      }
+      return supply;
     }
+
 }
