@@ -9,12 +9,16 @@ import {
   Query,
   UseGuards,
   Req,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
 import { RolesGuard } from '../roles/roles.guard';
 import { Roles } from '../roles/roles.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { multerOptions } from '../uploads/multer.config';
 import {
   CreateEmployeeUserDto,
   UpdateProfileDto,
@@ -44,6 +48,18 @@ export class UsersController {
       req.user.userId,
       dto,
     );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('profile/avatar')
+  @UseInterceptors(
+    FileInterceptor('file', multerOptions),
+  )
+  async uploadAvatar(
+    @Req() req: RequestWithUser,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.usersService.uploadAvatar(req.user.userId, file);
   }
 
   //ADMIN/MANAGER ONLY

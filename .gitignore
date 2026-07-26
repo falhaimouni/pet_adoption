@@ -20,6 +20,8 @@ Backend/**/*.d.ts
 Backend/**/*.js.map
 Backend/dist/
 
+Backend/uploads/
+
 Frontend/dist/
 Frontend/build/
 Frontend/.vite/
