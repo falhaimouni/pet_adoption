@@ -13,40 +13,42 @@ import {
 
 import { FileUploadCategory } from '@shared/enums';
 
-export const multerOptions = {
-  storage: diskStorage({
-    destination: (req, file, callback) => {
-      const category = req.body.category as FileUploadCategory;
+export function createMulterOptions(
+  category: FileUploadCategory,
+) {
+  return {
+    storage: diskStorage({
+      destination: (req, file, callback) => {
 
-      const folder =
-        UPLOAD_DIRECTORIES[category] ?? 'others';
+        const folder = UPLOAD_DIRECTORIES[category];
 
-      const uploadPath = join(
-        resolveUploadRoot(),
-        folder,
-      );
+        const uploadPath = join(
+          resolveUploadRoot(),
+          folder,
+        );
 
-      //checks if the folder exists, if not create it recursively
-      if (!existsSync(uploadPath)) {
-        mkdirSync(uploadPath, { recursive: true });
-      }
+        //checks if the folder exists, if not create it recursively
+        if (!existsSync(uploadPath)) {
+          mkdirSync(uploadPath, { recursive: true });
+        }
 
-      callback(null, uploadPath);
+        callback(null, uploadPath);
+      },
+
+      filename: (req, file, callback) => {
+        callback(
+          null,
+          generateFilename(file),
+        );
+      },
+    }),
+
+    //for the extensions
+    fileFilter,
+
+    //5MB
+    limits: {
+      fileSize: 5 * 1024 * 1024,
     },
-
-    filename: (req, file, callback) => {
-      callback(
-        null,
-        generateFilename(file),
-      );
-    },
-  }),
-
-  //for the extensions
-  fileFilter,
-
-  //5MB
-  limits: {
-    fileSize: 5 * 1024 * 1024,
-  },
-};
+  };
+}

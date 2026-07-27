@@ -18,13 +18,14 @@ import { UsersService } from './users.service';
 import { RolesGuard } from '../roles/roles.guard';
 import { Roles } from '../roles/roles.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { multerOptions } from '../uploads/multer.config';
+import { createMulterOptions } from '../uploads/multer.config';
 import {
   CreateEmployeeUserDto,
   UpdateProfileDto,
   UpdateUserDto,
 } from '@shared/dto/user.dto';
 import { RequestWithUser } from '@shared/types/auth.types';
+import { FileUploadCategory } from '@shared/enums/file-upload-category.enum';
 
 @Controller('users')
 export class UsersController {
@@ -53,13 +54,19 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @Post('profile/avatar')
   @UseInterceptors(
-    FileInterceptor('file', multerOptions),
+    FileInterceptor(
+      'file',
+      createMulterOptions(FileUploadCategory.AVATAR),
+    ),
   )
   async uploadAvatar(
     @Req() req: RequestWithUser,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.usersService.uploadAvatar(req.user.userId, file);
+    return this.usersService.uploadAvatar(
+      req.user.userId,
+      file,
+    );
   }
 
   //ADMIN/MANAGER ONLY
