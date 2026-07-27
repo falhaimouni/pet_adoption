@@ -2,7 +2,7 @@
 import { diskStorage } from 'multer';
 import { mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
-
+import { resolveUploadRoot } from './upload-path.util';
 import { fileFilter } from './file-filter';
 import { generateFilename } from './filename.util';
 
@@ -22,9 +22,7 @@ export const multerOptions = {
         UPLOAD_DIRECTORIES[category] ?? 'others';
 
       const uploadPath = join(
-        //returns the current working directory of the Node.js process
-        process.cwd(),
-        UPLOAD_ROOT,
+        resolveUploadRoot(),
         folder,
       );
 
