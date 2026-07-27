@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { resolve } from 'path';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { DatabaseModule } from './database/database.module';
 import { appConfig, dbConfig } from './config';
 import { AppController } from './app.controller';
@@ -14,6 +15,7 @@ import { PetsModule } from './modules/pets/pets.module';
 import { VaccinationsModule } from './modules/vaccinations/vaccinations.module';
 import { AdoptionsModule } from './modules/adoptions/adoptions.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 
 @Module({
   imports: [
@@ -26,6 +28,12 @@ import { InventoryModule } from './modules/inventory/inventory.module';
         resolve(process.cwd(), `.env.${process.env.NODE_ENV ?? 'development'}`),
       ],
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60_000,
+        limit: 20,
+      },
+    ]),
     DatabaseModule,
     AuthModule,
     UsersModule,
@@ -36,6 +44,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
     VaccinationsModule,
     AdoptionsModule,
     InventoryModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

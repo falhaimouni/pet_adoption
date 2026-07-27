@@ -13,12 +13,14 @@ import { Department } from '../../database/entities/department.entity';
 import { Employee } from '../../database/entities/employee.entity';
 import { Role } from '../../database/entities/role.entity';
 import { User } from '../../database/entities/user.entity';
+import { UploadsService } from '../uploads/uploads.service';
 import {
   CreateEmployeeUserDto,
   UpdateProfileDto,
   UpdateUserDto,
 } from '@shared/dto/user.dto';
 import { RequestWithUser } from '@shared/types/auth.types';
+import { FileUploadCategory } from '@shared/enums';
 
 type RoleName = 'ADMIN' | 'MANAGER' | 'EMPLOYEE' | 'VET' | 'ADOPTER';
 type UserListStatusFilter = 'active' | 'inactive' | 'all';
@@ -75,6 +77,7 @@ export class UsersService {
     @InjectRepository(Department)
     private departmentRepo: Repository<Department>,
 
+    private readonly uploadsService: UploadsService,
     private dataSource: DataSource,
   ) {}
 
@@ -228,6 +231,18 @@ export class UsersService {
     );
 
     return this.findOne(savedUser.userId);
+  }
+
+  async uploadAvatar(userId: string, file: Express.Multer.File) {
+    const uploadedFile = await this.uploadsService.createFileRecord(
+      file,
+      FileUploadCategory.AVATAR,
+      userId,
+    );
+
+    return this.updateProfile(userId, {
+      avatar: uploadedFile.fileUrl,
+    });
   }
 
   async updateProfile(id: string, data: UpdateProfileDto) {

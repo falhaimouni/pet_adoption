@@ -7,9 +7,13 @@ import { User } from '../../database/entities/user.entity';
 import { Department } from '../../database/entities/department.entity';
 import { Employee } from '../../database/entities/employee.entity';
 import { Role } from '../../database/entities/role.entity';
+import { UploadsModule } from '../uploads/uploads.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Role, Department, Employee])],
+  imports: [
+    TypeOrmModule.forFeature([User, Role, Department, Employee]),
+    UploadsModule,
+  ],
   controllers: [UsersController],
   providers: [UsersService],
 })

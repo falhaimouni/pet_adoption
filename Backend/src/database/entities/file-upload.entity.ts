@@ -1,3 +1,4 @@
+import { FileUploadCategory } from '@shared/enums';
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from './user.entity';
 
@@ -12,11 +13,17 @@ export class FileUpload {
   @Column({ name: 'file_name', type: 'varchar', length: 255 })
   fileName!: string;
 
+  @Column({ name:'file_size', type:'int' })
+  fileSize!: number;
+
+  @Column({ name: 'category', type: 'varchar', length: 40 })
+  category!: FileUploadCategory;
+
   @Column({ name: 'file_url', type: 'text' })
   fileUrl!: string;
 
-  @Column({ name: 'file_type', type: 'varchar', length: 120, nullable: true })
-  fileType?: string | null;
+  @Column({ name: 'mime_type', type: 'varchar', length: 120, nullable: true })
+  mimeType?: string | null;
 
   @CreateDateColumn({ name: 'uploaded_at', type: 'timestamp' })
   uploadedAt!: Date;
