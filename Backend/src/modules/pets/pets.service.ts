@@ -10,9 +10,13 @@ import { MedicalEntry } from '../../database/entities/medical-entry.entity';
 import { MedicalRecord } from '../../database/entities/medical-record.entity';
 import { Vaccination } from '../../database/entities/vaccination.entity';
 import { Adoption } from '../../database/entities/adoption.entity';
+import { FileUpload } from '../../database/entities/file-upload.entity';
+import { FileUploadCategory } from '@shared/enums';
+import { UploadsService } from '../uploads/uploads.service';
 
 interface PetImageResponse {
   imageId: string;
+  fileId: string;
   imageUrl: string;
   uploadedAt: Date;
 }
@@ -66,6 +70,8 @@ export class PetsService {
 
     @InjectRepository(Adoption)
     private readonly adoptionRepo: Repository<Adoption>,
+
+    private readonly uploadsService: UploadsService,
   ) {}
 
   async create(dto: CreatePetDto, createdBy?: string): Promise<PetResponse> {
@@ -83,15 +89,6 @@ export class PetsService {
 
     const savedPet = await this.petRepo.save(pet);
 
-    if (dto.image) {
-      await this.petImageRepo.save(
-        this.petImageRepo.create({
-          petId: savedPet.petId,
-          imageUrl: dto.image,
-        }),
-      );
-    }
-
     return this.findOne(savedPet.petId);
   }
 
@@ -99,6 +96,7 @@ export class PetsService {
     const qb = this.petRepo
       .createQueryBuilder('pet')
       .leftJoinAndSelect('pet.images', 'images')
+      .leftJoinAndSelect('images.file', 'imageFile')
       .orderBy('pet.createdAt', 'DESC');
 
     if (query.search) {
@@ -142,6 +140,7 @@ export class PetsService {
     const pet = await this.petRepo
       .createQueryBuilder('pet')
       .leftJoinAndSelect('pet.images', 'images')
+      .leftJoinAndSelect('images.file', 'imageFile')
       .where('pet.petId = :id', { id })
       .getOne();
 
@@ -156,6 +155,7 @@ export class PetsService {
     const pet = await this.petRepo
       .createQueryBuilder('pet')
       .leftJoinAndSelect('pet.images', 'images')
+      .leftJoinAndSelect('images.file', 'imageFile')
       .leftJoinAndSelect('pet.medicalRecord', 'medicalRecord')
       .leftJoinAndSelect(
         'pet.vaccinations',
@@ -188,6 +188,40 @@ export class PetsService {
 
     await this.petRepo.save(pet);
     return this.findOne(id);
+  }
+
+  async uploadPetImage(
+    petId: string,
+    userId: string,
+    file: Express.Multer.File,
+  ): Promise<PetImageResponse> {
+    let uploadedFile: FileUpload | undefined;
+
+    try {
+      await this.getPetEntity(petId);
+
+      uploadedFile = await this.uploadsService.createFileRecord(
+        file,
+        FileUploadCategory.PET_IMAGE,
+        userId,
+      );
+
+      const image = await this.petImageRepo.save(
+        this.petImageRepo.create({
+          petId,
+          fileId: uploadedFile.fileId,
+        }),
+      );
+
+      image.file = uploadedFile;
+      return this.mapPetImageResponse(image);
+    } catch (error) {
+      await this.uploadsService.rollbackFileUpload(
+        file.path,
+        uploadedFile?.fileId,
+      );
+      throw error;
+    }
   }
 
   async remove(id: string): Promise<{ message: string }> {
@@ -276,7 +310,8 @@ export class PetsService {
   private mapPetImageResponse(image: PetImage): PetImageResponse {
     return {
       imageId: image.imageId,
-      imageUrl: image.imageUrl,
+      fileId: image.fileId,
+      imageUrl: image.file.fileUrl,
       uploadedAt: image.uploadedAt,
     };
   }
