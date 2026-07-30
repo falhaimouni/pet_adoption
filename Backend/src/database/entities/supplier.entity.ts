@@ -1,7 +1,8 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { Supply } from './supply.entity';
 
 @Entity('suppliers')
+@Unique(['supplierName'])
 export class Supplier {
   @PrimaryGeneratedColumn('uuid', { name: 'supplier_id' })
   supplierId!: string;

@@ -4,14 +4,13 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import {
  Supply,
  Supplier,
- SupplierSupply,
 } from '../../database/entities';
 
 import {InventoryService} from './inventory.service'
 import {InventoryController} from './inventory.controller'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Supply, Supplier, SupplierSupply])],
+  imports: [TypeOrmModule.forFeature([Supply, Supplier])],
   controllers: [InventoryController],
   providers: [InventoryService]
 })

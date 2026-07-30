@@ -1,9 +1,10 @@
-import { IsIn, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsEnum, IsIn, IsNumber, IsOptional, IsString, IsUUID, MaxLength, Min, MinLength } from 'class-validator';
 import { SUPPLY_CATEGORIES } from '../constants/supply-categories.constants';
+import { SupplyStatusEnum } from '../enums';
 
 export class CreateSupplyDto {
   @IsString()
-  @Min(1)
+  @MinLength(1)
   @MaxLength(160)
   supplyName!: string;
 
@@ -16,34 +17,36 @@ export class CreateSupplyDto {
 
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  unitPrice!: number;
+  sellingPrice!: number;
+
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  purchasePrice!: number;
 
   @IsNumber({ maxDecimalPlaces: 0 })
   @Min(0)
   lowStockLimit!: number;
 
-  @IsString()
+  @IsUUID()
   supplierId!: string;
 
-  @IsNumber({maxDecimalPlaces:2})
-  @Min(0)
-  supplyPrice!: number;
-
   @IsOptional()
-  @IsString()
-  @MaxLength(80)
-  deliveryTime?: string
+  @IsNumber({ maxDecimalPlaces: 0 })
+  @Min(0)
+  deliveryTimeDays?: number;
 
   @IsNumber({maxDecimalPlaces: 0})
   @Min(1)
   minimumOrderQuantity!: number;
   
+  @IsOptional()
+  @IsEnum(SupplyStatusEnum)
+  status?: SupplyStatusEnum;
 }
-
 export class UpdateSupplyDto {
   @IsOptional()
   @IsString()
-  @Min(1)
+  @MinLength(1)
   @MaxLength(160)
   supplyName?: string;
 
@@ -59,10 +62,29 @@ export class UpdateSupplyDto {
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  unitPrice?: number;
+  sellingPrice?: number;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  purchasePrice?: number;
 
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 0 })
   @Min(0)
   lowStockLimit?: number;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 0 })
+  @Min(0)
+  deliveryTimeDays?: number;
+
+  @IsOptional()
+  @IsNumber({maxDecimalPlaces: 0})
+  @Min(1)
+  minimumOrderQuantity?: number;
+
+  @IsOptional()
+  @IsEnum(SupplyStatusEnum)
+  status?: SupplyStatusEnum;
 }

@@ -25,8 +25,8 @@ export class Supply {
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 
-  @Column({ name: 'delivery_time', type: 'varchar', length: 80, nullable: true })
-  deliveryTime?: string | null;
+  @Column({ name: 'delivery_time_days', type: 'integer', nullable: true })
+  deliveryTimeDays?: number | null;
 
   @Column({ name: 'minimum_order_quantity', type: 'integer', default: 1 })
   minimumOrderQuantity!: number;
