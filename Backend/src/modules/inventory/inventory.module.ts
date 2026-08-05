@@ -6,13 +6,14 @@ import {
  Supplier,
 } from '../../database/entities';
 
-import {InventoryService} from './inventory.service'
-import {InventoryController} from './inventory.controller'
+import {SupplierService} from './services/supplier.service'
+import {SupplyService} from './services/supply.service'
+import {InventoryController} from './conrollers/inventory.controller'
 
 @Module({
   imports: [TypeOrmModule.forFeature([Supply, Supplier])],
   controllers: [InventoryController],
-  providers: [InventoryService]
+  providers: [SupplyService, SupplierService]
 })
 
 export class InventoryModule {}

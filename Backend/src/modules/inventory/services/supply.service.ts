@@ -2,7 +2,7 @@ import { ConflictException, Injectable, NotFoundException} from "@nestjs/common"
 import { InjectRepository } from "@nestjs/typeorm";
 import { Supplier, Supply } from "src/database/entities";
 import { Repository } from "typeorm";
-import { InventoryQueryDto } from "../../../../shared/dto/inventory-query.dto";
+import { InventoryQueryDto } from "../../../../../shared/dto/inventory-query.dto";
 import { SupplyStatusEnum } from "@shared/enums";
 import { CreateSupplierDto, UpdateSupplierDto } from "@shared/dto/supplier.dto";
 import { CreateSupplyDto, UpdateSupplyDto } from "@shared/dto/supply.dto";
@@ -12,13 +12,10 @@ import { PaginatedSuppliesDto } from "@shared/dto/paginatedSupplies.dto";
 // import {CreateSupplierDto, UpdateSupplierDto} from "../../../../shared/dto/supplier.dto.ts"
 
 @Injectable()
-export class InventoryService{
+export class SupplyService{
   constructor(
     @InjectRepository(Supply)
     private readonly supplyRepo: Repository<Supply>,
-
-    @InjectRepository(Supplier)
-    private readonly supplierRepo: Repository<Supplier>,   
   ){}
   async getSupplies(query: InventoryQueryDto): Promise<PaginatedSuppliesDto>
   {
@@ -96,7 +93,7 @@ export class InventoryService{
 
     async createSupply(createSupplyDto: CreateSupplyDto)
     {
-      const supplier = await this.supplierRepo.findOneBy({
+      const supplier = await this.supplyRepo.findOneBy({
         supplierId:createSupplyDto.supplierId,
         isActive: true
       });
@@ -156,121 +153,21 @@ export class InventoryService{
       return await this.supplyRepo.save(supply);
     }
         
-        async deleteSupply(id: string)
-        {
-          const supply = await this.supplyRepo.findOneBy({
-            supplyId: id,
-            isActive: true
-          });
-          if (!supply)
-            {
-              throw new NotFoundException('Supply not found');
-            }
-            supply.isActive = false;
-            await this.supplyRepo.save(supply);
-            return { 
-              success: true,
-              message: 'Supply deleted successfully'
-            };
-          }
-          
-          async getSuppliers()
-          {
-            return await this.supplierRepo.find({
-              where: {isActive: true},
-              order: {supplierName: 'ASC'}
-            });
-          }
-
-          async getSupplierById(id: string)
-          {
-            const supplier = await this.supplierRepo.findOne({
-              where: {
-                supplierId: id,
-                isActive: true,},
-                relations: {supplies: true}
-              });
-              if (!supplier)
-                {
-                  throw new NotFoundException('Supplier not found');
-                }
-                return supplier;
-              }
-
-    async createSupplier(createSupplierDto: CreateSupplierDto)
+    async deleteSupply(id: string)
     {
-      const existingSupplier = await this.supplierRepo.findOne({
-        where:
-        {
-          supplierName: createSupplierDto.supplierName,//make it case sensetive
-        }
+      const supply = await this.supplyRepo.findOneBy({
+      supplyId: id,
+      isActive: true
       });
-      if (existingSupplier)
+      if (!supply)
       {
-        if (existingSupplier.isActive)
-          throw new ConflictException('Supplier already exists');
-        else
-        {
-          Object.assign(existingSupplier,createSupplierDto);
-          existingSupplier.isActive = true;
-          return await this.supplierRepo.save(existingSupplier);
-        }
+      throw new NotFoundException('Supply not found');
       }
-      const supplier = this.supplierRepo.create(createSupplierDto);
-      return await this.supplierRepo.save(supplier);
+      supply.isActive = false;
+      await this.supplyRepo.save(supply);
+      return { 
+      success: true,
+      message: 'Supply deleted successfully'
+      };
     }
-
-    async updateSupplier(id: string, updateSupplierDto: UpdateSupplierDto)
-    {
-      if (updateSupplierDto.supplierName)
-      {
-        const dupExist = await this.supplierRepo.findOneBy({
-          supplierName: updateSupplierDto.supplierName,
-          isActive:true
-        })
-        if (dupExist && dupExist.supplierId !== id)
-        {
-          throw new ConflictException('Supplier already exists');
-        }
-      }
-
-      const existingSupplier = await this.supplierRepo.findOneBy({
-          supplierId: id,
-          isActive:true
-      });
-      if (!existingSupplier)
-        throw new NotFoundException('Supplier not found');
-
-      Object.assign(existingSupplier,updateSupplierDto);
-      return await this.supplierRepo.save(existingSupplier);
-    }
-
-    async deleteSupplier(id: string)
-    {
-      const supplier = await this.supplierRepo.findOneBy({
-          supplierId: id,
-          isActive: true
-      });
-      if (!supplier)
-      {
-        throw new NotFoundException('Supplier not found');
-      }
-
-      supplier.isActive = false;
-      await this.supplierRepo.save(supplier);
-      return{
-        success: true,
-        message: 'Supplier deleted successfully'
-      }
-    }
-
-
-
-
-
-
-
-
-
-
 }

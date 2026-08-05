@@ -13,6 +13,7 @@ import { MedicalModule } from './modules/medical/medical.module';
 import { PetsModule } from './modules/pets/pets.module';
 import { VaccinationsModule } from './modules/vaccinations/vaccinations.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { StoreModule } from './modules/store/store.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
     MedicalModule,
     VaccinationsModule,
     InventoryModule,
+    StoreModule
   ],
   controllers: [AppController],
   providers: [AppService],
