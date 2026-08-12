@@ -41,10 +41,6 @@ export class CreatePetDto {
   @MaxLength(5000)
   description?: string;
 
-  @IsOptional()
-  @IsString()
-  @MaxLength(2048)
-  image?: string;
 }
 
 export class UpdatePetDto {

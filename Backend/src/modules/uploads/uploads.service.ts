@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { rm } from 'fs/promises';
 import { Repository } from 'typeorm';
 
 import { FileUpload } from '../../database/entities/file-upload.entity';
@@ -11,6 +12,7 @@ import {
 
 @Injectable()
 export class UploadsService {
+  private readonly logger = new Logger(UploadsService.name);
 
   constructor(
     @InjectRepository(FileUpload)
@@ -44,6 +46,36 @@ export class UploadsService {
     });
 
 
-    return this.fileRepo.save(fileUpload);
+    try {
+      return await this.fileRepo.save(fileUpload);
+    } catch (error) {
+      await this.rollbackFileUpload(file.path);
+      throw error;
+    }
+  }
+
+  async rollbackFileUpload(
+    filePath: string,
+    fileId?: string,
+  ): Promise<void> {
+    if (fileId) {
+      try {
+        await this.fileRepo.delete(fileId);
+      } catch (error) {
+        this.logger.error(
+          `Failed to remove FileUpload record ${fileId} during rollback`,
+          error instanceof Error ? error.stack : undefined,
+        );
+      }
+    }
+
+    try {
+      await rm(filePath, { force: true });
+    } catch (error) {
+      this.logger.error(
+        `Failed to remove uploaded file ${filePath} during rollback`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
   }
 }
