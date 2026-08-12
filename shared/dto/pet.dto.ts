@@ -1,5 +1,6 @@
 import { IsIn, IsNumber, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator';
 import { PET_STATUS } from '../constants/pet-status.constants';
+import { PET_SPECIES } from '../constants/pet-species.constants';
 
 export class CreatePetDto {
   @IsString()
@@ -7,9 +8,7 @@ export class CreatePetDto {
   @MaxLength(120)
   name!: string;
 
-  @IsString()
-  @MinLength(1)
-  @MaxLength(80)
+  @IsIn(Object.values(PET_SPECIES))
   species!: string;
 
   @IsOptional()
@@ -42,10 +41,6 @@ export class CreatePetDto {
   @MaxLength(5000)
   description?: string;
 
-  @IsOptional()
-  @IsString()
-  @MaxLength(2048)
-  image?: string;
 }
 
 export class UpdatePetDto {
@@ -56,9 +51,7 @@ export class UpdatePetDto {
   name?: string;
 
   @IsOptional()
-  @IsString()
-  @MinLength(1)
-  @MaxLength(80)
+  @IsIn(Object.values(PET_SPECIES))
   species?: string;
 
   @IsOptional()

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -7,6 +7,7 @@ import {
   UpdateVaccinationDto,
 } from '@shared/dto/vaccination.dto';
 import { Pet } from '../../database/entities/pet.entity';
+import { MedicalRecord } from '../../database/entities/medical-record.entity';
 import { User } from '../../database/entities/user.entity';
 import { Vaccination } from '../../database/entities/vaccination.entity';
 
@@ -41,6 +42,9 @@ export class VaccinationsService {
 
     @InjectRepository(Pet)
     private readonly petRepo: Repository<Pet>,
+
+    @InjectRepository(MedicalRecord)
+    private readonly medicalRecordRepo: Repository<MedicalRecord>,
   ) {}
 
   async findByPet(petId: string): Promise<VaccinationResponse[]> {
@@ -65,6 +69,8 @@ export class VaccinationsService {
     dto: CreateVaccinationDto,
   ): Promise<VaccinationResponse> {
     await this.ensurePetExists(petId);
+    await this.ensureMedicalRecordExists(petId);
+    this.validateDueDate(dto.vaccinationDate, dto.nextDueDate);
 
     const vaccination = this.vaccinationRepo.create({
       petId,
@@ -87,6 +93,11 @@ export class VaccinationsService {
     dto: UpdateVaccinationDto,
   ): Promise<VaccinationResponse> {
     const vaccination = await this.getVaccinationEntity(vaccinationId);
+
+    this.validateDueDate(
+      dto.vaccinationDate ?? vaccination.vaccinationDate,
+      dto.nextDueDate ?? vaccination.nextDueDate,
+    );
 
     if (dto.vaccineName !== undefined) vaccination.vaccineName = dto.vaccineName;
     if (dto.vaccinationDate !== undefined) {
@@ -167,5 +178,35 @@ export class VaccinationsService {
     }
 
     return pet;
+  }
+
+  private async ensureMedicalRecordExists(petId: string) {
+    const medicalRecord = await this.medicalRecordRepo.findOne({
+      where: { petId },
+      select: {
+        recordId: true,
+      },
+    });
+
+    if (!medicalRecord) {
+      throw new BadRequestException(
+        'Pet must have a medical record before adding vaccinations',
+      );
+    }
+
+    return medicalRecord;
+  }
+
+  private validateDueDate(
+    vaccinationDate: string,
+    nextDueDate?: string | null,
+  ): void {
+    if (!nextDueDate) return;
+
+    if (new Date(nextDueDate) <= new Date(vaccinationDate)) {
+      throw new BadRequestException(
+        'Next due date must be after vaccination date',
+      );
+    }
   }
 }

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { resolve } from 'path';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { DatabaseModule } from './database/database.module';
 import { appConfig, dbConfig } from './config';
 import { AppController } from './app.controller';
@@ -12,7 +13,9 @@ import { UsersModule } from './modules/users/users.module';
 import { MedicalModule } from './modules/medical/medical.module';
 import { PetsModule } from './modules/pets/pets.module';
 import { VaccinationsModule } from './modules/vaccinations/vaccinations.module';
+import { AdoptionsModule } from './modules/adoptions/adoptions.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 import { StoreModule } from './modules/store/store.module';
 
 @Module({
@@ -22,10 +25,25 @@ import { StoreModule } from './modules/store/store.module';
       cache: true,
       load: [appConfig, dbConfig],
       envFilePath: [
-        resolve(process.cwd(), '..', `.env.${process.env.NODE_ENV ?? 'development'}`),
-        resolve(process.cwd(), `.env.${process.env.NODE_ENV ?? 'development'}`),
+        resolve(
+          process.cwd(),
+          '..',
+          `.env.${process.env.NODE_ENV ?? 'development'}`,
+        ),
+        resolve(
+          process.cwd(),
+          `.env.${process.env.NODE_ENV ?? 'development'}`,
+        ),
       ],
     }),
+
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60_000,
+        limit: 20,
+      },
+    ]),
+
     DatabaseModule,
     AuthModule,
     UsersModule,
@@ -34,9 +52,12 @@ import { StoreModule } from './modules/store/store.module';
     PetsModule,
     MedicalModule,
     VaccinationsModule,
+    AdoptionsModule,
     InventoryModule,
-    StoreModule
+    UploadsModule,
+    StoreModule,
   ],
+
   controllers: [AppController],
   providers: [AppService],
 })
