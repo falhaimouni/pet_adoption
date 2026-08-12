@@ -4,31 +4,31 @@ export class CreateSupplierDto {
   @IsString()
   @MinLength(1)
   @MaxLength(160)
-  name!: string;
+  supplierName!: string;
 
   @IsString()
   @MinLength(1)
   @MaxLength(30)
-  phone!: string;
+  phone?: string;
 
   @IsEmail()
   @MaxLength(255)
-  email!: string;
+  email?: string;
 
   @IsString()
   @MinLength(1)
   @MaxLength(5000)
-  address!: string;
+  address?: string;
 
   @IsString()
   @MinLength(1)
   @MaxLength(100)
-  city!: string;
+  city?: string;
 
   @IsString()
   @MinLength(1)
   @MaxLength(100)
-  country!: string;
+  country? : string;
 }
 
 export class UpdateSupplierDto {
@@ -36,7 +36,7 @@ export class UpdateSupplierDto {
   @IsString()
   @MinLength(1)
   @MaxLength(160)
-  name?: string;
+  supplierName?: string;
 
   @IsOptional()
   @IsString()

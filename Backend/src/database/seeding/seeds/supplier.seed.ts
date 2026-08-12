@@ -8,37 +8,50 @@ export async function seedSuppliers(
 
   const suppliers = [
     {
-      supplierName: 'Pet Food Company',
+      supplierName: 'Royal Canin Agent',
       phone: '0791111111',
-      email: 'food@supplier.com',
+      email: 'royalcanin@agent.com',
       city: 'Amman',
       country: 'Jordan',
     },
     {
-      supplierName: 'Vet Medical Supply',
+      supplierName: "Hill's Agent",
       phone: '0792222222',
-      email: 'medical@supplier.com',
+      email: 'hills@agent.com',
       city: 'Amman',
       country: 'Jordan',
     },
     {
-      supplierName: 'Pet Accessories Ltd',
+      supplierName: 'Purina Agent',
       phone: '0793333333',
-      email: 'accessories@supplier.com',
+      email: 'purina@agent.com',
       city: 'Zarqa',
+      country: 'Jordan',
+    },
+    {
+      supplierName: 'Virbac Agent',
+      phone: '0794444444',
+      email: 'virbac@agent.com',
+      city: 'Irbid',
+      country: 'Jordan',
+    },
+    {
+      supplierName: 'Beaphar Agent',
+      phone: '0795555555',
+      email: 'beaphar@agent.com',
+      city: 'Aqaba',
       country: 'Jordan',
     },
   ];
 
   for (const supplier of suppliers) {
-    const exists = await repo.findOne({
-      where: {
-        supplierName: supplier.supplierName,
-      },
+    const exists = await repo.findOneBy({
+      supplierName: supplier.supplierName,
     });
 
     if (exists) {
-      await repo.save(repo.merge(exists, supplier));
+      repo.merge(exists, supplier);
+      await repo.save(exists);
     } else {
       await repo.save(repo.create(supplier));
     }

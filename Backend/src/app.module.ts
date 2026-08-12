@@ -16,6 +16,7 @@ import { VaccinationsModule } from './modules/vaccinations/vaccinations.module';
 import { AdoptionsModule } from './modules/adoptions/adoptions.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
+import { StoreModule } from './modules/store/store.module';
 
 @Module({
   imports: [
@@ -24,16 +25,25 @@ import { UploadsModule } from './modules/uploads/uploads.module';
       cache: true,
       load: [appConfig, dbConfig],
       envFilePath: [
-        resolve(process.cwd(), '..', `.env.${process.env.NODE_ENV ?? 'development'}`),
-        resolve(process.cwd(), `.env.${process.env.NODE_ENV ?? 'development'}`),
+        resolve(
+          process.cwd(),
+          '..',
+          `.env.${process.env.NODE_ENV ?? 'development'}`,
+        ),
+        resolve(
+          process.cwd(),
+          `.env.${process.env.NODE_ENV ?? 'development'}`,
+        ),
       ],
     }),
+
     ThrottlerModule.forRoot([
       {
         ttl: 60_000,
         limit: 20,
       },
     ]),
+
     DatabaseModule,
     AuthModule,
     UsersModule,
@@ -45,7 +55,9 @@ import { UploadsModule } from './modules/uploads/uploads.module';
     AdoptionsModule,
     InventoryModule,
     UploadsModule,
+    StoreModule,
   ],
+
   controllers: [AppController],
   providers: [AppService],
 })

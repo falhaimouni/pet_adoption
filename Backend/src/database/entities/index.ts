@@ -22,7 +22,7 @@ export { Product } from './product.entity';
 export { PetImage } from './pet-image.entity';
 export { Role } from './role.entity';
 export { Supplier } from './supplier.entity';
-export { SupplierSupply } from './supplier-supply.entity';
+// export { SupplierSupply } from './supplier-supply.entity';
 export { Supply } from './supply.entity';
 export { User } from './user.entity';
 export { Vaccination } from './vaccination.entity';
@@ -51,7 +51,7 @@ import { Product } from './product.entity';
 import { PetImage } from './pet-image.entity';
 import { Role } from './role.entity';
 import { Supplier } from './supplier.entity';
-import { SupplierSupply } from './supplier-supply.entity';
+// import { SupplierSupply } from './supplier-supply.entity';
 import { Supply } from './supply.entity';
 import { User } from './user.entity';
 import { Vaccination } from './vaccination.entity';
@@ -81,7 +81,6 @@ export const databaseEntities = [
   PetImage,
   Role,
   Supplier,
-  SupplierSupply,
   Supply,
   User,
   Vaccination,
