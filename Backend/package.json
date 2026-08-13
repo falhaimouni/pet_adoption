@@ -31,6 +31,7 @@
     "nodemailer": "^9.0.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "pdfkit": "^0.19.1",
     "pg": "^8.13.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
@@ -45,6 +46,7 @@
     "@types/multer": "^2.2.0",
     "@types/node": "^25.8.0",
     "@types/passport-jwt": "^4.0.1",
+    "@types/pdfkit": "^0.17.6",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.7.3"
