@@ -17,6 +17,7 @@ import { AdoptionsModule } from './modules/adoptions/adoptions.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { StoreModule } from './modules/store/store.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { StoreModule } from './modules/store/store.module';
     InventoryModule,
     UploadsModule,
     StoreModule,
+    ReportsModule,
   ],
 
   controllers: [AppController],
