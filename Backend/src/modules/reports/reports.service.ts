@@ -2,15 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
+  AdoptionReportQueryDto,
+  InventoryReportQueryDto,
+  PetReportQueryDto,
+} from '@shared/dto';
+import {
   AdoptionStatusEnum,
   PetStatusEnum,
   SupplyStatusEnum,
 } from '@shared/enums';
 
 import { AdoptionRequest, Pet, Supplier, Supply } from '../../database/entities';
-import { AdoptionReportQueryDto } from './dto/adoption-report.dto';
-import { InventoryReportQueryDto } from './dto/inventory-report.dto';
-import { PetReportQueryDto } from './dto/pet-report.dto';
 import { generateCsv } from './generators/csv.generator';
 import { generatePdf } from './generators/pdf.generator';
 

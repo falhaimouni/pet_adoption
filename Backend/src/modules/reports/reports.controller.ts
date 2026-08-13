@@ -6,14 +6,16 @@ import {
   StreamableFile,
   UseGuards,
 } from '@nestjs/common';
+import {
+  AdoptionReportQueryDto,
+  InventoryReportQueryDto,
+  PetReportQueryDto,
+} from '@shared/dto';
 import { RolesEnum } from '@shared/enums';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../roles/roles.decorator';
 import { RolesGuard } from '../roles/roles.guard';
-import { AdoptionReportQueryDto } from './dto/adoption-report.dto';
-import { InventoryReportQueryDto } from './dto/inventory-report.dto';
-import { PetReportQueryDto } from './dto/pet-report.dto';
 import { ReportsService } from './reports.service';
 
 @Controller('reports')
