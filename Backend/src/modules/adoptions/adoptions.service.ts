@@ -15,6 +15,7 @@ import { Adoption } from '../../database/entities/adoption.entity';
 import { Adopter } from '../../database/entities/adopter.entity';
 import { Pet } from '../../database/entities/pet.entity';
 import { User } from '../../database/entities/user.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const ADOPTION_REQUEST_STATUS = {
   PENDING: 'PENDING',
@@ -135,6 +136,8 @@ export class AdoptionsService {
 
     @InjectRepository(Pet)
     private readonly petRepo: Repository<Pet>,
+
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async findRequests(user: RequestUser): Promise<AdoptionRequestResponse[]> {
@@ -400,11 +403,19 @@ export class AdoptionsService {
       );
     });
 
-    return this.findRequest(requestId, {
+    const updatedRequest = await this.findRequest(requestId, {
       userId: reviewer.userId,
       email: reviewer.email,
       role: reviewer.role,
     });
+
+    await this.notifyAdoptionUpdate(
+      updatedRequest,
+      'Adoption request approved',
+      `Your adoption request for ${updatedRequest.pet.name} was approved.`,
+    );
+
+    return updatedRequest;
   }
 
   async cancelRequest(
@@ -474,11 +485,19 @@ export class AdoptionsService {
       );
     });
 
-    return this.findRequest(requestId, {
+    const updatedRequest = await this.findRequest(requestId, {
       userId,
       email: '',
       role: 'ADOPTER',
     });
+
+    await this.notifyAdoptionUpdate(
+      updatedRequest,
+      'Adoption request cancelled',
+      `Your adoption request for ${updatedRequest.pet.name} was cancelled.`,
+    );
+
+    return updatedRequest;
   }
 
   async rejectRequest(
@@ -534,11 +553,19 @@ export class AdoptionsService {
       );
     });
 
-    return this.findRequest(requestId, {
+    const updatedRequest = await this.findRequest(requestId, {
       userId: reviewer.userId,
       email: reviewer.email,
       role: reviewer.role,
     });
+
+    await this.notifyAdoptionUpdate(
+      updatedRequest,
+      'Adoption request rejected',
+      `Your adoption request for ${updatedRequest.pet.name} was rejected.`,
+    );
+
+    return updatedRequest;
   }
 
   private async getRequestEntity(requestId: string): Promise<AdoptionRequest> {
@@ -627,6 +654,18 @@ export class AdoptionsService {
       lastName: reviewer.lastName,
       avatar: reviewer.avatar,
     };
+  }
+
+  private async notifyAdoptionUpdate(
+    request: AdoptionRequestResponse,
+    title: string,
+    message: string,
+  ): Promise<void> {
+    await this.notificationsService.createAdoptionUpdate(
+      request.adopter.userId,
+      title,
+      message,
+    );
   }
 
   private assertCanAccessRequest(

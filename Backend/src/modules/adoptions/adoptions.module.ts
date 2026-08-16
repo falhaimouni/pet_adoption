@@ -7,11 +7,13 @@ import { Adopter } from '../../database/entities/adopter.entity';
 import { ActivityLog } from '../../database/entities/activity-log.entity';
 import { Pet } from '../../database/entities/pet.entity';
 import { User } from '../../database/entities/user.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { AdoptionsController } from './adoptions.controller';
 import { AdoptionsService } from './adoptions.service';
 
 @Module({
   imports: [
+    NotificationsModule,
     TypeOrmModule.forFeature([
       AdoptionRequest,
       Adoption,
