@@ -7,6 +7,7 @@ import { SupplyStatusEnum } from "@shared/enums";
 import { CreateSupplierDto, UpdateSupplierDto } from "@shared/dto/supplier.dto";
 import { CreateSupplyDto, UpdateSupplyDto } from "@shared/dto/supply.dto";
 import { PaginatedSuppliesDto } from "@shared/dto/paginatedSupplies.dto";
+import { NotificationsService } from "../../notifications/notifications.service";
 // import { TypeOrmModule } from "@nestjs/typeorm";
 // import {CreateSupplyDto, UpdateSupplyDto} from "../../../../shared/dto/supply.dto.ts"
 // import {CreateSupplierDto, UpdateSupplierDto} from "../../../../shared/dto/supplier.dto.ts"
@@ -16,6 +17,7 @@ export class SupplyService{
   constructor(
     @InjectRepository(Supply)
     private readonly supplyRepo: Repository<Supply>,
+    private readonly notificationsService: NotificationsService,
   ){}
   async getSupplies(query: InventoryQueryDto): Promise<PaginatedSuppliesDto>
   {
@@ -121,7 +123,10 @@ export class SupplyService{
         sellingPrice: createSupplyDto.sellingPrice.toString(),
         purchasePrice: createSupplyDto.purchasePrice.toString(),
       });
-      return await this.supplyRepo.save(supply);
+      const savedSupply = await this.supplyRepo.save(supply);
+      await this.notifyLowStockIfNeeded(savedSupply);
+
+      return savedSupply;
     }
 
     
@@ -139,6 +144,8 @@ export class SupplyService{
       {
         throw new ConflictException('Cannot update discontinued supply');
       }
+      const wasLowStock = this.isLowStock(supply);
+
       if (updateSupplyDto.sellingPrice !== undefined)
       {
         supply.sellingPrice = updateSupplyDto.sellingPrice.toString();
@@ -150,7 +157,13 @@ export class SupplyService{
       Object.assign(supply, {
         ...updateSupplyDto,
       });
-      return await this.supplyRepo.save(supply);
+      const savedSupply = await this.supplyRepo.save(supply);
+      if (!wasLowStock && this.isLowStock(savedSupply))
+      {
+        await this.notifyLowStock(savedSupply);
+      }
+
+      return savedSupply;
     }
         
     async deleteSupply(id: string)
@@ -169,5 +182,37 @@ export class SupplyService{
       success: true,
       message: 'Supply deleted successfully'
       };
+    }
+
+    private async notifyLowStockIfNeeded(supply: Supply): Promise<void>
+    {
+      if (this.isLowStock(supply))
+      {
+        await this.notifyLowStock(supply);
+      }
+    }
+
+    private isLowStock(supply: Supply): boolean
+    {
+      if (
+        supply.status !== SupplyStatusEnum.AVAILABLE &&
+        supply.status !== SupplyStatusEnum.OUT_OF_STOCK
+      )
+      {
+        return false;
+      }
+
+      return supply.quantity <= supply.lowStockLimit;
+    }
+
+    private async notifyLowStock(supply: Supply): Promise<void>
+    {
+      const title =
+        supply.quantity <= 0 ? 'Supply out of stock' : 'Supply low stock';
+      const message =
+        `${supply.supplyName} has quantity ${supply.quantity}. ` +
+        `Minimum stock is ${supply.lowStockLimit}.`;
+
+      await this.notificationsService.createInventoryAlert(title, message);
     }
 }

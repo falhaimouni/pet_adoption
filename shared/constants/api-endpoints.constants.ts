@@ -36,6 +36,8 @@ export const API_ENDPOINTS = {
   },
   NOTIFICATIONS: {
     LIST: "/notifications",
+    UNREAD_COUNT: "/notifications/unread-count",
     MARK_READ: "/notifications/:id/read",
+    MARK_ALL_READ: "/notifications/read-all",
   },
 };
