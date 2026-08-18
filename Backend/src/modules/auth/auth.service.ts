@@ -115,6 +115,14 @@ export class AuthService implements OnModuleInit {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
+    if (user.provider === 'GOOGLE') {
+      throw new UnauthorizedException('Please sign in with Google');
+    }
+
+    if (!user.password) {
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+    }
+
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
 
     if (!isPasswordValid) {
@@ -201,6 +209,10 @@ export class AuthService implements OnModuleInit {
     }
 
     this.assertPasswordActionsAllowed(user.provider);
+
+    if (!user.password) {
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+    }
 
     if (dto.newPassword !== dto.confirmPassword) {
       throw new ConflictException('Passwords do not match');
@@ -325,6 +337,19 @@ export class AuthService implements OnModuleInit {
     });
 
     return { message: 'Password has been reset successfully' };
+  }
+
+  async createAuthTokens(userId: string) {
+    const user = await this.userRepo.findOne({
+      where: { userId },
+      relations: ['role'],
+    });
+
+    if (!user || !user.role) {
+      throw new UnauthorizedException('Invalid user');
+    }
+
+    return this.issueTokens(user);
   }
 
   private issueTokens(user: User) {

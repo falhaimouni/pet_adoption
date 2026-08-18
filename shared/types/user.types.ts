@@ -16,7 +16,6 @@ export interface User {
   phone?: string;
   role: UserRole;
   status: UserStatus;
-  oauthProvider?: string;
   createdAt: string;
   updatedAt: string;
 }

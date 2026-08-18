@@ -48,7 +48,6 @@ const EMPLOYEE_PROFILE_FIELDS: Array<keyof UpdateUserDto> = [
 const BASIC_PROFILE_FIELDS: Array<keyof UpdateUserDto> = [
   'firstName',
   'lastName',
-  'email',
   'phone',
   'avatar',
 ];
@@ -246,19 +245,18 @@ export class UsersService {
   }
 
   async updateProfile(id: string, data: UpdateProfileDto) {
+    if ('email' in data) {
+      throw new ForbiddenException('Email cannot be changed');
+    }
+
     const updateData: Partial<
-      Pick<User, 'firstName' | 'lastName' | 'email' | 'phone' | 'avatar'>
+      Pick<User, 'firstName' | 'lastName' | 'phone' | 'avatar'>
     > = {};
 
     if (data.firstName !== undefined) updateData.firstName = data.firstName;
     if (data.lastName !== undefined) updateData.lastName = data.lastName;
-    if (data.email !== undefined) updateData.email = data.email;
     if (data.phone !== undefined) updateData.phone = data.phone;
     if (data.avatar !== undefined) updateData.avatar = data.avatar;
-
-    if (updateData.email) {
-      await this.ensureEmailAvailable(updateData.email, id);
-    }
 
     if (Object.keys(updateData).length > 0) {
       await this.userRepo.update(id, updateData);
@@ -272,6 +270,10 @@ export class UsersService {
     data: UpdateUserDto,
     currentUser: RequestWithUser['user'],
   ) {
+    if ('email' in data) {
+      throw new ForbiddenException('Email cannot be changed');
+    }
+
     const targetUser = await this.getUserForAuthorization(id);
     const currentRole = this.toRoleName(currentUser.role);
     const targetRole = this.toRoleName(targetUser.role.roleName);
@@ -315,15 +317,10 @@ export class UsersService {
       await this.ensureNotLastActiveAdmin();
     }
 
-    if (data.email) {
-      await this.ensureEmailAvailable(data.email, id);
-    }
-
     const userData: Partial<User> = {};
 
     if (data.firstName !== undefined) userData.firstName = data.firstName;
     if (data.lastName !== undefined) userData.lastName = data.lastName;
-    if (data.email !== undefined) userData.email = data.email;
     if (data.phone !== undefined) userData.phone = data.phone;
     if (data.avatar !== undefined) userData.avatar = data.avatar;
     if (data.status !== undefined) userData.status = data.status;
