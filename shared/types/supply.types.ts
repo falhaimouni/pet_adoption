@@ -1,9 +1,14 @@
+import { SupplyStatusEnum } from "../enums";
 export interface Supply {
-  id: string;
-  name: string;
+  supplyId: string;
+  supplyName: string;
   category: string;
   quantity: number;
-  unitPrice: number;
+  sellingPrice: string;
+  purchasePrice: string;
   lowStockLimit: number;
-  lastUpdated: string;
+  lastUpdated: Date;
+  supplierId: string;
+  isActive: boolean;
+  status: SupplyStatusEnum;
 }

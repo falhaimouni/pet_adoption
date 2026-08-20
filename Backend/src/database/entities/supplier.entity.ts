@@ -1,7 +1,8 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { SupplierSupply } from './supplier-supply.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { Supply } from './supply.entity';
 
 @Entity('suppliers')
+@Unique(['supplierName'])
 export class Supplier {
   @PrimaryGeneratedColumn('uuid', { name: 'supplier_id' })
   supplierId!: string;
@@ -27,6 +28,6 @@ export class Supplier {
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 
-  @OneToMany(() => SupplierSupply, (supplierSupply) => supplierSupply.supplier)
-  supplierSupplies!: SupplierSupply[];
+  @OneToMany(() => Supply, (supply) => supply.supplier)
+  supplies!: Supply[];
 }

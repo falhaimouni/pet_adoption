@@ -19,7 +19,6 @@ import { seedMessages } from './seeds/message.seed';
 
 import { seedSuppliers } from './seeds/supplier.seed';
 import { seedSupplies } from './seeds/supply.seed';
-import { seedSupplierSupplies } from './seeds/supplier-supply.seed';
 import { seedProducts } from './seeds/product.seed';
 import { seedCarts } from './seeds/cart.seed';
 import { seedCartItems } from './seeds/cart-item.seed';
@@ -57,7 +56,6 @@ export class SeedService {
     //suppliers system
     await seedSuppliers(this.dataSource);
     await seedSupplies(this.dataSource);
-    await seedSupplierSupplies(this.dataSource);
 
     //commerce system
     await seedProducts(this.dataSource);

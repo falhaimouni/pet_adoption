@@ -14,6 +14,7 @@ import { AuthService } from '../auth/auth.service';
 type GoogleUserData = {
   providerUserId: string;
   email: string;
+  emailVerified: boolean;
   firstName: string;
   lastName: string;
   avatar?: string | null;
@@ -35,7 +36,20 @@ export class OAuthService {
   ) {}
 
   async validateGoogleUser(googleUser: GoogleUserData) {
-    const { providerUserId, email, firstName, lastName, avatar } = googleUser;
+    const {
+      providerUserId,
+      email,
+      emailVerified,
+      firstName,
+      lastName,
+      avatar,
+    } = googleUser;
+
+    if (!emailVerified) {
+      throw new UnauthorizedException(
+        'Google email must be verified before signing in',
+      );
+    }
 
     //check whether this Google account already exists
     const existingOAuthAccount = await this.oauthAccountRepo.findOne({
@@ -51,7 +65,12 @@ export class OAuthService {
     if (existingOAuthAccount) {
       const user = existingOAuthAccount.user;
 
-      if (!user || user.status !== 'active' || !user.role) {
+      if (
+        !user ||
+        user.status !== 'active' ||
+        !user.role ||
+        user.role.isActive === false
+      ) {
         throw new UnauthorizedException('Inactive or invalid account');
       }
 
@@ -65,11 +84,19 @@ export class OAuthService {
     });
 
     if (existingUser) {
-      if (existingUser.status !== 'active' || !existingUser.role) {
+      if (
+        existingUser.status !== 'active' ||
+        !existingUser.role ||
+        existingUser.role.isActive === false
+      ) {
         throw new UnauthorizedException('Inactive or invalid account');
       }
 
-      //existing LOCAL account -> link google account to it
+      //only an account with a local password can be linked to Google
+      if (!existingUser.password) {
+        throw new UnauthorizedException('Invalid OAuth account');
+      }
+
       const oauthAccount = this.oauthAccountRepo.create({
         userId: existingUser.userId,
         provider: 'GOOGLE',
@@ -99,7 +126,7 @@ export class OAuthService {
       firstName,
       lastName,
       email,
-      password: '',
+      password: null,
       avatar: avatar ?? null,
       provider: 'GOOGLE',
       roleId: adopterRole.roleId,

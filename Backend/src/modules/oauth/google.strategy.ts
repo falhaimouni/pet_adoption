@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-google-oauth20';
 import { ConfigService } from '@nestjs/config';
@@ -42,11 +46,18 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
 
     //get the first email's value, but safely.
     //?. optional chaining operator, if emails is undefined or null, it won't crash, it will just return undefined
-    const email = emails?.[0]?.value;
+    const googleEmail = emails?.[0];
+    const email = googleEmail?.value;
 
     if (!email) {
       throw new InternalServerErrorException(
         'Google account did not provide an email address',
+      );
+    }
+
+    if (googleEmail?.verified !== true) {
+      throw new UnauthorizedException(
+        'Google email must be verified before signing in',
       );
     }
 
@@ -60,6 +71,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       firstName: name?.givenName ?? '',
       lastName: name?.familyName ?? '',
       avatar: photos?.[0]?.value ?? null,
+      emailVerified: true,
     });
   }
 }

@@ -44,7 +44,7 @@ export class User {
   email!: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  password?: string | null;
+  password!: string | null;
 
   @Column({ type: 'text', nullable: true })
   avatar?: string | null;

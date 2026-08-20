@@ -115,10 +115,6 @@ export class AuthService implements OnModuleInit {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
-    if (user.provider === 'GOOGLE') {
-      throw new UnauthorizedException('Please sign in with Google');
-    }
-
     if (!user.password) {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
@@ -208,10 +204,10 @@ export class AuthService implements OnModuleInit {
       throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
     }
 
-    this.assertPasswordActionsAllowed(user.provider);
-
     if (!user.password) {
-      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+      throw new ForbiddenException(
+        'This account does not have a local password',
+      );
     }
 
     if (dto.newPassword !== dto.confirmPassword) {
@@ -262,8 +258,8 @@ export class AuthService implements OnModuleInit {
       return genericResponse;
     }
 
-    //do not allow password actions for non-local providers — but don't reveal this
-    if (user.provider === 'GOOGLE') {
+    //do not issue reset tokens for accounts without a local password
+    if (!user.password) {
       return genericResponse;
     }
 
@@ -324,8 +320,11 @@ export class AuthService implements OnModuleInit {
       throw new BadRequestException('Invalid token');
     }
 
-    //ensure provider allows password actions
-    this.assertPasswordActionsAllowed(user.provider);
+    if (!user.password) {
+      throw new ForbiddenException(
+        'This account does not have a local password',
+      );
+    }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
@@ -345,7 +344,12 @@ export class AuthService implements OnModuleInit {
       relations: ['role'],
     });
 
-    if (!user || !user.role) {
+    if (
+      !user ||
+      user.status !== 'active' ||
+      !user.role ||
+      user.role.isActive === false
+    ) {
       throw new UnauthorizedException('Invalid user');
     }
 
@@ -389,14 +393,6 @@ export class AuthService implements OnModuleInit {
 
   private async invalidateRefreshTokens(userId: string) {
     await this.userRepo.increment({ userId }, 'refreshTokenVersion', 1);
-  }
-
-  private assertPasswordActionsAllowed(provider?: string | null) {
-    if (provider === 'GOOGLE') {
-      throw new ForbiddenException(
-        'Google accounts cannot use password-based actions',
-      );
-    }
   }
 
   private hashResetToken(token: string): string {

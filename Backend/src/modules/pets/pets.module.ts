@@ -7,11 +7,13 @@ import { MedicalEntry } from '../../database/entities/medical-entry.entity';
 import { MedicalRecord } from '../../database/entities/medical-record.entity';
 import { Vaccination } from '../../database/entities/vaccination.entity';
 import { Adoption } from '../../database/entities/adoption.entity';
+import { UploadsModule } from '../uploads/uploads.module';
 import { PetsController } from './pets.controller';
 import { PetsService } from './pets.service';
 
 @Module({
   imports: [
+    UploadsModule,
     TypeOrmModule.forFeature([
       Pet,
       PetImage,

@@ -17,6 +17,9 @@ import { VaccinationsModule } from './modules/vaccinations/vaccinations.module';
 import { AdoptionsModule } from './modules/adoptions/adoptions.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
+import { StoreModule } from './modules/store/store.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PreventEmailChangeMiddleware } from './common/middleware/prevent-email-change.middleware';
 
 @Module({
@@ -26,16 +29,25 @@ import { PreventEmailChangeMiddleware } from './common/middleware/prevent-email-
       cache: true,
       load: [appConfig, dbConfig],
       envFilePath: [
-        resolve(process.cwd(), '..', `.env.${process.env.NODE_ENV ?? 'development'}`),
-        resolve(process.cwd(), `.env.${process.env.NODE_ENV ?? 'development'}`),
+        resolve(
+          process.cwd(),
+          '..',
+          `.env.${process.env.NODE_ENV ?? 'development'}`,
+        ),
+        resolve(
+          process.cwd(),
+          `.env.${process.env.NODE_ENV ?? 'development'}`,
+        ),
       ],
     }),
+
     ThrottlerModule.forRoot([
       {
         ttl: 60_000,
         limit: 20,
       },
     ]),
+
     DatabaseModule,
     AuthModule,
     OAuthModule,
@@ -48,6 +60,9 @@ import { PreventEmailChangeMiddleware } from './common/middleware/prevent-email-
     AdoptionsModule,
     InventoryModule,
     UploadsModule,
+    StoreModule,
+    ReportsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
