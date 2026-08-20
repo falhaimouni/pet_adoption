@@ -12,7 +12,7 @@ COPY Backend/tsconfig*.json Backend/nest-cli.json ./
 # Copy backend source
 COPY Backend/src ./src
 
-# Copy shared folder
-COPY shared ../shared
+# Copy shared folder into app so imports resolve to /app/node_modules
+COPY shared ./shared
 
 CMD ["npm", "run", "start:dev"]

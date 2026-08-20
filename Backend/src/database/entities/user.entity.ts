@@ -43,8 +43,8 @@ export class User {
   @Column({ type: 'varchar', length: 255, unique: true })
   email!: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  password!: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  password!: string | null;
 
   @Column({ type: 'text', nullable: true })
   avatar?: string | null;
@@ -67,9 +67,6 @@ export class User {
 
   @Column({ name: 'refresh_token_version', type: 'integer', default: 0 })
   refreshTokenVersion!: number;
-
-  @Column({ name: 'oauth_provider', type: 'varchar', length: 80, nullable: true })
-  oauthProvider?: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt!: Date;

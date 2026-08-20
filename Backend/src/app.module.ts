@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
 import { resolve } from 'path';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -7,6 +7,7 @@ import { appConfig, dbConfig } from './config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
+import { OAuthModule } from './modules/oauth/oauth.module';
 import { CartModule } from './modules/cart/cart.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { UsersModule } from './modules/users/users.module';
@@ -19,6 +20,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
 import { StoreModule } from './modules/store/store.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { PreventEmailChangeMiddleware } from './common/middleware/prevent-email-change.middleware';
 
 @Module({
   imports: [
@@ -48,6 +50,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 
     DatabaseModule,
     AuthModule,
+    OAuthModule,
     UsersModule,
     CartModule,
     DashboardModule,
@@ -61,8 +64,16 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     ReportsModule,
     NotificationsModule,
   ],
-
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(PreventEmailChangeMiddleware)
+      .forRoutes(
+        { path: 'users/profile', method: RequestMethod.PATCH },
+        { path: 'users/:id', method: RequestMethod.PATCH },
+      );
+  }
+}

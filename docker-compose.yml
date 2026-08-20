@@ -22,6 +22,8 @@ services:
       - "${PORT:-3000}:3000"
     env_file:
       - ${ENV_FILE:-.env.development}
+    environment:
+      - POSTGRES_HOST=postgres
     depends_on:
       - postgres
 
