@@ -1,0 +1,11 @@
+# Normalize line endings for the project
+* text=auto eol=crlf
+
+# Keep binary assets untouched
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary

@@ -1,7 +1,0 @@
-export const ROLES = {
-  ADMIN: "ADMIN",
-  MANAGER: "MANAGER",
-  VET: "VET",
-  EMPLOYEE: "EMPLOYEE",
-  ADOPTER: "ADOPTER",
-};

@@ -1,0 +1,34 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&family=Prata&family=Inter:wght@200;300;400;600;700&family=Quattrocento:wght@400;700&family=Cairo:wght@300;400;600;700&display=swap');
+
+/* Hide scrollbars but keep scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth scroll-to-top on page transition */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Card hover lift */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+}
+
+/* Image zoom group */
+.img-zoom-wrapper {
+  overflow: hidden;
+}
+.img-zoom-wrapper img {
+  transition: transform 0.5s ease;
+}
+.img-zoom-wrapper:hover img {
+  transform: scale(1.06);
+}
