@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, NotFoundException} from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
+import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 import { Supplier, Supply } from "src/database/entities";
-import { Repository } from "typeorm";
+import { DataSource, QueryFailedError, Repository } from "typeorm";
 import { InventoryQueryDto } from "../../../../../shared/dto/inventory-query.dto";
 import { SupplyStatusEnum } from "@shared/enums";
 import { CreateSupplierDto, UpdateSupplierDto } from "@shared/dto/supplier.dto";
@@ -17,6 +17,10 @@ export class SupplyService{
   constructor(
     @InjectRepository(Supply)
     private readonly supplyRepo: Repository<Supply>,
+
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
+
     private readonly notificationsService: NotificationsService,
   ){}
   async getSupplies(query: InventoryQueryDto): Promise<PaginatedSuppliesDto>
@@ -123,7 +127,15 @@ export class SupplyService{
         sellingPrice: createSupplyDto.sellingPrice.toString(),
         purchasePrice: createSupplyDto.purchasePrice.toString(),
       });
-      const savedSupply = await this.supplyRepo.save(supply);
+      let savedSupply: Supply;
+      try {
+        savedSupply = await this.supplyRepo.save(supply);
+      } catch (error) {
+        if (error instanceof QueryFailedError && (error as any).code === '23505') {
+          throw new ConflictException('Supply already exists for this supplier');
+        }
+        throw error;
+      }
       await this.notifyLowStockIfNeeded(savedSupply);
 
       return savedSupply;
@@ -132,38 +144,30 @@ export class SupplyService{
     
     async updateSupply(id: string, updateSupplyDto: UpdateSupplyDto)
     {
-      const supply = await this.supplyRepo.findOneBy({
-          supplyId: id,
-          isActive: true
+      const savedSupply = await this.dataSource.transaction(async (manager) => {
+        const supply = await manager.getRepository(Supply)
+          .createQueryBuilder('supply')
+          .setLock('pessimistic_write')
+          .where('supply.supplyId = :id', { id })
+          .andWhere('supply.isActive = :isActive', { isActive: true })
+          .getOne();
+        if (!supply) throw new NotFoundException('Supply not found');
+        if (supply.status === SupplyStatusEnum.DISCONTINUED) {
+          throw new ConflictException('Cannot update discontinued supply');
+        }
+        const wasLowStock = this.isLowStock(supply);
+        if (updateSupplyDto.sellingPrice !== undefined) supply.sellingPrice = updateSupplyDto.sellingPrice.toString();
+        if (updateSupplyDto.purchasePrice !== undefined) supply.purchasePrice = updateSupplyDto.purchasePrice.toString();
+        Object.assign(supply, updateSupplyDto);
+        const updated = await manager.getRepository(Supply).save(supply);
+        return { updated, wasLowStock };
       });
-      if (!supply)
+      if (!savedSupply.wasLowStock && this.isLowStock(savedSupply.updated))
       {
-        throw new NotFoundException('Supply not found');
-      }
-      if (supply.status === SupplyStatusEnum.DISCONTINUED)
-      {
-        throw new ConflictException('Cannot update discontinued supply');
-      }
-      const wasLowStock = this.isLowStock(supply);
-
-      if (updateSupplyDto.sellingPrice !== undefined)
-      {
-        supply.sellingPrice = updateSupplyDto.sellingPrice.toString();
-      }
-      if (updateSupplyDto.purchasePrice !== undefined)
-      {
-        supply.purchasePrice = updateSupplyDto.purchasePrice.toString();
-      }
-      Object.assign(supply, {
-        ...updateSupplyDto,
-      });
-      const savedSupply = await this.supplyRepo.save(supply);
-      if (!wasLowStock && this.isLowStock(savedSupply))
-      {
-        await this.notifyLowStock(savedSupply);
+        await this.notifyLowStock(savedSupply.updated);
       }
 
-      return savedSupply;
+      return savedSupply.updated;
     }
         
     async deleteSupply(id: string)

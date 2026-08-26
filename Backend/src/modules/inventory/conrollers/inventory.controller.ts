@@ -17,21 +17,21 @@ export class InventoryController{
           private readonly supplierService: SupplierService,
   ){}
 
-  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE','VET', 'ADOPTER')
+  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
   @Get('supplies')
   getSupplies(@Query() query: InventoryQueryDto)
   { 
     return this.supplyService.getSupplies(query);
   }
 
-  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE','VET', 'ADOPTER')
+  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
   @Get('supplies/low-stock')//use it later for notification
   getLowStockSupplies()
   {
     return this.supplyService.getLowStockSupplies();
   }
 
-  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE','VET', 'ADOPTER')
+  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
   @Get('supplies/:id')
   getSupplyByID(@Param('id') id: string)
   {
@@ -59,14 +59,14 @@ export class InventoryController{
     return this.supplyService.deleteSupply(id);
   }
 
-  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE','VET', 'ADOPTER')
+  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
   @Get('suppliers')
   getSuppliers()
   {
     return this.supplierService.getSuppliers();
   }
 
-  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE','VET', 'ADOPTER','VET')
+  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
   @Get('suppliers/:id')
   getSupplierById(@Param('id') id: string)
   {

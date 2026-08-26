@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, QueryFailedError, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { Department } from '../../database/entities/department.entity';
@@ -198,8 +198,11 @@ export class UsersService {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    const savedUser = await this.dataSource.transaction(
-      async (manager) => {
+    let savedUser: User;
+    try {
+      //all inside {} is one transaction
+      savedUser = await this.dataSource.transaction(
+        async (manager) => {
         const user = manager.create(User, {
           firstName: dto.firstName,
           lastName: dto.lastName,
@@ -226,8 +229,14 @@ export class UsersService {
         await manager.save(employee);
 
         return createdUser;
-      },
-    );
+        },
+      );
+    } catch (error) {
+      if (error instanceof QueryFailedError && (error as any).code === '23505') {
+        throw new ConflictException('Email already exists');
+      }
+      throw error;
+    }
 
     return this.findOne(savedUser.userId);
   }
@@ -298,24 +307,14 @@ export class UsersService {
 
       nextRole = requestedRole;
 
-      if (
-        isSelf &&
-        targetRole === 'ADMIN' &&
-        nextRole.roleName !== 'ADMIN'
-      ) {
-        await this.ensureNotLastActiveAdmin();
-      }
     }
 
-    if (
+    const removesActiveAdmin =
       isSelf &&
-      currentRole === 'ADMIN' &&
+      targetRole === 'ADMIN' &&
       targetUser.status === USER_STATUS.ACTIVE &&
-      data.status &&
-      data.status !== USER_STATUS.ACTIVE
-    ) {
-      await this.ensureNotLastActiveAdmin();
-    }
+      ((data.roleId && nextRole.roleName !== 'ADMIN') ||
+        (data.status !== undefined && data.status !== USER_STATUS.ACTIVE));
 
     const userData: Partial<User> = {};
 
@@ -329,6 +328,10 @@ export class UsersService {
     }
 
     await this.dataSource.transaction(async (manager) => {
+      if (removesActiveAdmin) {
+        await this.ensureNotLastActiveAdmin(manager);
+      }
+
       if (Object.keys(userData).length > 0) {
         await manager.update(User, id, userData);
       }
@@ -387,24 +390,42 @@ export class UsersService {
       throw new ForbiddenException('Only admins can deactivate users');
     }
 
-    if (isSelf) {
-      if (
-        user.status === USER_STATUS.ACTIVE &&
-        targetRole === 'ADMIN'
-      ) {
-        await this.ensureNotLastActiveAdmin();
-      }
-    } else if (!this.isLowerRole(currentRole, targetRole)) {
+    if (!isSelf && !this.isLowerRole(currentRole, targetRole)) {
       throw new ForbiddenException(
         'You can only deactivate lower-role users',
       );
     }
 
-    if (user.status !== USER_STATUS.INACTIVE) {
-      await this.userRepo.update(id, {
-        status: USER_STATUS.INACTIVE,
-      });
-    }
+    await this.dataSource.transaction(async (manager) => {
+      const lockedUser = await manager
+        .getRepository(User)
+        .createQueryBuilder('user')
+        //get the role with the user
+        .leftJoinAndSelect('user.role', 'role')
+        //lock this user row
+        .setLock('pessimistic_write')
+        .where('user.userId = :id', { id })
+        //run the query and get the result
+        .getOne();
+
+      if (!lockedUser) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (
+        isSelf &&
+        lockedUser.status === USER_STATUS.ACTIVE &&
+        targetRole === 'ADMIN'
+      ) {
+        await this.ensureNotLastActiveAdmin(manager);
+      }
+
+      if (lockedUser.status !== USER_STATUS.INACTIVE) {
+        await manager.update(User, id, {
+          status: USER_STATUS.INACTIVE,
+        });
+      }
+    });
 
     return {
       message: 'User deactivated successfully',
@@ -514,16 +535,22 @@ export class UsersService {
     );
   }
 
-  private async ensureNotLastActiveAdmin() {
-    const activeAdminCount = await this.userRepo.count({
-      where: {
-        status: USER_STATUS.ACTIVE,
-        role: {
-          roleName: 'ADMIN',
-        },
-      },
-      relations: ['role'],
-    });
+  //the manager is the transaction manager, we want it all inside the transaction to ensure that we don't have a race condition
+  private async ensureNotLastActiveAdmin(manager: EntityManager) {
+    const activeAdmins = await manager
+      .getRepository(User)
+      .createQueryBuilder('user')
+      //join with the role entity
+      .innerJoin('user.role', 'role')
+      //lock the rows for update to prevent race
+      .setLock('pessimistic_write')
+      //filter for active admins
+      .where('user.status = :status', { status: USER_STATUS.ACTIVE })
+      .andWhere('role.roleName = :roleName', { roleName: 'ADMIN' })
+      //run the query and get the results
+      .getMany();
+
+    const activeAdminCount = activeAdmins.length;
 
     if (activeAdminCount <= 1) {
       throw new ForbiddenException(

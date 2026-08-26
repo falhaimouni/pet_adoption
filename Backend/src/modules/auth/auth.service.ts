@@ -10,11 +10,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { randomBytes, createHash } from 'crypto';
 import * as bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
+import { DataSource, QueryFailedError, Repository } from 'typeorm';
 
 import { ERROR_MESSAGES } from '@shared/constants/error-messages.constants';
 import { ChangePasswordDto } from '@shared/dto/change-password.dto';
@@ -48,6 +48,9 @@ export class AuthService implements OnModuleInit {
 
     @InjectRepository(PasswordResetToken)
     private readonly passwordResetTokenRepo: Repository<PasswordResetToken>,
+
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
 
     private readonly jwtService: JwtService,
 
@@ -100,7 +103,14 @@ export class AuthService implements OnModuleInit {
       provider: 'LOCAL',
     });
 
-    await this.userRepo.save(user);
+    try {
+      await this.userRepo.save(user);
+    } catch (error) {
+      if (error instanceof QueryFailedError && (error as any).code === '23505') {
+        throw new ConflictException(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
+      }
+      throw error;
+    }
 
     return { message: 'User created successfully' };
   }
@@ -298,41 +308,36 @@ export class AuthService implements OnModuleInit {
 
     const tokenHash = this.hashResetToken(token);
 
-    const tokenRecord = await this.passwordResetTokenRepo.findOne({
-      where: { tokenHash },
-      relations: ['user'],
-    });
-
-    if (!tokenRecord) {
-      throw new BadRequestException('Invalid or expired token');
-    }
-
-    if (tokenRecord.usedAt) {
-      throw new BadRequestException('Token already used');
-    }
-
-    if (tokenRecord.expiresAt.getTime() < Date.now()) {
-      throw new BadRequestException('Token expired');
-    }
-
-    const user = tokenRecord.user;
-    if (!user) {
-      throw new BadRequestException('Invalid token');
-    }
-
-    if (!user.password) {
-      throw new ForbiddenException(
-        'This account does not have a local password',
-      );
-    }
-
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await this.userRepo.update(user.userId, { password: hashedPassword });
-    await this.invalidateRefreshTokens(user.userId);
+    await this.dataSource.transaction(async (manager) => {
+      const tokenRecord = await manager
+        .getRepository(PasswordResetToken)
+        .createQueryBuilder('token')
+        .innerJoinAndSelect('token.user', 'user')
+        .setLock('pessimistic_write')
+        .where('token.tokenHash = :tokenHash', { tokenHash })
+        .getOne();
 
-    await this.passwordResetTokenRepo.update(tokenRecord.tokenId, {
-      usedAt: new Date(),
+      if (!tokenRecord) throw new BadRequestException('Invalid or expired token');
+      if (tokenRecord.usedAt) throw new BadRequestException('Token already used');
+      if (tokenRecord.expiresAt.getTime() < Date.now()) throw new BadRequestException('Token expired');
+
+      const user = tokenRecord.user;
+      if (!user) throw new BadRequestException('Invalid token');
+      if (!user.password) {
+        throw new ForbiddenException('This account does not have a local password');
+      }
+
+      await manager.getRepository(User).update(user.userId, {
+        password: hashedPassword,
+      });
+      await manager
+        .getRepository(User)
+        .increment({ userId: user.userId }, 'refreshTokenVersion', 1);
+      await manager.getRepository(PasswordResetToken).update(tokenRecord.tokenId, {
+        usedAt: new Date(),
+      });
     });
 
     return { message: 'Password has been reset successfully' };

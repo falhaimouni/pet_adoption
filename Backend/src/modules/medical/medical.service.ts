@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 
 import {
   CreateMedicalEntryDto,
@@ -201,11 +201,21 @@ export class MedicalService {
       return existingRecord;
     }
 
-    return this.medicalRecordRepo.save(
-      this.medicalRecordRepo.create({
-        petId,
-      }),
-    );
+    try {
+      return await this.medicalRecordRepo.save(
+        this.medicalRecordRepo.create({ petId }),
+      );
+    } catch (error) {
+      if (!(error instanceof QueryFailedError && (error as any).code === '23505')) {
+        throw error;
+      }
+
+      const record = await this.medicalRecordRepo.findOne({ where: { petId } });
+      if (!record) {
+        throw error;
+      }
+      return record;
+    }
   }
 
   private async ensurePetExists(petId: string) {

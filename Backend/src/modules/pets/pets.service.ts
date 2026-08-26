@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 import { CreatePetDto, UpdatePetDto } from '@shared/dto/pet.dto';
 import { FindPetsQueryDto } from '@shared/dto/find-pets-query.dto';
@@ -70,6 +70,8 @@ export class PetsService {
 
     @InjectRepository(Adoption)
     private readonly adoptionRepo: Repository<Adoption>,
+
+    private readonly dataSource: DataSource,
 
     private readonly uploadsService: UploadsService,
   ) {}
@@ -173,20 +175,32 @@ export class PetsService {
   }
 
   async update(id: string, dto: UpdatePetDto): Promise<PetResponse> {
-    const pet = await this.getPetEntity(id);
+    await this.dataSource.transaction(async (manager) => {
+      const pet = await manager
+        .getRepository(Pet)
+        .createQueryBuilder('pet')
+        .setLock('pessimistic_write')
+        .where('pet.petId = :id', { id })
+        .getOne();
 
-    if (dto.name !== undefined) pet.petName = dto.name;
-    if (dto.species !== undefined) pet.species = dto.species;
-    if (dto.breed !== undefined) pet.breed = dto.breed;
-    if (dto.age !== undefined) pet.age = dto.age;
-    if (dto.gender !== undefined) pet.gender = dto.gender;
-    if (dto.color !== undefined) pet.color = dto.color;
-    if (dto.weight !== undefined) pet.weight = String(dto.weight);
-    if (dto.description !== undefined) pet.description = dto.description;
-    if (dto.adoptionStatus !== undefined) pet.adoptionStatus = dto.adoptionStatus;
-    if (dto.healthStatus !== undefined) pet.healthStatus = dto.healthStatus;
+      if (!pet) {
+        throw new NotFoundException('Pet not found');
+      }
 
-    await this.petRepo.save(pet);
+      if (dto.name !== undefined) pet.petName = dto.name;
+      if (dto.species !== undefined) pet.species = dto.species;
+      if (dto.breed !== undefined) pet.breed = dto.breed;
+      if (dto.age !== undefined) pet.age = dto.age;
+      if (dto.gender !== undefined) pet.gender = dto.gender;
+      if (dto.color !== undefined) pet.color = dto.color;
+      if (dto.weight !== undefined) pet.weight = String(dto.weight);
+      if (dto.description !== undefined) pet.description = dto.description;
+      if (dto.adoptionStatus !== undefined) pet.adoptionStatus = dto.adoptionStatus;
+      if (dto.healthStatus !== undefined) pet.healthStatus = dto.healthStatus;
+
+      await manager.getRepository(Pet).save(pet);
+    });
+
     return this.findOne(id);
   }
 
@@ -225,34 +239,46 @@ export class PetsService {
   }
 
   async remove(id: string): Promise<{ message: string }> {
-    await this.getPetEntity(id);
+    await this.dataSource.transaction(async (manager) => {
+      const petRepo = manager.getRepository(Pet);
+      const pet = await petRepo
+        .createQueryBuilder('pet')
+        .setLock('pessimistic_write')
+        .where('pet.petId = :id', { id })
+        .getOne();
 
-    const completedAdoption = await this.adoptionRepo
-      .createQueryBuilder('adoption')
-      .innerJoin('adoption.request', 'request')
-      .where('request.petId = :petId', { petId: id })
-      .getExists();
+      if (!pet) {
+        throw new NotFoundException('Pet not found');
+      }
 
-    if (completedAdoption) {
-      throw new BadRequestException(
-        'Cannot archive a pet that has completed adoptions',
-      );
-    }
+      const completedAdoption = await manager
+        .getRepository(Adoption)
+        .createQueryBuilder('adoption')
+        .innerJoin('adoption.request', 'request')
+        .where('request.petId = :petId', { petId: id })
+        .getExists();
 
-    const medicalRecord = await this.medicalRecordRepo.findOne({
-      where: { petId: id },
-      select: {
-        recordId: true,
-      },
+      if (completedAdoption) {
+        throw new BadRequestException(
+          'Cannot archive a pet that has completed adoptions',
+        );
+      }
+
+      const medicalRecord = await manager.getRepository(MedicalRecord).findOne({
+        where: { petId: id },
+        select: { recordId: true },
+      });
+
+      if (medicalRecord) {
+        await manager
+          .getRepository(MedicalEntry)
+          .softDelete({ recordId: medicalRecord.recordId });
+      }
+
+      await manager.getRepository(Vaccination).softDelete({ petId: id });
+      await manager.getRepository(PetImage).delete({ petId: id });
+      await petRepo.softDelete(id);
     });
-
-    if (medicalRecord) {
-      await this.medicalEntryRepo.softDelete({ recordId: medicalRecord.recordId });
-    }
-
-    await this.vaccinationRepo.softDelete({ petId: id });
-    await this.petImageRepo.delete({ petId: id });
-    await this.petRepo.softDelete(id);
 
     return {
       message: 'Pet archived successfully',
