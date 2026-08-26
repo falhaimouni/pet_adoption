@@ -1,8 +1,12 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Supplier } from './supplier.entity';
 import { SupplyStatusEnum } from '@shared/enums/supply-status.enum';
 
 @Entity('supplies')
+@Index('UQ_supplies_active_name_supplier', ['supplyName', 'supplierId'], {
+  unique: true,
+  where: '"is_active" = true',
+})
 export class Supply {
   @PrimaryGeneratedColumn('uuid', { name: 'supply_id' })
   supplyId!: string;

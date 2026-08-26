@@ -88,7 +88,7 @@ function App() {
     <main className="app-shell">
       <header className="topbar">
         <div>
-          <p className="eyebrow">Pet Adoption System</p>
+          <p className="eyebrow">Petopia</p>
           <h1>{title}</h1>
         </div>
         <div className="toolbar">

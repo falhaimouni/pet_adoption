@@ -31,7 +31,7 @@ export function generatePdf(report: PdfReport): Promise<Buffer> {
       bufferPages: true,
       info: {
         Title: report.title,
-        Author: 'Pet Adoption Center',
+        Author: 'Petopia',
       },
     });
     const chunks: Buffer[] = [];
@@ -56,7 +56,7 @@ function drawDocumentHeader(doc: PDFKit.PDFDocument, report: PdfReport): void {
     .fillColor('#0f172a')
     .font('Helvetica-Bold')
     .fontSize(18)
-    .text('PET ADOPTION CENTER', { align: 'center' })
+    .text('PETOPIA', { align: 'center' })
     .moveDown(0.35);
 
   doc

@@ -3,8 +3,8 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, QueryFailedError, Repository } from 'typeorm';
 
 import { User } from '../../database/entities/user.entity';
 import { OAuthAccount } from '../../database/entities/oauth-account.entity';
@@ -31,6 +31,9 @@ export class OAuthService {
 
     @InjectRepository(Role)
     private readonly roleRepo: Repository<Role>,
+
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
 
     private readonly authService: AuthService,
   ) {}
@@ -103,7 +106,13 @@ export class OAuthService {
         providerUserId,
       });
 
-      await this.oauthAccountRepo.save(oauthAccount);
+      try {
+        await this.oauthAccountRepo.save(oauthAccount);
+      } catch (error) {
+        if (!(error instanceof QueryFailedError && (error as any).code === '23505')) {
+          throw error;
+        }
+      }
 
       return this.authService.createAuthTokens(existingUser.userId);
     }
@@ -134,16 +143,30 @@ export class OAuthService {
       status: 'active',
     });
 
-    const savedUser = await this.userRepo.save(newUser);
-
-    //create the OAuthAccount that connects Google to our user
-    const oauthAccount = this.oauthAccountRepo.create({
-      userId: savedUser.userId,
-      provider: 'GOOGLE',
-      providerUserId,
-    });
-
-    await this.oauthAccountRepo.save(oauthAccount);
+    let savedUser: User;
+    try {
+      savedUser = await this.dataSource.transaction(async (manager) => {
+        const createdUser = await manager.getRepository(User).save(newUser);
+        await manager.getRepository(OAuthAccount).save(
+          manager.getRepository(OAuthAccount).create({
+            userId: createdUser.userId,
+            provider: 'GOOGLE',
+            providerUserId,
+          }),
+        );
+        return createdUser;
+      });
+    } catch (error) {
+      if (error instanceof QueryFailedError && (error as any).code === '23505') {
+        const concurrentAccount = await this.oauthAccountRepo.findOne({
+          where: { provider: 'GOOGLE', providerUserId },
+        });
+        if (concurrentAccount) {
+          return this.authService.createAuthTokens(concurrentAccount.userId);
+        }
+      }
+      throw error;
+    }
 
     //issue our normal application JWTs
     return this.authService.createAuthTokens(savedUser.userId);

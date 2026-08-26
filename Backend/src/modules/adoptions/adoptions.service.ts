@@ -300,6 +300,25 @@ export class AdoptionsService {
       const petRepo = manager.getRepository(Pet);
       const logRepo = manager.getRepository(ActivityLog);
 
+      const requestIdentity = await requestRepo.findOne({
+        where: { requestId },
+        select: { requestId: true, petId: true },
+      });
+
+      if (!requestIdentity) {
+        throw new NotFoundException('Adoption request not found');
+      }
+
+      const pet = await petRepo
+        .createQueryBuilder('pet')
+        .setLock('pessimistic_write')
+        .where('pet.petId = :petId', { petId: requestIdentity.petId })
+        .getOne();
+
+      if (!pet) {
+        throw new NotFoundException('Pet not found');
+      }
+
       const request = await requestRepo
         .createQueryBuilder('request')
         .setLock('pessimistic_write')
@@ -312,16 +331,6 @@ export class AdoptionsService {
 
       if (!this.isStatus(request.status, ADOPTION_REQUEST_STATUS.PENDING)) {
         throw new BadRequestException('Only pending requests can be approved');
-      }
-
-      const pet = await petRepo
-        .createQueryBuilder('pet')
-        .setLock('pessimistic_write')
-        .where('pet.petId = :petId', { petId: request.petId })
-        .getOne();
-
-      if (!pet) {
-        throw new NotFoundException('Pet not found');
       }
 
       if (this.isStatus(pet.adoptionStatus, PET_ADOPTION_STATUS.ADOPTED)) {
@@ -428,6 +437,25 @@ export class AdoptionsService {
       const petRepo = manager.getRepository(Pet);
       const logRepo = manager.getRepository(ActivityLog);
 
+      const requestIdentity = await requestRepo.findOne({
+        where: { requestId },
+        select: { requestId: true, petId: true },
+      });
+
+      if (!requestIdentity) {
+        throw new NotFoundException('Adoption request not found');
+      }
+
+      const pet = await petRepo
+        .createQueryBuilder('pet')
+        .setLock('pessimistic_write')
+        .where('pet.petId = :petId', { petId: requestIdentity.petId })
+        .getOne();
+
+      if (!pet) {
+        throw new NotFoundException('Pet not found');
+      }
+
       const request = await requestRepo
         .createQueryBuilder('request')
         .setLock('pessimistic_write')
@@ -456,16 +484,6 @@ export class AdoptionsService {
 
       if (!this.isStatus(request.status, ADOPTION_REQUEST_STATUS.PENDING)) {
         throw new BadRequestException('Only pending requests can be cancelled');
-      }
-
-      const pet = await petRepo
-        .createQueryBuilder('pet')
-        .setLock('pessimistic_write')
-        .where('pet.petId = :petId', { petId: request.petId })
-        .getOne();
-
-      if (!pet) {
-        throw new NotFoundException('Pet not found');
       }
 
       request.status = ADOPTION_REQUEST_STATUS.CANCELLED;
