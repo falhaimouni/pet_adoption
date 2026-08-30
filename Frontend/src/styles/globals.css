@@ -1,0 +1,17 @@
+@media (max-width: 640px) {
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .overflow-x-auto table {
+    min-width: 720px;
+  }
+
+  .overflow-x-auto th,
+  .overflow-x-auto td {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    white-space: nowrap;
+  }
+}
