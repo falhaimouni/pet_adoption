@@ -79,7 +79,7 @@ const suppliers = [
 let supplies = PRODUCTS.map((product) => ({
   supplyId: String(product.id),
   supplyName: product.name,
-  category: product.category.toUpperCase().replaceAll(" ", "_").replaceAll("&", "AND"),
+  category: product.category.toUpperCase().replace(/ /g, "_").replace(/&/g, "AND"),
   quantity: product.inStock ? 24 : 0,
   sellingPrice: product.price.toFixed(2),
   purchasePrice: Math.max(product.price * 0.65, 0).toFixed(2),
@@ -232,9 +232,24 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
 
   if (url.pathname === "/pets" && method === "GET") return withDelay(listPets(url.searchParams) as T);
   if (url.pathname === "/pets" && method === "POST") {
-    const next = { ...body, petId: `mock-pet-${Date.now()}`, images: [], adoptionStatus: String(body.adoptionStatus ?? "AVAILABLE") };
-    pets = [next as typeof pets[number], ...pets];
-    return withDelay(next as T);
+    const next = {
+      ...body,
+      petId: `mock-pet-${Date.now()}`,
+      name: String(body.name ?? "New pet"),
+      species: String(body.species ?? "Dog"),
+      breed: String(body.breed ?? "Mixed"),
+      age: Number(body.age ?? 1),
+      gender: (body.gender as "Male" | "Female") ?? "Male",
+      color: String(body.color ?? "Brown"),
+      weight: Number(body.weight ?? 10),
+      description: String(body.description ?? ""),
+      healthStatus: String(body.healthStatus ?? "Healthy"),
+      adoptionStatus: String(body.adoptionStatus ?? "AVAILABLE"),
+      arrivalDate: String(body.arrivalDate ?? now().slice(0, 10)),
+      images: [],
+    };
+    pets = [next as unknown as typeof pets[number], ...pets];
+    return withDelay(next as unknown as T);
   }
   const petMatch = url.pathname.match(/^\/pets\/([^/]+)$/);
   if (petMatch && method === "GET") return withDelay(pets.find((pet) => pet.petId === petMatch[1]) as T);
@@ -271,7 +286,16 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
   if (url.pathname === "/adoption/requests" && method === "POST") {
     const pet = pets.find((item) => item.petId === String(body.petId)) ?? pets[0];
     const date = now();
-    const next = { requestId: `request-${Date.now()}`, petId: pet.petId, status: "PENDING", notes: body.notes ?? "", createdAt: date, requestDate: date.slice(0, 10), pet, adopter: currentProfile };
+    const next = {
+      requestId: `request-${Date.now()}`,
+      petId: pet.petId,
+      status: "PENDING",
+      notes: String(body.notes ?? ""),
+      createdAt: date,
+      requestDate: date.slice(0, 10),
+      pet,
+      adopter: currentProfile,
+    };
     adoptionRequests = [next, ...adoptionRequests];
     addNotification("Adoption request submitted", `Your request for ${pet.name} is now pending review.`);
     return withDelay(next as T);
@@ -309,7 +333,7 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
   }
 
   if (url.pathname === "/messages/conversations" && method === "GET") {
-    return withDelay(conversations.map(({ messages, ...conversation }) => ({ ...conversation, lastMessage: messages.at(-1) })) as T);
+    return withDelay(conversations.map(({ messages, ...conversation }) => ({ ...conversation, lastMessage: messages[messages.length - 1] })) as T);
   }
   const conversationMatch = url.pathname.match(/^\/messages\/conversations\/([^/]+)$/);
   if (conversationMatch && method === "GET") return withDelay(conversations.find((item) => item.conversationId === conversationMatch[1]) as T);

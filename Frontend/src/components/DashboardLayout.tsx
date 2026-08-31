@@ -3,7 +3,7 @@ import {
   Home, User, Heart, Bell, Settings,
   LogOut, Menu, X, Syringe, BarChart2, Package, Users,
   FileText, ClipboardList, Stethoscope, Tag,
-  ChevronRight, Sun, Moon, Globe, MessageCircle, FolderOpen, Shield, Activity, Calendar,
+  ChevronRight, Sun, Moon, Globe, MessageCircle, FolderOpen, Shield, Activity, Calendar, ShoppingCart,
 } from "lucide-react";
 import logoImg from "../imports/MyPetopia/be6bd1f12e9a602c8830a9c39abaf73ad65d4682.png";
 import profileImg from "../imports/MyPetopia/0ade9078bed97f834442fbb8c3bc4424aaf43269.png";
@@ -11,6 +11,8 @@ import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useTheme } from "../context/ThemeContext";
 import { apiFetch } from "../lib/api";
+import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
 
 export type Role = "adopter" | "staff" | "vet" | "manager" | "admin";
 
@@ -90,6 +92,17 @@ function petsPageForRole(role: Role) {
   return map[role];
 }
 
+function homePageForRole(role: Role) {
+  const map: Record<Role, string> = {
+    adopter: "profile",
+    staff: "staff-dashboard",
+    vet: "vet-dashboard",
+    manager: "manager-dashboard",
+    admin: "admin-dashboard",
+  };
+  return map[role];
+}
+
 function getRoleLabel(role: Role, t: TFn) {
   const map: Record<Role, string> = {
     adopter: t("role_adopter"),
@@ -124,6 +137,8 @@ export default function DashboardLayout({
   const { user } = useAuth();
   const { t, lang, setLang } = useLanguage();
   const { isDark, toggleTheme } = useTheme();
+  const { count } = useCart();
+  const { totalSaved } = useWishlist();
   const displayName = userName ?? user?.name ?? "Guest";
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const navItems = getNavItems(role, t).map((item) =>
@@ -151,6 +166,18 @@ export default function DashboardLayout({
     };
   }, []);
 
+  const topNavItems = [
+    { id: "home", label: t("nav_home"), page: homePageForRole(role) },
+    { id: "pets", label: t("nav_pets"), page: petsPageForRole(role) },
+    { id: "shop", label: t("nav_shop"), page: "shop" },
+    { id: "about", label: t("nav_about"), page: "about" },
+  ];
+
+  const legalLinks = [
+    { id: "privacy", label: "Privacy", page: "privacy" },
+    { id: "terms", label: "Terms", page: "terms" },
+  ];
+
   return (
     <div className="min-h-screen bg-[rgba(186,216,211,0.99)] flex flex-col">
       {/* Top Navbar */}
@@ -164,18 +191,34 @@ export default function DashboardLayout({
           </div>
 
           <div className="hidden lg:flex items-center gap-1">
-            <button
-              onClick={() => onNavigate("home")}
-              className="px-4 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[15px] transition-all text-[#1a2e2d]/70 hover:text-[#089D97] hover:bg-[#f0f9f8]"
-            >
-              {t("dash_home")}
-            </button>
-            <button
-              onClick={() => onNavigate(petsPageForRole(role))}
-              className="px-4 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[15px] transition-all text-[#1a2e2d]/70 hover:text-[#089D97] hover:bg-[#f0f9f8]"
-            >
-              {t("dash_pets")}
-            </button>
+            {topNavItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => onNavigate(item.page)}
+                className={`px-4 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[15px] transition-all ${
+                  activePage === item.page
+                    ? "bg-[#e0f2f0] text-[#089D97]"
+                    : "text-[#1a2e2d]/70 hover:text-[#089D97] hover:bg-[#f0f9f8]"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+            <div className="hidden lg:flex items-center border-l border-[#e0f2f0] ml-2 pl-2">
+              {legalLinks.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => onNavigate(item.page)}
+                  className={`px-2.5 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[12px] transition-all ${
+                    activePage === item.page
+                      ? "bg-[#e0f2f0] text-[#089D97]"
+                      : "text-[#1a2e2d]/55 hover:text-[#089D97] hover:bg-[#f0f9f8]"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -196,6 +239,32 @@ export default function DashboardLayout({
               className="w-9 h-9 rounded-[10px] flex items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
             >
               {isDark ? <Sun size={17} /> : <Moon size={17} />}
+            </button>
+
+            <button
+              onClick={() => onNavigate("wishlist")}
+              aria-label={t("wishlist_title")}
+              className="relative hidden sm:flex w-9 h-9 rounded-[10px] items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
+            >
+              <Heart size={17} />
+              {totalSaved > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
+                  {totalSaved}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => onNavigate("cart")}
+              aria-label={t("cart_title")}
+              className="relative hidden sm:flex w-9 h-9 rounded-[10px] items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
+            >
+              <ShoppingCart size={17} />
+              {count > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-[#089D97] text-white text-[10px] font-bold flex items-center justify-center">
+                  {count}
+                </span>
+              )}
             </button>
 
             <button onClick={() => onNavigate("notifications")} className="relative text-black hover:text-[#089D97] transition-colors" aria-label={t("nav_notifications")}>

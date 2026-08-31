@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Menu, X, PawPrint, ChevronDown, User, Settings, LogOut, Sun, Moon, Globe, Heart, ShoppingCart, Bell } from "lucide-react";
+import { Menu, X, PawPrint, ChevronDown, User, Settings, LogOut, Sun, Moon, Globe, Heart, ShoppingCart, Bell, CheckCheck } from "lucide-react";
 import logoImg from "../imports/Home/be6bd1f12e9a602c8830a9c39abaf73ad65d4682.png";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -30,31 +30,44 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
   ];
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; message: string; type: string; isRead: boolean; createdAt: string }>>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
   const { user, isAuthenticated, logout } = useAuth();
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   useEffect(() => {
     if (!isAuthenticated) {
       setUnreadNotifications(0);
+      setNotifications([]);
       return;
     }
 
     let cancelled = false;
-    async function loadUnread() {
+    async function loadNotifications() {
       try {
-        const data = await apiFetch<{ count: number }>("/notifications/unread-count");
-        if (!cancelled) setUnreadNotifications(Number(data.count ?? 0));
+        const [countData, items] = await Promise.all([
+          apiFetch<{ count: number }>("/notifications/unread-count"),
+          apiFetch<Array<{ id: string; title: string; message: string; type: string; isRead: boolean; createdAt: string }>>("/notifications"),
+        ]);
+        if (!cancelled) {
+          setUnreadNotifications(Number(countData.count ?? 0));
+          setNotifications(items);
+        }
       } catch {
-        if (!cancelled) setUnreadNotifications(0);
+        if (!cancelled) {
+          setUnreadNotifications(0);
+          setNotifications([]);
+        }
       }
     }
 
-    void loadUnread();
-    window.addEventListener("petopia:notifications-changed", loadUnread);
+    void loadNotifications();
+    window.addEventListener("petopia:notifications-changed", loadNotifications);
     return () => {
       cancelled = true;
-      window.removeEventListener("petopia:notifications-changed", loadUnread);
+      window.removeEventListener("petopia:notifications-changed", loadNotifications);
     };
   }, [isAuthenticated]);
 
@@ -62,6 +75,9 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
     function handler(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
+      }
+      if (notificationRef.current && !notificationRef.current.contains(e.target as Node)) {
+        setNotificationsOpen(false);
       }
     }
     document.addEventListener("mousedown", handler);
@@ -72,6 +88,7 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
     onNavigate(page);
     setMenuOpen(false);
     setDropdownOpen(false);
+    setNotificationsOpen(false);
   }
 
   function handleLogout() {
@@ -87,8 +104,16 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
     user?.role === "admin" ? "admin-dashboard"
     : user?.role === "manager" ? "manager-dashboard"
     : user?.role === "staff" ? "staff-dashboard"
-    : user?.role === "vet" ? "vet-pets"
-    : "pets";
+    : user?.role === "vet" ? "vet-dashboard"
+    : "profile";
+
+  async function markAllNotificationsRead() {
+    await apiFetch("/notifications/read-all", { method: "PATCH" });
+    setNotifications((items) => items.map((item) => ({ ...item, isRead: true })));
+    setUnreadNotifications(0);
+  }
+
+  const previewNotifications = notifications.slice(0, 3);
 
   return (
     <header className="w-full bg-white shadow-sm sticky top-0 z-30 border-b border-[rgba(8,157,151,0.08)]">
@@ -103,7 +128,7 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
           {NAV_LINKS.map(({ label, page }) => (
             <button
               key={page}
-              onClick={() => nav(page)}
+              onClick={() => nav(page === "home" && isAuthenticated ? dashboardPage : page)}
               className={`px-4 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[15px] transition-all ${
                 activePage === page
                   ? "bg-[#e0f2f0] text-[#089D97]"
@@ -113,6 +138,18 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
               {label}
             </button>
           ))}
+          {isAuthenticated && (
+            <button
+              onClick={() => nav(dashboardPage)}
+              className={`px-4 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[15px] transition-all ${
+                activePage === dashboardPage
+                  ? "bg-[#e0f2f0] text-[#089D97]"
+                  : "text-[#1a2e2d]/70 hover:text-[#089D97] hover:bg-[#f0f9f8]"
+              }`}
+            >
+              {t("nav_my_petopia")}
+            </button>
+          )}
           <div className="hidden md:flex items-center border-l border-[#e0f2f0] ml-2 pl-2">
             {LEGAL_LINKS.map(({ label, page }) => (
               <button
@@ -170,14 +207,70 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
           </button>
 
           {isAuthenticated && (
-            <button
-              onClick={() => nav("notifications")}
-              aria-label={t("nav_notifications")}
-              className="relative hidden sm:flex w-9 h-9 rounded-[10px] items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
-            >
-              <Bell size={17} />
-              {unreadNotifications > 0 && <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center">{unreadNotifications}</span>}
-            </button>
+            <div className="relative hidden sm:block" ref={notificationRef}>
+              <button
+                onClick={() => {
+                  setNotificationsOpen((open) => !open);
+                  setDropdownOpen(false);
+                }}
+                aria-label={t("nav_notifications")}
+                aria-expanded={notificationsOpen}
+                className="relative flex w-9 h-9 rounded-[10px] items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
+              >
+                <Bell size={17} />
+                {unreadNotifications > 0 && <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center">{unreadNotifications}</span>}
+              </button>
+
+              {notificationsOpen && (
+                <div className="absolute right-0 top-full mt-3 w-[340px] max-w-[calc(100vw-2rem)] bg-white rounded-[18px] shadow-2xl border border-[rgba(8,157,151,0.12)] overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-[#f0f8f7] flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-[#1a2e2d]">{t("notif_title")}</p>
+                      <p className="font-['Poppins',sans-serif] text-[11px] text-[#5a8a87]">{unreadNotifications} {t("notif_unread").toLowerCase()}</p>
+                    </div>
+                    {unreadNotifications > 0 && (
+                      <button
+                        type="button"
+                        onClick={markAllNotificationsRead}
+                        className="flex items-center gap-1.5 text-[#089D97] font-['Poppins',sans-serif] text-[11px] font-medium hover:underline"
+                      >
+                        <CheckCheck size={13} /> {t("notif_mark_all")}
+                      </button>
+                    )}
+                  </div>
+
+                  {previewNotifications.length === 0 ? (
+                    <div className="px-4 py-6 text-center">
+                      <p className="font-['Poppins',sans-serif] font-medium text-[13px] text-[#1a2e2d]">{t("notif_none")}</p>
+                      <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87] mt-1">{t("notif_caught_up")}</p>
+                    </div>
+                  ) : (
+                    <div className="max-h-[280px] overflow-y-auto">
+                      {previewNotifications.map((item) => (
+                        <div key={item.id} className={`px-4 py-3 border-b border-[#f0f8f7] last:border-b-0 ${item.isRead ? "bg-white" : "bg-[#f0f8f7]"}`}>
+                          <div className="flex items-start gap-3">
+                            <span className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${item.isRead ? "bg-gray-200" : "bg-amber-500"}`} />
+                            <div className="min-w-0">
+                              <p className="font-['Poppins',sans-serif] font-semibold text-[13px] text-[#1a2e2d] truncate">{item.title}</p>
+                              <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87] leading-snug line-clamp-2">{item.message}</p>
+                              <p className="font-['Poppins',sans-serif] text-[10px] text-black/35 mt-1">{new Date(item.createdAt).toLocaleString(lang === "ar" ? "ar-JO" : "en-US")}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => nav("notifications")}
+                    className="w-full px-4 py-3 bg-white hover:bg-[#f0f8f7] text-[#089D97] font-['Poppins',sans-serif] text-[13px] font-semibold transition-colors"
+                  >
+                    View all notifications
+                  </button>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Auth area — desktop */}
@@ -264,7 +357,7 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
           {NAV_LINKS.map(({ label, page }) => (
             <button
               key={page}
-              onClick={() => nav(page)}
+              onClick={() => nav(page === "home" && isAuthenticated ? dashboardPage : page)}
               className="text-start px-3 py-2.5 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[15px] text-[#1a2e2d]/70 hover:bg-[#f0f9f8] hover:text-[#089D97] transition-colors"
             >
               {label}
