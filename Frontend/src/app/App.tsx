@@ -43,8 +43,6 @@ import VetPetsPage from "../pages/vet/VetPetsPage";
 import VetMedicalPage from "../pages/vet/VetMedicalPage";
 import VetVaccinationsPage from "../pages/vet/VetVaccinationsPage";
 import VetProfilePage from "../pages/vet/VetProfilePage";
-import VetAppointmentsPage from "../pages/vet/VetAppointmentsPage";
-import VetAppointmentDetailPage from "../pages/vet/VetAppointmentDetailPage";
 
 // Manager pages
 import ManagerDashboardPage from "../pages/manager/ManagerDashboardPage";
@@ -67,11 +65,18 @@ export type Role = UserRole;
 // Pages anyone can view without logging in.
 const PUBLIC_PAGES = new Set<string>([
   "home", "login", "signup", "about", "terms",
-  "privacy", "forgot-password", "reset-password", "pets", "pet-detail", "shop", "wishlist", "cart", "orders",
+  "privacy", "forgot-password", "reset-password", "pets", "pet-detail", "shop",
 ]);
 
 // Pages restricted to specific roles.
 const ROLE_PAGES: Record<string, UserRole[]> = {
+  about: ["adopter"],
+  pets: ["adopter"],
+  "pet-detail": ["adopter"],
+  shop: ["adopter"],
+  wishlist: ["adopter"],
+  cart: ["adopter"],
+  orders: ["adopter"],
   profile: ["adopter"],
   "my-requests": ["adopter"],
   "my-adoptions": ["adopter"],
@@ -91,8 +96,6 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   "vet-pets": ["vet"],
   "vet-medical": ["vet"],
   "vet-vaccinations": ["vet"],
-  "vet-appointments": ["vet"],
-  "vet-appointment-detail": ["vet"],
   "vet-profile": ["vet"],
   "manager-dashboard": ["manager"],
   "manager-pets": ["manager"],
@@ -202,7 +205,6 @@ function readHashRoute(): { page: string; params: Params } {
   if (parts[1]) params.id = parts[1];
   if (page === "pet-detail" && parts[1]) params.petId = parts[1];
   if ((page === "chat-detail" || page === "staff-chat-detail") && parts[1]) params.conversationId = parts[1];
-  if (page === "vet-appointment-detail" && parts[1]) params.appointmentId = parts[1];
   return { page, params };
 }
 
@@ -210,11 +212,10 @@ function writeHashRoute(page: string, params: Params) {
   const pathParam =
     page === "pet-detail" ? params.petId :
     page === "chat-detail" || page === "staff-chat-detail" ? params.conversationId :
-    page === "vet-appointment-detail" ? params.appointmentId :
     undefined;
   const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
-    if (value == null || key === "petId" || key === "conversationId" || key === "appointmentId") return;
+    if (value == null || key === "petId" || key === "conversationId") return;
     query.set(key, String(value));
   });
   const next = `#/${page}${pathParam ? `/${pathParam}` : ""}${query.toString() ? `?${query}` : ""}`;
@@ -264,8 +265,6 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "vet-pets": return <VetPetsPage onNavigate={navigate} />;
     case "vet-medical": return <VetMedicalPage onNavigate={navigate} />;
     case "vet-vaccinations": return <VetVaccinationsPage onNavigate={navigate} />;
-    case "vet-appointments": return <VetAppointmentsPage onNavigate={navigate} />;
-    case "vet-appointment-detail": return <VetAppointmentDetailPage onNavigate={navigate} />;
     case "vet-profile": return <VetProfilePage onNavigate={navigate} />;
 
     // Manager
