@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Users, Package, Tag, FileText,
   BarChart2, ArrowUpRight, TrendingUp, AlertTriangle, UserCheck, Shield, FolderOpen, Activity,
@@ -5,6 +6,7 @@ import {
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import DashboardLayout from "../../components/DashboardLayout";
 import KpiCard from "../../components/KpiCard";
+import { apiFetch } from "../../lib/api";
 
 interface AdminDashboardPageProps {
   onNavigate: (page: string) => void;
@@ -20,13 +22,14 @@ const userGrowth = [
   { month: "Jul", users: 486 },
 ];
 
-const roleDistribution = [
-  { name: "Adopters", value: 380, color: "#089D97" },
-  { name: "Staff", value: 42, color: "#047975" },
-  { name: "Vets", value: 18, color: "#80bdba" },
-  { name: "Managers", value: 12, color: "#bae0dd" },
-  { name: "Admins", value: 4, color: "#1a2e2d" },
-];
+interface DashboardData {
+  users: { total: number; admin?: number; manager?: number; employee: number; vet: number; adopter: number; active?: number };
+  pets: { total: number; available: number; adopted: number; pendingAdoption: number };
+  adoptions: { totalRequests: number; pending: number; approved: number };
+  medical: { petsNeedingMedicalAttention?: number };
+  supplies: { lowStockSupplies: number; totalSuppliers: number };
+  activity: { recentActivityLogs: Array<{ logId: string; action: string; entityType: string; createdAt: string; user?: { firstName: string; lastName: string } | null }> };
+}
 
 const features = [
   { id: "admin-users", label: "Users", desc: "Manage all accounts", icon: Users, color: "text-[#089D97]", bg: "bg-[#e0f2f0]" },
@@ -39,21 +42,33 @@ const features = [
   { id: "admin-activity", label: "Activity", desc: "Audit actions", icon: Activity, color: "text-slate-600", bg: "bg-slate-50" },
 ];
 
-const recentActivity = [
-  { id: 1, action: "New user registered", detail: "sarah_j joined as Adopter", time: "5m ago", icon: UserCheck, color: "text-green-600" },
-  { id: 2, action: "Low inventory", detail: "Flea Treatment - 3 units left", time: "3h ago", icon: AlertTriangle, color: "text-amber-600" },
-  { id: 3, action: "Report generated", detail: "Monthly adoptions summary", time: "6h ago", icon: FileText, color: "text-indigo-600" },
-];
-
 export default function AdminDashboardPage({ onNavigate }: AdminDashboardPageProps) {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    apiFetch<DashboardData>("/dashboard/admin")
+      .then(setData)
+      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load dashboard."));
+  }, []);
+
+  const roleDistribution = [
+    { name: "Adopters", value: data?.users.adopter ?? 0, color: "#089D97" },
+    { name: "Staff", value: data?.users.employee ?? 0, color: "#047975" },
+    { name: "Vets", value: data?.users.vet ?? 0, color: "#80bdba" },
+    { name: "Managers", value: data?.users.manager ?? 0, color: "#bae0dd" },
+    { name: "Admins", value: data?.users.admin ?? 0, color: "#1a2e2d" },
+  ];
+  const recentActivity = data?.activity.recentActivityLogs ?? [];
+
   return (
     <DashboardLayout role="admin" activePage="admin-dashboard" onNavigate={onNavigate} pageTitle="Admin Dashboard" breadcrumbs={["Admin", "Dashboard"]}>
       {/* KPIs */}
       <div className="flex flex-wrap gap-4 mb-6">
-        <KpiCard label="Total Users" value={486} icon={<Users size={20} />} trend={21} trendLabel="vs last month" />
-        <KpiCard label="Active Staff" value={72} icon={<UserCheck size={20} />} trend={4} accent="bg-green-50" />
-        <KpiCard label="Total Adoptions" value={318} icon={<TrendingUp size={20} />} trend={9} accent="bg-teal-50" />
-        <KpiCard label="Inventory Alerts" value={3} icon={<AlertTriangle size={20} />} accent="bg-red-50" />
+        <KpiCard label="Total Users" value={data?.users.total ?? "..."} icon={<Users size={20} />} trendLabel={error || "Live backend data"} />
+        <KpiCard label="Active Staff" value={(data?.users.employee ?? 0) + (data?.users.vet ?? 0) + (data?.users.manager ?? 0)} icon={<UserCheck size={20} />} accent="bg-green-50" />
+        <KpiCard label="Approved Requests" value={data?.adoptions.approved ?? "..."} icon={<TrendingUp size={20} />} accent="bg-teal-50" />
+        <KpiCard label="Inventory Alerts" value={data?.supplies.lowStockSupplies ?? "..."} icon={<AlertTriangle size={20} />} accent="bg-red-50" />
       </div>
 
       {/* Feature cards */}
@@ -135,16 +150,17 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
           </button>
         </div>
         <div className="flex flex-col gap-3">
-          {recentActivity.map(({ id, action, detail, time, icon: Icon, color }) => (
-            <div key={id} className="flex items-center gap-3 py-2 border-b border-[#f0f8f7] last:border-0">
+          {recentActivity.length === 0 && <p className="font-['Poppins',sans-serif] text-[13px] text-black/40">No recent activity.</p>}
+          {recentActivity.map((item) => (
+            <div key={item.logId} className="flex items-center gap-3 py-2 border-b border-[#f0f8f7] last:border-0">
               <div className="w-9 h-9 rounded-full bg-[#f0f8f7] flex items-center justify-center flex-shrink-0">
-                <Icon size={16} className={color} />
+                <Activity size={16} className="text-[#089D97]" />
               </div>
               <div className="flex-1">
-                <p className="font-['Poppins',sans-serif] font-medium text-[13px] text-black">{action}</p>
-                <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87]">{detail}</p>
+                <p className="font-['Poppins',sans-serif] font-medium text-[13px] text-black">{item.action}</p>
+                <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87]">{item.entityType} {item.user ? `by ${item.user.firstName} ${item.user.lastName}` : ""}</p>
               </div>
-              <span className="font-['Poppins',sans-serif] text-[11px] text-gray-400 whitespace-nowrap">{time}</span>
+              <span className="font-['Poppins',sans-serif] text-[11px] text-gray-400 whitespace-nowrap">{item.createdAt.slice(0, 10)}</span>
             </div>
           ))}
         </div>

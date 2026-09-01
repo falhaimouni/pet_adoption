@@ -13,9 +13,9 @@ function FilterInput({label,value,onChange,placeholder,type="text"}:{label:strin
 function SummaryCard({label,value}:{label:string;value:string|number}) { return (<div className="bg-[rgba(8,157,151,0.06)] rounded-[12px] p-4"><p className="font-['Poppins',sans-serif] text-[11px] text-black/50 uppercase tracking-wider mb-1">{label}</p><p className="font-['Poppins',sans-serif] font-semibold text-[20px] text-[#089D97]">{String(value)}</p></div>); }
 function DataTable({data}:{data:Record<string,unknown>[]}) { if(!data.length)return null; const headers=Object.keys(data[0]); return (<div className="overflow-x-auto"><table className="w-full text-left"><thead><tr className="border-b border-gray-100">{headers.map(h=><th key={h} className="py-2.5 px-3 font-['Poppins',sans-serif] font-semibold text-[11px] text-black/50 uppercase tracking-wider whitespace-nowrap">{h}</th>)}</tr></thead><tbody>{data.map((row,i)=><tr key={i} className="border-b border-gray-50 hover:bg-[rgba(8,157,151,0.03)] transition-colors">{headers.map(h=><td key={h} className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70 whitespace-nowrap">{String(row[h]??"")}</td>)}</tr>)}</tbody></table></div>); }
 
-interface AdminReportsPageProps { onNavigate: (page: string) => void; role?: "admin"|"manager"|"staff"|"vet"; }
+interface AdminReportsPageProps { onNavigate: (page: string) => void; role?: "admin"|"manager"|"staff"|"vet"; activePage?: string; }
 
-export default function AdminReportsPage({ onNavigate, role = "admin" }: AdminReportsPageProps) {
+export default function AdminReportsPage({ onNavigate, role = "admin", activePage = "admin-reports" }: AdminReportsPageProps) {
   const { t } = useLanguage();
   const ACCESS: Record<ReportType, boolean> = {
     adoptions: ["admin","manager","staff"].includes(role),
@@ -62,7 +62,7 @@ export default function AdminReportsPage({ onNavigate, role = "admin" }: AdminRe
   const typeIcons: Record<ReportType,React.ReactNode> = { adoptions:<FileText size={16}/>, pets:<BarChart2 size={16}/>, inventory:<Package size={16}/> };
 
   return (
-    <DashboardLayout role={role} activePage="reports" onNavigate={onNavigate} pageTitle={t("action_generate")} breadcrumbs={[role, t("action_generate")]}>
+    <DashboardLayout role={role} activePage={activePage} onNavigate={onNavigate} pageTitle={t("action_generate")} breadcrumbs={[role, t("action_generate")]}>
       <div className="space-y-5">
         <div className="bg-white rounded-[15px] shadow-md p-5">
           <div className="flex flex-wrap gap-2 mb-5">

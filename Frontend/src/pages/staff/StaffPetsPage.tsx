@@ -28,6 +28,7 @@ export default function StaffPetsPage({ onNavigate, role = "staff", activePage =
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const canArchivePets = role === "admin" || role === "manager";
 
   function loadPets() {
     setLoading(true);
@@ -125,7 +126,7 @@ export default function StaffPetsPage({ onNavigate, role = "staff", activePage =
       return;
     }
     const body = new FormData();
-    body.append("image", file);
+    body.append("file", file);
     await apiFetch(`/pets/${imagePet.petId}/images`, { method: "POST", body });
     setImagePet(null);
     loadPets();
@@ -180,7 +181,9 @@ export default function StaffPetsPage({ onNavigate, role = "staff", activePage =
                         <button onClick={() => onNavigate("pet-detail", { petId: p.petId })} className="text-[#089D97] hover:text-[#047975]" aria-label="View pet"><Eye size={15} /></button>
                         <button onClick={() => openEdit(p)} className="text-blue-500 hover:text-blue-700" aria-label="Edit pet"><Edit size={15} /></button>
                         <button onClick={() => setImagePet(p)} className="text-amber-500 hover:text-amber-700" aria-label="Upload pet image"><ImagePlus size={15} /></button>
-                        <button onClick={() => setDeletePet(p)} className="text-red-400 hover:text-red-600" aria-label="Archive pet"><Trash2 size={15} /></button>
+                        {canArchivePets && (
+                          <button onClick={() => setDeletePet(p)} className="text-red-400 hover:text-red-600" aria-label="Archive pet"><Trash2 size={15} /></button>
+                        )}
                       </div>
                     </td>
                   </tr>

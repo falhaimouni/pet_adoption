@@ -44,6 +44,8 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "staff-adoptions",  label: t("nav_adoptions"),         icon: <Heart size={16} /> },
         { id: "staff-chats",      label: t("nav_chats"),             icon: <MessageCircle size={16} /> },
         { id: "staff-inventory",  label: t("nav_inventory"),         icon: <Package size={16} /> },
+        { id: "staff-suppliers",  label: t("nav_suppliers"),         icon: <Tag size={16} /> },
+        { id: "staff-reports",    label: t("nav_reports"),           icon: <FileText size={16} /> },
         { id: "notifications",    label: t("nav_notifications"),     icon: <Bell size={16} /> },
       ];
     case "vet":
@@ -52,6 +54,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "vet-pets",         label: t("dash_pets"),             icon: <Heart size={16} /> },
         { id: "vet-medical",      label: t("nav_medical_records"),   icon: <Stethoscope size={16} /> },
         { id: "vet-vaccinations", label: t("nav_vaccinations"),      icon: <Syringe size={16} /> },
+        { id: "vet-reports",      label: t("nav_reports"),           icon: <FileText size={16} /> },
         { id: "notifications",    label: t("nav_notifications"),     icon: <Bell size={16} /> },
         { id: "vet-profile",      label: t("nav_my_profile"),        icon: <User size={16} /> },
       ];
@@ -59,14 +62,21 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
       return [
         { id: "manager-dashboard", label: t("nav_dashboard"),     icon: <Home size={16} /> },
         { id: "manager-pets",      label: t("dash_pets"),         icon: <Heart size={16} /> },
+        { id: "manager-requests",  label: t("nav_adoption_requests"), icon: <ClipboardList size={16} /> },
+        { id: "manager-adoptions", label: t("nav_adoptions"),     icon: <Heart size={16} /> },
+        { id: "manager-users",     label: t("nav_users"),         icon: <Users size={16} /> },
         { id: "manager-analytics", label: t("nav_analytics"),     icon: <BarChart2 size={16} /> },
         { id: "manager-inventory", label: t("nav_inventory"),     icon: <Package size={16} /> },
+        { id: "manager-suppliers", label: t("nav_suppliers"),     icon: <Tag size={16} /> },
+        { id: "manager-reports",   label: t("nav_reports"),       icon: <FileText size={16} /> },
         { id: "notifications",     label: t("nav_notifications"), icon: <Bell size={16} /> },
       ];
     case "admin":
       return [
         { id: "admin-dashboard", label: t("nav_dashboard"),     icon: <Home size={16} /> },
         { id: "admin-pets",      label: t("dash_pets"),         icon: <Heart size={16} /> },
+        { id: "admin-requests",  label: t("nav_adoption_requests"), icon: <ClipboardList size={16} /> },
+        { id: "admin-adoptions", label: t("nav_adoptions"),     icon: <Heart size={16} /> },
         { id: "admin-users",     label: t("nav_users"),         icon: <Users size={16} /> },
         { id: "admin-roles",     label: t("nav_roles"),         icon: <Shield size={16} /> },
         { id: "admin-inventory", label: t("nav_inventory"),     icon: <Package size={16} /> },

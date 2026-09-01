@@ -5,6 +5,7 @@ import Badge, { statusBadge } from "../../components/Badge";
 import EmptyState from "../../components/EmptyState";
 import Modal from "../../components/Modal";
 import { apiFetch } from "../../lib/api";
+import type { UserRole } from "../../context/AuthContext";
 
 interface AdoptionRequest {
   requestId: string;
@@ -15,9 +16,9 @@ interface AdoptionRequest {
   pet: { name: string; species: string; adoptionStatus: string };
 }
 
-interface StaffRequestsPageProps { onNavigate: (page: string) => void; }
+interface StaffRequestsPageProps { onNavigate: (page: string) => void; role?: UserRole; activePage?: string; }
 
-export default function StaffRequestsPage({ onNavigate }: StaffRequestsPageProps) {
+export default function StaffRequestsPage({ onNavigate, role = "staff", activePage = "staff-requests" }: StaffRequestsPageProps) {
   const [requests, setRequests] = useState<AdoptionRequest[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -50,7 +51,7 @@ export default function StaffRequestsPage({ onNavigate }: StaffRequestsPageProps
   }
 
   return (
-    <DashboardLayout role="staff" activePage="staff-requests" onNavigate={onNavigate} pageTitle="Adoption Requests" breadcrumbs={["Staff", "Adoption Requests"]}>
+    <DashboardLayout role={role} activePage={activePage} onNavigate={onNavigate} pageTitle="Adoption Requests" breadcrumbs={[role === "admin" ? "Admin" : role === "manager" ? "Manager" : "Staff", "Adoption Requests"]}>
       <div className="bg-white rounded-[15px] shadow-md p-5">
         <div className="flex flex-wrap gap-3 mb-5 items-center">
           <div className="flex-1 min-w-[180px] relative">

@@ -4,6 +4,7 @@ import DashboardLayout from "../../components/DashboardLayout";
 import Badge, { statusBadge } from "../../components/Badge";
 import EmptyState from "../../components/EmptyState";
 import { apiFetch } from "../../lib/api";
+import type { UserRole } from "../../context/AuthContext";
 
 interface Adoption {
   adoptionId: string;
@@ -13,9 +14,9 @@ interface Adoption {
   pet: { name: string; species: string; adoptionStatus: string };
 }
 
-interface StaffAdoptionsPageProps { onNavigate: (page: string) => void; }
+interface StaffAdoptionsPageProps { onNavigate: (page: string) => void; role?: UserRole; activePage?: string; }
 
-export default function StaffAdoptionsPage({ onNavigate }: StaffAdoptionsPageProps) {
+export default function StaffAdoptionsPage({ onNavigate, role = "staff", activePage = "staff-adoptions" }: StaffAdoptionsPageProps) {
   const [items, setItems] = useState<Adoption[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -36,7 +37,7 @@ export default function StaffAdoptionsPage({ onNavigate }: StaffAdoptionsPagePro
   }), [items, search]);
 
   return (
-    <DashboardLayout role="staff" activePage="staff-adoptions" onNavigate={onNavigate} pageTitle="Adoptions" breadcrumbs={["Staff", "Adoptions"]}>
+    <DashboardLayout role={role} activePage={activePage} onNavigate={onNavigate} pageTitle="Adoptions" breadcrumbs={[role === "admin" ? "Admin" : role === "manager" ? "Manager" : "Staff", "Adoptions"]}>
       <div className="bg-white rounded-[15px] shadow-md p-5">
         <div className="relative mb-5 max-w-xs">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#089D97]" />

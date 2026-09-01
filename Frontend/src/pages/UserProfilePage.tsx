@@ -71,7 +71,7 @@ export default function UserProfilePage({ onNavigate }: UserProfilePageProps) {
       let nextAvatar = profile.avatar ? resolveAssetUrl(profile.avatar) : user?.avatar;
       if (avatarFile) {
         const body = new FormData();
-        body.append("image", avatarFile);
+        body.append("file", avatarFile);
         const uploaded = await apiFetch<{ avatar?: string | null }>("/users/profile/avatar", {
           method: "POST",
           body,

@@ -104,6 +104,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
   const title = role === "admin" ? "Inventory Management" : "Inventory";
   const breadcrumbs = [displayRole(role), "Inventory"];
   const totalPages = Math.max(1, Math.ceil(total / 10));
+  const canDeleteSupplies = role === "admin" || role === "manager";
 
   const alertCount = useMemo(
     () => supplies.filter((item) => item.status === "OUT_OF_STOCK" || (item.status === "AVAILABLE" && item.quantity <= item.lowStockLimit)).length,
@@ -335,7 +336,9 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
                       <td className="py-3 px-3">
                         <div className="flex gap-2 items-center">
                           <button onClick={() => openEdit(item)} className="text-blue-500 hover:text-blue-700 transition-colors" aria-label={`Edit ${item.supplyName}`}><Edit size={14} /></button>
-                          <button onClick={() => setDeleteItem(item)} className="text-red-400 hover:text-red-600 transition-colors" aria-label={`Delete ${item.supplyName}`}><Trash2 size={14} /></button>
+                          {canDeleteSupplies && (
+                            <button onClick={() => setDeleteItem(item)} className="text-red-400 hover:text-red-600 transition-colors" aria-label={`Delete ${item.supplyName}`}><Trash2 size={14} /></button>
+                          )}
                         </div>
                       </td>
                     </tr>

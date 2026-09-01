@@ -110,6 +110,51 @@ let adoptionRequests = [
   },
 ];
 
+let users = [
+  mockProfile("admin@petopia.test"),
+  mockProfile("manager@petopia.test"),
+  mockProfile("staff@petopia.test"),
+  mockProfile("vet@petopia.test"),
+  mockProfile("adopter@petopia.test"),
+].map((user, index) => ({
+  ...user,
+  status: "active",
+  createdAt: `2026-0${Math.min(index + 1, 9)}-10T09:00:00.000Z`,
+  role: { roleId: `role-${user.roleName.toLowerCase()}`, roleName: user.roleName },
+  employeeProfile: user.roleName === "ADOPTER" ? null : {
+    departmentId: "department-operations",
+    department: { departmentId: "department-operations", departmentName: "Operations" },
+    salary: "700.00",
+    hireDate: "2026-01-10",
+    address: "Amman",
+  },
+}));
+
+let medicalEntries = [
+  {
+    entryId: "medical-entry-1",
+    diagnosis: "Routine exam",
+    treatment: "Healthy, continue standard care",
+    vaccinationStatus: "VACCINATED",
+    medicalDate: "2026-07-10",
+    notes: "Demo medical entry",
+    veterinarian: { firstName: "Vet", lastName: "Demo" },
+  },
+];
+
+let vaccinations = [
+  {
+    vaccinationId: "vaccination-1",
+    vaccineName: "Rabies",
+    vaccinationDate: "2026-07-10",
+    nextDueDate: "2027-07-10",
+    status: "VACCINATED",
+    notes: "Demo vaccination",
+    pet: { name: pets[0].name, species: pets[0].species },
+    veterinarian: { firstName: "Vet", lastName: "Demo" },
+  },
+];
+
 let conversations = [
   {
     conversationId: "conversation-1",
@@ -229,6 +274,25 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
     return withDelay(currentProfile as T);
   }
   if (url.pathname === "/users/profile/avatar" && method === "POST") return withDelay({ avatar: null } as T);
+  if (url.pathname === "/users" && method === "GET") {
+    const status = url.searchParams.get("status") ?? "active";
+    const data = status === "all" ? users : users.filter((user) => user.status === status);
+    return withDelay(data as T);
+  }
+  const userMatch = url.pathname.match(/^\/users\/([^/]+)$/);
+  if (userMatch && method === "GET") return withDelay(users.find((user) => user.userId === userMatch[1]) as T);
+  if (userMatch && method === "PATCH") {
+    users = users.map((user) => {
+      if (user.userId !== userMatch[1]) return user;
+      const role = body.roleId ? users.find((item) => item.role.roleId === body.roleId)?.role ?? user.role : user.role;
+      return { ...user, ...body, role, updatedAt: now() };
+    });
+    return withDelay(users.find((user) => user.userId === userMatch[1]) as T);
+  }
+  if (userMatch && method === "DELETE") {
+    users = users.map((user) => user.userId === userMatch[1] ? { ...user, status: "inactive", updatedAt: now() } : user);
+    return withDelay({ message: "User deactivated in mock mode" } as T);
+  }
 
   if (url.pathname === "/pets" && method === "GET") return withDelay(listPets(url.searchParams) as T);
   if (url.pathname === "/pets" && method === "POST") {
@@ -251,6 +315,53 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
     pets = [next as unknown as typeof pets[number], ...pets];
     return withDelay(next as unknown as T);
   }
+  const petFullMatch = url.pathname.match(/^\/pets\/([^/]+)\/full$/);
+  if (petFullMatch && method === "GET") {
+    const pet = pets.find((item) => item.petId === petFullMatch[1]);
+    return withDelay({ ...pet, medicalRecord: { recordId: "medical-record-1", createdAt: now() }, vaccinations } as T);
+  }
+  const petMedicalMatch = url.pathname.match(/^\/pets\/([^/]+)\/medical-record$/);
+  if (petMedicalMatch && method === "GET") {
+    const pet = pets.find((item) => item.petId === petMedicalMatch[1]) ?? pets[0];
+    return withDelay({ pet, entries: medicalEntries } as T);
+  }
+  const petMedicalCreateMatch = url.pathname.match(/^\/pets\/([^/]+)\/medical-record\/entries$/);
+  if (petMedicalCreateMatch && method === "POST") {
+    const next = { entryId: `medical-entry-${Date.now()}`, ...body, veterinarian: { firstName: "Vet", lastName: "Demo" } };
+    medicalEntries = [next as typeof medicalEntries[number], ...medicalEntries];
+    return withDelay(next as T);
+  }
+  const medicalEntryMatch = url.pathname.match(/^\/medical-entries\/([^/]+)$/);
+  if (medicalEntryMatch && method === "PATCH") {
+    medicalEntries = medicalEntries.map((entry) => entry.entryId === medicalEntryMatch[1] ? { ...entry, ...body } : entry);
+    return withDelay(medicalEntries.find((entry) => entry.entryId === medicalEntryMatch[1]) as T);
+  }
+  if (medicalEntryMatch && method === "DELETE") {
+    medicalEntries = medicalEntries.filter((entry) => entry.entryId !== medicalEntryMatch[1]);
+    return withDelay({ message: "Medical entry deleted in mock mode" } as T);
+  }
+  const petVaccinationsMatch = url.pathname.match(/^\/pets\/([^/]+)\/vaccinations$/);
+  if (petVaccinationsMatch && method === "GET") return withDelay(vaccinations as T);
+  if (petVaccinationsMatch && method === "POST") {
+    const pet = pets.find((item) => item.petId === petVaccinationsMatch[1]) ?? pets[0];
+    const next = {
+      vaccinationId: `vaccination-${Date.now()}`,
+      ...body,
+      pet: { name: pet.name, species: pet.species },
+      veterinarian: { firstName: "Vet", lastName: "Demo" },
+    };
+    vaccinations = [next as typeof vaccinations[number], ...vaccinations];
+    return withDelay(next as T);
+  }
+  const vaccinationMatch = url.pathname.match(/^\/vaccinations\/([^/]+)$/);
+  if (vaccinationMatch && method === "PATCH") {
+    vaccinations = vaccinations.map((item) => item.vaccinationId === vaccinationMatch[1] ? { ...item, ...body } : item);
+    return withDelay(vaccinations.find((item) => item.vaccinationId === vaccinationMatch[1]) as T);
+  }
+  if (vaccinationMatch && method === "DELETE") {
+    vaccinations = vaccinations.filter((item) => item.vaccinationId !== vaccinationMatch[1]);
+    return withDelay({ message: "Vaccination deleted in mock mode" } as T);
+  }
   const petMatch = url.pathname.match(/^\/pets\/([^/]+)$/);
   if (petMatch && method === "GET") return withDelay(pets.find((pet) => pet.petId === petMatch[1]) as T);
   if (petMatch && method === "PATCH") {
@@ -266,6 +377,26 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
 
   if (url.pathname === "/store/supplies" && method === "GET") return withDelay(listSupplies(url.searchParams) as T);
   if (url.pathname === "/inventory/suppliers" && method === "GET") return withDelay(suppliers as T);
+  if (url.pathname === "/inventory/suppliers" && method === "POST") {
+    const next = { ...body, supplierId: `mock-supplier-${Date.now()}`, isActive: true, supplies: [] };
+    suppliers.unshift(next as typeof suppliers[number]);
+    return withDelay(next as T);
+  }
+  const supplierMatch = url.pathname.match(/^\/inventory\/suppliers\/([^/]+)$/);
+  if (supplierMatch && method === "GET") {
+    const supplier = suppliers.find((item) => item.supplierId === supplierMatch[1]);
+    return withDelay({ ...supplier, supplies: supplies.filter((item) => item.supplierId === supplierMatch[1]) } as T);
+  }
+  if (supplierMatch && method === "PATCH") {
+    const index = suppliers.findIndex((supplier) => supplier.supplierId === supplierMatch[1]);
+    if (index >= 0) suppliers[index] = { ...suppliers[index], ...body };
+    return withDelay(suppliers[index] as T);
+  }
+  if (supplierMatch && method === "DELETE") {
+    const index = suppliers.findIndex((supplier) => supplier.supplierId === supplierMatch[1]);
+    if (index >= 0) suppliers[index] = { ...suppliers[index], isActive: false };
+    return withDelay({ success: true, message: "Supplier deleted in mock mode" } as T);
+  }
   if (url.pathname === "/inventory/supplies" && method === "GET") return withDelay(listSupplies(url.searchParams) as T);
   if (url.pathname === "/inventory/supplies" && method === "POST") {
     const next = { ...body, supplyId: `mock-supply-${Date.now()}`, supplier: suppliers.find((s) => s.supplierId === body.supplierId), lastUpdated: now() };
@@ -350,6 +481,26 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
 
   const reportMatch = url.pathname.match(/^\/reports\/([^/]+)$/);
   if (reportMatch && method === "GET") return withDelay(reportFor(reportMatch[1]) as T);
+  if (url.pathname === "/dashboard/admin" && method === "GET") {
+    return withDelay({
+      users: { total: users.length, admin: 1, manager: 1, employee: 1, vet: 1, adopter: 1, active: users.filter((user) => user.status === "active").length },
+      pets: { total: pets.length, available: pets.filter((pet) => pet.adoptionStatus === "AVAILABLE").length, adopted: 0, pendingAdoption: 0 },
+      adoptions: { totalRequests: adoptionRequests.length, pending: adoptionRequests.filter((request) => request.status === "PENDING").length, approved: adoptionRequests.filter((request) => request.status === "APPROVED").length },
+      medical: { totalMedicalRecords: 1, totalVaccinations: vaccinations.length, petsNeedingMedicalAttention: 0 },
+      supplies: { totalSupplies: supplies.length, lowStockSupplies: supplies.filter((supply) => supply.quantity <= supply.lowStockLimit).length, totalSuppliers: suppliers.length },
+      activity: { recentActivityLogs: [{ logId: "log-1", action: "Mock dashboard loaded", entityType: "dashboard", createdAt: now(), user: null }] },
+    } as T);
+  }
+  if (url.pathname === "/dashboard/manager" && method === "GET") {
+    return withDelay({
+      users: { total: 3, employee: 1, vet: 1, adopter: 1 },
+      pets: { total: pets.length, available: pets.filter((pet) => pet.adoptionStatus === "AVAILABLE").length, adopted: 0, pendingAdoption: 0 },
+      adoptions: { totalRequests: adoptionRequests.length, pending: adoptionRequests.filter((request) => request.status === "PENDING").length, approved: adoptionRequests.filter((request) => request.status === "APPROVED").length },
+      medical: { totalVaccinations: vaccinations.length },
+      supplies: { availableSupplies: supplies.filter((supply) => supply.quantity > 0).length, lowStockSupplies: supplies.filter((supply) => supply.quantity <= supply.lowStockLimit).length, totalSuppliers: suppliers.length },
+      activity: { recentActivityLogs: [{ logId: "log-2", action: "Mock manager dashboard loaded", entityType: "dashboard", createdAt: now(), user: null }] },
+    } as T);
+  }
 
   return withDelay({} as T);
 }

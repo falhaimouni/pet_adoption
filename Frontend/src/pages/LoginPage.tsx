@@ -9,6 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import type { UserRole } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import { useLanguage } from "../context/LanguageContext";
+import { API_BASE_URL } from "../lib/api";
 
 interface LoginPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
@@ -63,17 +64,9 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
     onNavigate(pageForRole(loggedInUser.role));
   };
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = () => {
     setError("");
-    setLoading(true);
-    try {
-      const loggedInUser = await login("google-adopter@test.com", "mock-google-login", true);
-      if (loggedInUser) onNavigate(pageForRole(loggedInUser.role));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("error_backend_connect"));
-    } finally {
-      setLoading(false);
-    }
+    window.location.href = `${API_BASE_URL}/auth/google`;
   };
 
   return (

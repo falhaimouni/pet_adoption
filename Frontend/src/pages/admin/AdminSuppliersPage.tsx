@@ -1,183 +1,238 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Plus, Edit, Trash2, Phone, Mail, MapPin, Eye } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import Badge, { statusBadge } from "../../components/Badge";
 import Modal from "../../components/Modal";
 import Pagination from "../../components/Pagination";
+import EmptyState from "../../components/EmptyState";
+import { apiFetch } from "../../lib/api";
+import type { UserRole } from "../../context/AuthContext";
 
 interface Supplier {
-  id: number; name: string; contact: string; phone: string; email: string; city: string; categories: string[]; status: string; lastOrder: string; totalOrders: number;
+  supplierId: string;
+  supplierName: string;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  city?: string | null;
+  country?: string | null;
+  isActive?: boolean;
+  supplies?: Array<{ supplyId: string; supplyName: string; category?: string | null }>;
 }
 
-const SUPPLIERS: Supplier[] = [
-  { id: 1, name: "PetCo Jordan", contact: "Ahmad Haddad", phone: "+962-6-5001234", email: "orders@petcojordan.com", city: "Amman", categories: ["Food", "Grooming"], status: "active", lastOrder: "2026-07-10", totalOrders: 28 },
-  { id: 2, name: "VetPharma", contact: "Dr. Sana Khalil", phone: "+962-6-5229876", email: "supply@vetpharma.jo", city: "Amman", categories: ["Medical"], status: "active", lastOrder: "2026-06-28", totalOrders: 14 },
-  { id: 3, name: "Animal Care Co.", contact: "Rami Saleh", phone: "+962-6-5314455", email: "info@animalcare.jo", city: "Zarqa", categories: ["Hygiene", "Food"], status: "active", lastOrder: "2026-07-01", totalOrders: 9 },
-  { id: 4, name: "HealthPet", contact: "Lara Mansour", phone: "+962-6-4890011", email: "sales@healthpet.com", city: "Irbid", categories: ["Medical", "Food"], status: "inactive", lastOrder: "2025-12-15", totalOrders: 5 },
-  { id: 5, name: "NaturePet", contact: "Omar Jamil", phone: "+962-6-5770022", email: "contact@naturepet.jo", city: "Aqaba", categories: ["Food"], status: "active", lastOrder: "2026-07-05", totalOrders: 7 },
-];
+const emptyForm = { supplierName: "", phone: "", email: "", address: "", city: "", country: "" };
 
-const catOptions = ["Food", "Medical", "Hygiene", "Grooming"];
-const emptyForm = { name: "", contact: "", phone: "", email: "", city: "", categories: [] as string[], status: "active" };
+interface AdminSuppliersPageProps {
+  onNavigate: (page: string) => void;
+  role?: UserRole;
+  activePage?: string;
+}
 
-interface AdminSuppliersPageProps { onNavigate: (page: string) => void; }
-
-export default function AdminSuppliersPage({ onNavigate }: AdminSuppliersPageProps) {
-  const [suppliers, setSuppliers] = useState(SUPPLIERS);
+export default function AdminSuppliersPage({ onNavigate, role = "admin", activePage = "admin-suppliers" }: AdminSuppliersPageProps) {
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [viewItem, setViewItem] = useState<Supplier | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<Supplier | null>(null);
   const [deleteItem, setDeleteItem] = useState<Supplier | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
+  const canDelete = role === "admin" || role === "manager";
 
   const filtered = suppliers.filter((s) => {
-    const ms = s.name.toLowerCase().includes(search.toLowerCase()) || s.city.toLowerCase().includes(search.toLowerCase());
-    const mst = statusFilter === "all" || s.status === statusFilter;
-    return ms && mst;
+    const query = search.toLowerCase();
+    return s.supplierName.toLowerCase().includes(query) || (s.city ?? "").toLowerCase().includes(query);
   });
 
-  function openAdd() { setForm(emptyForm); setAddOpen(true); }
-  function openEdit(s: Supplier) { setForm({ name: s.name, contact: s.contact, phone: s.phone, email: s.email, city: s.city, categories: [...s.categories], status: s.status }); setEditItem(s); }
+  function loadSuppliers() {
+    setLoading(true);
+    setError("");
+    apiFetch<Supplier[]>("/inventory/suppliers")
+      .then(setSuppliers)
+      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load suppliers."))
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(loadSuppliers, []);
+
+  function openAdd() {
+    setForm(emptyForm);
+    setFormError("");
+    setAddOpen(true);
+  }
+
+  function openEdit(s: Supplier) {
+    setForm({
+      supplierName: s.supplierName,
+      phone: s.phone ?? "",
+      email: s.email ?? "",
+      address: s.address ?? "",
+      city: s.city ?? "",
+      country: s.country ?? "",
+    });
+    setFormError("");
+    setEditItem(s);
+  }
+
+  async function openView(s: Supplier) {
+    setViewItem(s);
+    try {
+      setViewItem(await apiFetch<Supplier>(`/inventory/suppliers/${s.supplierId}`));
+    } catch {
+      setViewItem(s);
+    }
+  }
+
+  async function saveSupplier() {
+    if (!form.supplierName.trim()) {
+      setFormError("Supplier name is required.");
+      return;
+    }
+    const body = {
+      supplierName: form.supplierName.trim(),
+      phone: form.phone.trim() || undefined,
+      email: form.email.trim() || undefined,
+      address: form.address.trim() || undefined,
+      city: form.city.trim() || undefined,
+      country: form.country.trim() || undefined,
+    };
+    setSaving(true);
+    setFormError("");
+    try {
+      await apiFetch(editItem ? `/inventory/suppliers/${editItem.supplierId}` : "/inventory/suppliers", {
+        method: editItem ? "PATCH" : "POST",
+        body: JSON.stringify(body),
+      });
+      setForm(emptyForm);
+      setAddOpen(false);
+      setEditItem(null);
+      loadSuppliers();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Unable to save supplier.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteSupplier() {
+    if (!deleteItem) return;
+    setSaving(true);
+    try {
+      await apiFetch(`/inventory/suppliers/${deleteItem.supplierId}`, { method: "DELETE" });
+      setDeleteItem(null);
+      loadSuppliers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to delete supplier.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
-    <DashboardLayout role="admin" activePage="admin-suppliers" onNavigate={onNavigate} pageTitle="Suppliers" breadcrumbs={["Admin", "Suppliers"]}>
+    <DashboardLayout role={role} activePage={activePage} onNavigate={onNavigate} pageTitle="Suppliers" breadcrumbs={[role === "admin" ? "Admin" : role === "manager" ? "Manager" : "Staff", "Suppliers"]}>
       <div className="bg-white rounded-[15px] shadow-md p-5">
-        {/* Toolbar */}
         <div className="flex flex-wrap gap-3 mb-5 items-center">
           <div className="flex-1 min-w-[200px] relative">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
             <input placeholder="Search by name or city..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
-          </div>
-          <div className="flex gap-2">
-            {["all", "active", "inactive"].map((s) => (
-              <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1.5 rounded-[20px] font-['Poppins',sans-serif] text-[12px] capitalize transition-colors ${statusFilter === s ? "bg-[#089D97] text-white" : "bg-gray-100 text-black/70 hover:bg-gray-200"}`}>{s}</button>
-            ))}
           </div>
           <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 bg-[#089D97] text-white font-['Poppins',sans-serif] font-medium text-[13px] rounded-[10px] hover:bg-[#047975] transition-colors ml-auto">
             <Plus size={15} /> Add Supplier
           </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-gray-100">
-                {["Supplier", "Contact", "City", "Categories", "Orders", "Last Order", "Status", "Actions"].map((h) => (
-                  <th key={h} className="py-2.5 px-3 font-['Poppins',sans-serif] font-semibold text-[11px] text-black/50 uppercase tracking-wider whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((s) => (
-                <tr key={s.id} className="border-b border-gray-50 hover:bg-[rgba(8,157,151,0.03)] transition-colors">
-                  <td className="py-3 px-3 font-['Poppins',sans-serif] font-medium text-[13px] text-black whitespace-nowrap">{s.name}</td>
-                  <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60 whitespace-nowrap">{s.contact}</td>
-                  <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60 whitespace-nowrap">{s.city}</td>
-                  <td className="py-3 px-3">
-                    <div className="flex gap-1 flex-wrap">
-                      {s.categories.map((c) => (
-                        <span key={c} className="px-2 py-0.5 rounded-[6px] bg-[rgba(8,157,151,0.1)] text-[#047975] font-['Poppins',sans-serif] text-[10px] font-medium">{c}</span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] font-semibold text-black">{s.totalOrders}</td>
-                  <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60">{s.lastOrder}</td>
-                  <td className="py-3 px-3"><Badge label={s.status} variant={statusBadge(s.status)} /></td>
-                  <td className="py-3 px-3">
-                    <div className="flex gap-2">
-                      <button onClick={() => setViewItem(s)} className="text-[#089D97] hover:text-[#047975] transition-colors"><Eye size={14} /></button>
-                      <button onClick={() => openEdit(s)} className="text-blue-400 hover:text-blue-600 transition-colors"><Edit size={14} /></button>
-                      <button onClick={() => setDeleteItem(s)} className="text-red-400 hover:text-red-600 transition-colors"><Trash2 size={14} /></button>
-                    </div>
-                  </td>
+        {loading ? (
+          <div className="space-y-2">{[1, 2, 3, 4].map((n) => <div key={n} className="h-12 rounded-[10px] bg-gray-50 animate-pulse" />)}</div>
+        ) : error ? (
+          <EmptyState icon={<Mail size={26} />} title="Unable to load suppliers" description={error} actionLabel="Try again" onAction={loadSuppliers} />
+        ) : filtered.length === 0 ? (
+          <EmptyState icon={<Mail size={26} />} title="No suppliers found" description="Supplier records will appear here after they are added." />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  {["Supplier", "Phone", "Email", "City", "Country", "Status", "Actions"].map((h) => (
+                    <th key={h} className="py-2.5 px-3 font-['Poppins',sans-serif] font-semibold text-[11px] text-black/50 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filtered.map((s) => (
+                  <tr key={s.supplierId} className="border-b border-gray-50 hover:bg-[rgba(8,157,151,0.03)] transition-colors">
+                    <td className="py-3 px-3 font-['Poppins',sans-serif] font-medium text-[13px] text-black whitespace-nowrap">{s.supplierName}</td>
+                    <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60 whitespace-nowrap">{s.phone ?? "-"}</td>
+                    <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60 whitespace-nowrap">{s.email ?? "-"}</td>
+                    <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60 whitespace-nowrap">{s.city ?? "-"}</td>
+                    <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60 whitespace-nowrap">{s.country ?? "-"}</td>
+                    <td className="py-3 px-3"><Badge label={s.isActive === false ? "inactive" : "active"} variant={statusBadge(s.isActive === false ? "inactive" : "active")} /></td>
+                    <td className="py-3 px-3">
+                      <div className="flex gap-2">
+                        <button onClick={() => openView(s)} className="text-[#089D97] hover:text-[#047975] transition-colors"><Eye size={14} /></button>
+                        <button onClick={() => openEdit(s)} className="text-blue-400 hover:text-blue-600 transition-colors"><Edit size={14} /></button>
+                        {canDelete && <button onClick={() => setDeleteItem(s)} className="text-red-400 hover:text-red-600 transition-colors"><Trash2 size={14} /></button>}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
         <div className="flex items-center justify-between mt-3">
           <p className="font-['Poppins',sans-serif] text-[12px] text-black/40">{filtered.length} suppliers</p>
-          <Pagination page={page} totalPages={2} onPage={setPage} />
+          <Pagination page={page} totalPages={1} onPage={setPage} />
         </div>
       </div>
 
-      {/* View details */}
       <Modal title="Supplier Details" open={!!viewItem} onClose={() => setViewItem(null)} size="sm">
         {viewItem && (
           <div className="space-y-3">
             <div className="pb-3 border-b border-gray-100">
-              <p className="font-['Poppins',sans-serif] font-semibold text-[18px] text-black">{viewItem.name}</p>
-              <Badge label={viewItem.status} variant={statusBadge(viewItem.status)} />
+              <p className="font-['Poppins',sans-serif] font-semibold text-[18px] text-black">{viewItem.supplierName}</p>
+              <Badge label={viewItem.isActive === false ? "inactive" : "active"} variant={statusBadge(viewItem.isActive === false ? "inactive" : "active")} />
             </div>
-            <div className="flex items-center gap-2 text-[13px] font-['Poppins',sans-serif] text-black/60"><Phone size={13} className="text-[#089D97]" /> {viewItem.phone}</div>
-            <div className="flex items-center gap-2 text-[13px] font-['Poppins',sans-serif] text-black/60"><Mail size={13} className="text-[#089D97]" /> {viewItem.email}</div>
-            <div className="flex items-center gap-2 text-[13px] font-['Poppins',sans-serif] text-black/60"><MapPin size={13} className="text-[#089D97]" /> {viewItem.city}</div>
+            <div className="flex items-center gap-2 text-[13px] font-['Poppins',sans-serif] text-black/60"><Phone size={13} className="text-[#089D97]" /> {viewItem.phone ?? "-"}</div>
+            <div className="flex items-center gap-2 text-[13px] font-['Poppins',sans-serif] text-black/60"><Mail size={13} className="text-[#089D97]" /> {viewItem.email ?? "-"}</div>
+            <div className="flex items-center gap-2 text-[13px] font-['Poppins',sans-serif] text-black/60"><MapPin size={13} className="text-[#089D97]" /> {[viewItem.address, viewItem.city, viewItem.country].filter(Boolean).join(", ") || "-"}</div>
             <div className="pt-2 border-t border-gray-100 flex justify-between">
-              <span className="font-['Poppins',sans-serif] text-[12px] text-black/50">Total Orders</span>
-              <span className="font-['Poppins',sans-serif] font-semibold text-[13px] text-black">{viewItem.totalOrders}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="font-['Poppins',sans-serif] text-[12px] text-black/50">Last Order</span>
-              <span className="font-['Poppins',sans-serif] font-semibold text-[13px] text-black">{viewItem.lastOrder}</span>
+              <span className="font-['Poppins',sans-serif] text-[12px] text-black/50">Linked Supplies</span>
+              <span className="font-['Poppins',sans-serif] font-semibold text-[13px] text-black">{viewItem.supplies?.length ?? 0}</span>
             </div>
             <div>
               <span className="font-['Poppins',sans-serif] text-[12px] text-black/50 block mb-1">Supplies</span>
               <div className="flex gap-1 flex-wrap">
-                {viewItem.categories.map((c) => (
-                  <span key={c} className="px-2 py-0.5 rounded-[6px] bg-[rgba(8,157,151,0.1)] text-[#047975] font-['Poppins',sans-serif] text-[11px] font-medium">{c}</span>
-                ))}
+                {(viewItem.supplies ?? []).length === 0 ? (
+                  <span className="font-['Poppins',sans-serif] text-[12px] text-black/50">No linked supplies</span>
+                ) : (
+                  viewItem.supplies?.map((supply) => (
+                    <span key={supply.supplyId} className="px-2 py-0.5 rounded-[6px] bg-[rgba(8,157,151,0.1)] text-[#047975] font-['Poppins',sans-serif] text-[11px] font-medium">{supply.supplyName}</span>
+                  ))
+                )}
               </div>
             </div>
           </div>
         )}
       </Modal>
 
-      {/* Add / Edit */}
-      <Modal title={editItem ? "Edit Supplier" : "Add Supplier"} open={addOpen || !!editItem} onClose={() => { setAddOpen(false); setEditItem(null); }} onConfirm={() => {
-        if (!form.name.trim()) return;
-        if (editItem) {
-          setSuppliers((current) => current.map((supplier) => supplier.id === editItem.id ? { ...supplier, ...form } : supplier));
-        } else {
-          setSuppliers((current) => [{ id: Date.now(), ...form, lastOrder: "Not ordered yet", totalOrders: 0 }, ...current]);
-        }
-        setForm(emptyForm);
-        setAddOpen(false);
-        setEditItem(null);
-      }} confirmLabel="Save" size="md">
+      <Modal title={editItem ? "Edit Supplier" : "Add Supplier"} open={addOpen || !!editItem} onClose={() => { setAddOpen(false); setEditItem(null); }} onConfirm={saveSupplier} confirmLabel={saving ? "Saving..." : "Save"} size="md">
         <div className="grid grid-cols-2 gap-4">
-          {[{ label: "Company Name", field: "name" as const, span: 2 }, { label: "Contact Person", field: "contact" as const, span: 1 }, { label: "City", field: "city" as const, span: 1 }, { label: "Phone", field: "phone" as const, span: 1 }, { label: "Email", field: "email" as const, span: 1 }].map(({ label, field, span }) => (
+          {formError && <p className="col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
+          {[{ label: "Supplier Name", field: "supplierName" as const, span: 2 }, { label: "City", field: "city" as const, span: 1 }, { label: "Country", field: "country" as const, span: 1 }, { label: "Phone", field: "phone" as const, span: 1 }, { label: "Email", field: "email" as const, span: 1 }, { label: "Address", field: "address" as const, span: 2 }].map(({ label, field, span }) => (
             <div key={field} className={span === 2 ? "col-span-2" : ""}>
               <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{label}</label>
-              <input value={form[field] as string} onChange={(e) => setForm((f) => ({ ...f, [field]: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+              <input value={form[field]} onChange={(e) => setForm((f) => ({ ...f, [field]: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
             </div>
           ))}
-          <div>
-            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Status</label>
-            <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97] transition-colors">
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-          <div className="col-span-2">
-            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-2">Supply Categories</label>
-            <div className="flex gap-2 flex-wrap">
-              {catOptions.map((c) => {
-                const checked = form.categories.includes(c);
-                return (
-                  <button key={c} type="button" onClick={() => setForm((f) => ({ ...f, categories: checked ? f.categories.filter((x) => x !== c) : [...f.categories, c] }))} className={`px-3 py-1 rounded-[20px] font-['Poppins',sans-serif] text-[12px] border transition-colors ${checked ? "bg-[#089D97] text-white border-[#089D97]" : "bg-white text-black/60 border-gray-200 hover:border-[#089D97]"}`}>{c}</button>
-                );
-              })}
-            </div>
-          </div>
         </div>
       </Modal>
 
-      {/* Delete */}
-      <Modal title="Delete Supplier" open={!!deleteItem} onClose={() => setDeleteItem(null)} onConfirm={() => { setSuppliers((current) => current.filter((supplier) => supplier.id !== deleteItem?.id)); setDeleteItem(null); }} confirmLabel="Delete" confirmDestructive size="sm">
-        <p className="font-['Poppins',sans-serif] text-[14px] text-black">Remove <span className="font-semibold">{deleteItem?.name}</span> from your supplier list?</p>
+      <Modal title="Delete Supplier" open={!!deleteItem} onClose={() => setDeleteItem(null)} onConfirm={deleteSupplier} confirmLabel={saving ? "Deleting..." : "Delete"} confirmDestructive size="sm">
+        <p className="font-['Poppins',sans-serif] text-[14px] text-black">Remove <span className="font-semibold">{deleteItem?.supplierName}</span> from your supplier list?</p>
       </Modal>
     </DashboardLayout>
   );

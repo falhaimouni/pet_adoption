@@ -23,10 +23,15 @@ function statusLabel(status: string, t: (key: string) => string) {
   return t("common_unavailable");
 }
 
+interface PetFullResponse extends PetResponse {
+  medicalRecord?: { recordId: string; createdAt: string } | null;
+  vaccinations?: Array<{ vaccinationId: string; vaccineName: string; vaccinationDate: string; nextDueDate?: string | null }>;
+}
+
 export default function PetDetailPage({ onNavigate, petId }: PetDetailPageProps) {
   const { isAuthenticated, user } = useAuth();
   const { t } = useLanguage();
-  const [pet, setPet] = useState<PetResponse | null>(null);
+  const [pet, setPet] = useState<PetFullResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [adoptOpen, setAdoptOpen] = useState(false);
@@ -44,11 +49,12 @@ export default function PetDetailPage({ onNavigate, petId }: PetDetailPageProps)
 
     setLoading(true);
     setError("");
-    apiFetch<PetResponse>(`/pets/${petId}`)
+    const canViewFull = isAuthenticated && user?.role !== "adopter";
+    apiFetch<PetFullResponse>(`/pets/${petId}${canViewFull ? "/full" : ""}`)
       .then(setPet)
       .catch((err) => setError(err instanceof Error ? err.message : t("pet_not_found_desc")))
       .finally(() => setLoading(false));
-  }, [petId, t]);
+  }, [isAuthenticated, petId, t, user?.role]);
 
   async function submitAdoptionRequest() {
     if (!pet) return;
@@ -143,6 +149,30 @@ export default function PetDetailPage({ onNavigate, petId }: PetDetailPageProps)
                 <h3 className="font-['Poppins',sans-serif] font-semibold text-[14px] text-[#089D97] uppercase tracking-wider mb-2">{t("pet_about")} {pet.name}</h3>
                 <p className="font-['Poppins',sans-serif] text-[14px] text-[#1a2e2d]/80 leading-relaxed">{pet.description || t("pet_no_description")}</p>
               </div>
+
+              {isAuthenticated && user?.role !== "adopter" && (
+                <div className="bg-white rounded-[20px] p-5 shadow-sm">
+                  <h3 className="font-['Poppins',sans-serif] font-semibold text-[14px] text-[#089D97] uppercase tracking-wider mb-2">Internal Health Summary</h3>
+                  <div className="space-y-2 font-['Poppins',sans-serif] text-[13px] text-[#1a2e2d]/80">
+                    <p>Medical record: <span className="font-semibold text-[#1a2e2d]">{pet.medicalRecord ? "Available" : "Not created"}</span></p>
+                    <div>
+                      <p className="font-semibold text-[#1a2e2d] mb-1">Vaccinations</p>
+                      {(pet.vaccinations ?? []).length === 0 ? (
+                        <p className="text-[#5a8a87]">No vaccinations recorded.</p>
+                      ) : (
+                        <div className="flex flex-col gap-1">
+                          {pet.vaccinations?.map((vaccination) => (
+                            <div key={vaccination.vaccinationId} className="flex justify-between gap-3 border-b border-[#f0f8f7] pb-1 last:border-0">
+                              <span>{vaccination.vaccineName}</span>
+                              <span className="text-[#5a8a87]">{vaccination.vaccinationDate}{vaccination.nextDueDate ? ` -> ${vaccination.nextDueDate}` : ""}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {status === "AVAILABLE" && (!isAuthenticated || user?.role === "adopter") ? (
                 <button

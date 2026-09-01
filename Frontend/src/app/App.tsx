@@ -72,7 +72,7 @@ const PUBLIC_PAGES = new Set<string>([
 const ROLE_PAGES: Record<string, UserRole[]> = {
   about: ["adopter"],
   pets: ["adopter"],
-  "pet-detail": ["adopter"],
+  "pet-detail": ["adopter", "staff", "vet", "manager", "admin"],
   shop: ["adopter"],
   wishlist: ["adopter"],
   cart: ["adopter"],
@@ -92,17 +92,27 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   "staff-chats": ["staff"],
   "staff-chat-detail": ["staff"],
   "staff-inventory": ["staff"],
+  "staff-suppliers": ["staff"],
+  "staff-reports": ["staff"],
   "vet-dashboard": ["vet"],
   "vet-pets": ["vet"],
   "vet-medical": ["vet"],
   "vet-vaccinations": ["vet"],
+  "vet-reports": ["vet"],
   "vet-profile": ["vet"],
   "manager-dashboard": ["manager"],
   "manager-pets": ["manager"],
+  "manager-requests": ["manager"],
+  "manager-adoptions": ["manager"],
+  "manager-users": ["manager"],
   "manager-analytics": ["manager"],
   "manager-inventory": ["manager"],
+  "manager-suppliers": ["manager"],
+  "manager-reports": ["manager"],
   "admin-dashboard": ["admin"],
   "admin-pets": ["admin"],
+  "admin-requests": ["admin"],
+  "admin-adoptions": ["admin"],
   "admin-users": ["admin"],
   "admin-inventory": ["admin"],
   "admin-suppliers": ["admin"],
@@ -203,14 +213,14 @@ function readHashRoute(): { page: string; params: Params } {
   const search = new URLSearchParams(queryPart ?? "");
   const params: Params = Object.fromEntries(search.entries());
   if (parts[1]) params.id = parts[1];
-  if (page === "pet-detail" && parts[1]) params.petId = parts[1];
+  if ((page === "pet-detail" || page === "vet-medical" || page === "vet-vaccinations") && parts[1]) params.petId = parts[1];
   if ((page === "chat-detail" || page === "staff-chat-detail") && parts[1]) params.conversationId = parts[1];
   return { page, params };
 }
 
 function writeHashRoute(page: string, params: Params) {
   const pathParam =
-    page === "pet-detail" ? params.petId :
+    page === "pet-detail" || page === "vet-medical" || page === "vet-vaccinations" ? params.petId :
     page === "chat-detail" || page === "staff-chat-detail" ? params.conversationId :
     undefined;
   const query = new URLSearchParams();
@@ -259,23 +269,33 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "staff-chats": return <StaffChatsListPage onNavigate={navigate} />;
     case "staff-chat-detail": return <StaffChatDetailPage onNavigate={navigate} conversationId={params.conversationId as string} />;
     case "staff-inventory": return <AdminInventoryPage onNavigate={navigate} role="staff" activePage="staff-inventory" />;
+    case "staff-suppliers": return <AdminSuppliersPage onNavigate={navigate} role="staff" activePage="staff-suppliers" />;
+    case "staff-reports": return <AdminReportsPage onNavigate={navigate} role="staff" activePage="staff-reports" />;
 
     // Vet
     case "vet-dashboard": return <VetDashboardPage onNavigate={navigate} />;
     case "vet-pets": return <VetPetsPage onNavigate={navigate} />;
-    case "vet-medical": return <VetMedicalPage onNavigate={navigate} />;
-    case "vet-vaccinations": return <VetVaccinationsPage onNavigate={navigate} />;
+    case "vet-medical": return <VetMedicalPage onNavigate={navigate} params={{ petId: params.petId as string | undefined }} />;
+    case "vet-vaccinations": return <VetVaccinationsPage onNavigate={navigate} params={{ petId: params.petId as string | undefined }} />;
+    case "vet-reports": return <AdminReportsPage onNavigate={navigate} role="vet" activePage="vet-reports" />;
     case "vet-profile": return <VetProfilePage onNavigate={navigate} />;
 
     // Manager
     case "manager-dashboard": return <ManagerDashboardPage onNavigate={navigate} />;
     case "manager-pets": return <StaffPetsPage onNavigate={navigate} role="manager" activePage="manager-pets" />;
+    case "manager-requests": return <StaffRequestsPage onNavigate={navigate} role="manager" activePage="manager-requests" />;
+    case "manager-adoptions": return <StaffAdoptionsPage onNavigate={navigate} role="manager" activePage="manager-adoptions" />;
+    case "manager-users": return <AdminUsersPage onNavigate={navigate} role="manager" activePage="manager-users" />;
     case "manager-analytics": return <ManagerAnalyticsPage onNavigate={navigate} />;
     case "manager-inventory": return <ManagerInventoryPage onNavigate={navigate} />;
+    case "manager-suppliers": return <AdminSuppliersPage onNavigate={navigate} role="manager" activePage="manager-suppliers" />;
+    case "manager-reports": return <AdminReportsPage onNavigate={navigate} role="manager" activePage="manager-reports" />;
 
     // Admin
     case "admin-dashboard": return <AdminDashboardPage onNavigate={navigate} />;
     case "admin-pets": return <StaffPetsPage onNavigate={navigate} role="admin" activePage="admin-pets" />;
+    case "admin-requests": return <StaffRequestsPage onNavigate={navigate} role="admin" activePage="admin-requests" />;
+    case "admin-adoptions": return <StaffAdoptionsPage onNavigate={navigate} role="admin" activePage="admin-adoptions" />;
     case "admin-users": return <AdminUsersPage onNavigate={navigate} />;
     case "admin-inventory": return <AdminInventoryPage onNavigate={navigate} role="admin" activePage="admin-inventory" />;
     case "admin-suppliers": return <AdminSuppliersPage onNavigate={navigate} />;
