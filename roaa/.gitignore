@@ -1,9 +1,0 @@
-node_modules/
-dist/
-coverage/
-.vite/
-
-# Editor and OS files
-.DS_Store
-Thumbs.db
-*.log
