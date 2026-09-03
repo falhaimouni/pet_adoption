@@ -8,10 +8,12 @@ export type ProductCategory =
   | "Housing";
 
 export interface Product {
-  id: number;
+  id: string | number;
+  productId?: string;
+  supplyId?: string;
   name: string;
   brand: string;
-  category: ProductCategory;
+  category: ProductCategory | string;
   subCategory: string;
   price: number;
   originalPrice?: number;
@@ -45,7 +47,7 @@ const productImages = [
   productImg8,
 ];
 
-const productImage = (index: number) => productImages[index % productImages.length];
+export const productImage = (index: number) => productImages[index % productImages.length];
 
 export const PRODUCTS: Product[] = [
   // Food

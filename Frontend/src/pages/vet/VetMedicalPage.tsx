@@ -166,7 +166,7 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
           {formError && <p className="text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Medical Date</label>
-            <input type="date" value={form.medicalDate} onChange={(e) => setForm((f) => ({ ...f, medicalDate: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+            <input type="date" value={form.medicalDate} disabled={!!editTarget} onChange={(e) => setForm((f) => ({ ...f, medicalDate: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors disabled:bg-gray-50 disabled:text-black/50" />
           </div>
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Vaccination Status</label>

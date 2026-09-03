@@ -8,7 +8,7 @@ interface WishlistContextValue {
   togglePet: (pet: PetResponse) => void;
   toggleProduct: (product: Product) => void;
   isPetSaved: (petId: string) => boolean;
-  isProductSaved: (productId: number) => boolean;
+  isProductSaved: (productId: string | number) => boolean;
   totalSaved: number;
 }
 
@@ -26,12 +26,12 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
   const toggleProduct = (product: Product) => {
     setSavedProducts((prev) =>
-      prev.some((p) => p.id === product.id) ? prev.filter((p) => p.id !== product.id) : [...prev, product]
+      prev.some((p) => String(p.id) === String(product.id)) ? prev.filter((p) => String(p.id) !== String(product.id)) : [...prev, product]
     );
   };
 
   const isPetSaved = (petId: string) => savedPets.some((p) => p.petId === petId);
-  const isProductSaved = (productId: number) => savedProducts.some((p) => p.id === productId);
+  const isProductSaved = (productId: string | number) => savedProducts.some((p) => String(p.id) === String(productId));
   const totalSaved = savedPets.length + savedProducts.length;
 
   return (

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import {
   Users, Package, Tag, FileText,
-  BarChart2, ArrowUpRight, TrendingUp, AlertTriangle, UserCheck, Shield, FolderOpen, Activity,
+  ArrowUpRight, TrendingUp, AlertTriangle, UserCheck, Activity,
 } from "lucide-react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import DashboardLayout from "../../components/DashboardLayout";
 import KpiCard from "../../components/KpiCard";
 import { apiFetch } from "../../lib/api";
@@ -11,16 +11,6 @@ import { apiFetch } from "../../lib/api";
 interface AdminDashboardPageProps {
   onNavigate: (page: string) => void;
 }
-
-const userGrowth = [
-  { month: "Jan", users: 120 },
-  { month: "Feb", users: 168 },
-  { month: "Mar", users: 210 },
-  { month: "Apr", users: 265 },
-  { month: "May", users: 330 },
-  { month: "Jun", users: 402 },
-  { month: "Jul", users: 486 },
-];
 
 interface DashboardData {
   users: { total: number; admin?: number; manager?: number; employee: number; vet: number; adopter: number; active?: number };
@@ -33,13 +23,9 @@ interface DashboardData {
 
 const features = [
   { id: "admin-users", label: "Users", desc: "Manage all accounts", icon: Users, color: "text-[#089D97]", bg: "bg-[#e0f2f0]" },
-  { id: "admin-roles", label: "Roles", desc: "Review permissions", icon: Shield, color: "text-violet-600", bg: "bg-violet-50" },
   { id: "admin-inventory", label: "Inventory", desc: "Stock & products", icon: Package, color: "text-amber-600", bg: "bg-amber-50" },
   { id: "admin-suppliers", label: "Suppliers", desc: "Vendor directory", icon: Tag, color: "text-sky-600", bg: "bg-sky-50" },
-  { id: "admin-files", label: "Files", desc: "Upload documents", icon: FolderOpen, color: "text-rose-600", bg: "bg-rose-50" },
   { id: "admin-reports", label: "Reports", desc: "Generate reports", icon: FileText, color: "text-indigo-600", bg: "bg-indigo-50" },
-  { id: "admin-analytics", label: "Analytics", desc: "Platform insights", icon: BarChart2, color: "text-teal-600", bg: "bg-teal-50" },
-  { id: "admin-activity", label: "Activity", desc: "Audit actions", icon: Activity, color: "text-slate-600", bg: "bg-slate-50" },
 ];
 
 export default function AdminDashboardPage({ onNavigate }: AdminDashboardPageProps) {
@@ -94,26 +80,6 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
 
       {/* Charts + activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* User growth */}
-        <div className="lg:col-span-2 bg-white rounded-[16px] p-5 shadow-sm">
-          <h3 className="font-['Poppins',sans-serif] font-semibold text-[15px] text-black mb-4">User Growth</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={userGrowth}>
-              <defs>
-                <linearGradient id="uGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#089D97" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#089D97" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e0f2f0" />
-              <XAxis dataKey="month" stroke="#5a8a87" fontSize={12} />
-              <YAxis stroke="#5a8a87" fontSize={12} />
-              <Tooltip />
-              <Area type="monotone" dataKey="users" stroke="#089D97" strokeWidth={2} fill="url(#uGrad)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
         {/* Role distribution */}
         <div className="bg-white rounded-[16px] p-5 shadow-sm">
           <h3 className="font-['Poppins',sans-serif] font-semibold text-[15px] text-black mb-4">Role Distribution</h3>

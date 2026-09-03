@@ -33,11 +33,14 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
 export default function ProductCard({ product, onQuickView }: ProductCardProps) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [error, setError] = useState("");
   const { addToCart, isInCart } = useCart();
   const { isProductSaved, toggleProduct } = useWishlist();
   const { t } = useLanguage();
-  const inCart = isInCart(product.id);
-  const saved = isProductSaved(product.id);
+  const productId = String(product.id);
+  const inCart = isInCart(productId);
+  const saved = isProductSaved(productId);
   const discount = product.originalPrice
     ? Math.round((1 - product.price / product.originalPrice) * 100)
     : null;
@@ -118,13 +121,24 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
 
         {/* Add to cart */}
         <button
-          onClick={() => addToCart(product)}
-          disabled={!product.inStock}
+          onClick={async () => {
+            setAdding(true);
+            setError("");
+            try {
+              await addToCart(product);
+            } catch (err) {
+              setError(err instanceof Error ? err.message : "Unable to add item.");
+            } finally {
+              setAdding(false);
+            }
+          }}
+          disabled={!product.inStock || adding}
           className={`w-full flex items-center justify-center gap-2 py-2.5 font-['Poppins',sans-serif] font-medium text-[13px] rounded-[11px] transition-all duration-200 ${inCart ? "bg-[#e0f2f0] text-[#089D97] border-2 border-[#089D97]" : "bg-[#089D97] text-white hover:bg-[#047975]"} disabled:opacity-40 disabled:cursor-not-allowed`}
         >
           <ShoppingCart size={14} />
-          {inCart ? t("product_in_cart") : t("product_add_to_cart")}
+          {adding ? "Adding..." : inCart ? t("product_in_cart") : t("product_add_to_cart")}
         </button>
+        {error && <p className="font-['Poppins',sans-serif] text-[11px] text-red-600">{error}</p>}
       </div>
     </article>
   );

@@ -40,6 +40,7 @@ interface AuthContextValue {
   returnTo: string | null;
   loading: boolean;
   login: (email: string, password: string, remember?: boolean) => Promise<AuthUser | null>;
+  completeGoogleLogin: (code: string) => Promise<AuthUser>;
   logout: () => void;
   setReturnTo: (page: string | null) => void;
   updateUser: (updates: Partial<AuthUser>) => void;
@@ -171,6 +172,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function completeGoogleLogin(code: string): Promise<AuthUser> {
+    try {
+      const response = await apiFetch<AuthResponse>("/auth/google/session", {
+        method: "POST",
+        body: JSON.stringify({ code }),
+      });
+      setAuthTokens(response.accessToken, response.refreshToken, false);
+      const profile = await apiFetch<ProfileResponse>("/users/profile").catch(() => null);
+      const account = profile ? mapProfileUser(profile) : mapAuthUser(response);
+      setUser(account);
+      return account;
+    } catch (err) {
+      clearAuthTokens();
+      setUser(null);
+      throw err;
+    }
+  }
+
   function logout() {
     void apiFetch("/auth/logout", { method: "POST" }).catch(() => undefined);
     setUser(null);
@@ -183,7 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, loading, returnTo, login, logout, setReturnTo, updateUser }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, loading, returnTo, login, completeGoogleLogin, logout, setReturnTo, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

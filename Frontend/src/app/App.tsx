@@ -10,6 +10,7 @@ import AboutPage from "../pages/AboutPage";
 import TermsPage from "../pages/TermsPage";
 import PrivacyPolicyPage from "../pages/PrivacyPolicyPage";
 import LoginPage from "../pages/LoginPage";
+import OAuthCallbackPage from "../pages/OAuthCallbackPage";
 import SignUpPage from "../pages/SignUpPage";
 import ForgotPasswordPage from "../pages/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/ResetPasswordPage";
@@ -66,6 +67,7 @@ export type Role = UserRole;
 const PUBLIC_PAGES = new Set<string>([
   "home", "login", "signup", "about", "terms",
   "privacy", "forgot-password", "reset-password", "pets", "pet-detail", "shop",
+  "oauth-callback",
 ]);
 
 // Pages restricted to specific roles.
@@ -240,6 +242,7 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "terms": return <TermsPage onNavigate={navigate} />;
     case "privacy": return <PrivacyPolicyPage onNavigate={navigate} />;
     case "login": return <LoginPage onNavigate={navigate} />;
+    case "oauth-callback": return <OAuthCallbackPage onNavigate={navigate} code={params.code as string | undefined} />;
     case "signup": return <SignUpPage onNavigate={navigate} />;
     case "forgot-password": return <ForgotPasswordPage onNavigate={navigate} />;
     case "reset-password": return <ResetPasswordPage onNavigate={navigate} token={params.token as string | undefined} />;

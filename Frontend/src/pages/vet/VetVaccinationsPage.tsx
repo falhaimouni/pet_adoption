@@ -11,6 +11,7 @@ interface Vaccination {
   vaccineName: string;
   vaccinationDate: string;
   nextDueDate?: string | null;
+  batch?: string | null;
   status?: string;
   notes?: string | null;
   pet?: { name: string; species: string };
@@ -22,7 +23,7 @@ interface VetVaccinationsPageProps {
   params?: { petId?: string };
 }
 
-const blank = { vaccineName: "", vaccinationDate: "", nextDueDate: "", status: "VACCINATED", notes: "" };
+const blank = { vaccineName: "", vaccinationDate: "", nextDueDate: "", batch: "", status: "VACCINATED", notes: "" };
 
 function displayStatus(vaccine: Vaccination) {
   if (vaccine.status) return vaccine.status;
@@ -66,6 +67,7 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
       vaccineName: vaccine.vaccineName,
       vaccinationDate: vaccine.vaccinationDate,
       nextDueDate: vaccine.nextDueDate ?? "",
+      batch: vaccine.batch ?? "",
       status: displayStatus(vaccine),
       notes: vaccine.notes ?? "",
     });
@@ -83,8 +85,9 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
       vaccineName: form.vaccineName.trim(),
       vaccinationDate: form.vaccinationDate,
       nextDueDate: form.nextDueDate || undefined,
+      batch: form.batch.trim() || undefined,
+      status: form.status,
       notes: form.notes.trim() || undefined,
-      ...(editTarget ? { status: form.status } : {}),
     };
     setSaving(true);
     setFormError("");
@@ -140,7 +143,7 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-gray-100">
-                    {["Vaccine", "Date Given", "Next Due", "Vet", "Status", "Actions"].map((h) => (
+                    {["Vaccine", "Date Given", "Next Due", "Batch", "Vet", "Status", "Notes", "Actions"].map((h) => (
                       <th key={h} className="py-2.5 px-3 font-['Poppins',sans-serif] font-semibold text-[11px] text-black/50 uppercase tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -153,8 +156,10 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
                         <td className="py-3 px-3 font-['Poppins',sans-serif] font-medium text-[14px] text-black">{v.vaccineName}</td>
                         <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{v.vaccinationDate}</td>
                         <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{v.nextDueDate ?? "-"}</td>
+                        <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{v.batch ?? "-"}</td>
                         <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/50">{[v.veterinarian?.firstName, v.veterinarian?.lastName].filter(Boolean).join(" ") || "-"}</td>
                         <td className="py-3 px-3"><Badge label={status.toLowerCase()} variant={statusBadge(status.toLowerCase())} /></td>
+                        <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/50 max-w-[180px] truncate">{v.notes ?? "-"}</td>
                         <td className="py-3 px-3">
                           <div className="flex gap-2">
                             <button onClick={() => openEdit(v)} className="text-blue-400 hover:text-blue-600 transition-colors"><Edit size={15} /></button>
@@ -186,14 +191,16 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Next Due</label>
             <input type="date" value={form.nextDueDate} onChange={(e) => setForm((f) => ({ ...f, nextDueDate: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
           </div>
-          {editTarget && (
-            <div className="col-span-2">
-              <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Status</label>
-              <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] bg-white transition-colors">
-                {["VACCINATED", "PENDING", "OVERDUE"].map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-          )}
+          <div>
+            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Batch</label>
+            <input value={form.batch} onChange={(e) => setForm((f) => ({ ...f, batch: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+          </div>
+          <div>
+            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Status</label>
+            <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] bg-white transition-colors">
+              {["VACCINATED", "PENDING", "OVERDUE"].map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
           <div className="col-span-2">
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Notes</label>
             <textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} rows={3} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />

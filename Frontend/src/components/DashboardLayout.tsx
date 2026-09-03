@@ -3,7 +3,7 @@ import {
   Home, User, Heart, Bell, Settings,
   LogOut, Menu, X, Syringe, BarChart2, Package, Users,
   FileText, ClipboardList, Stethoscope, Tag,
-  ChevronRight, Sun, Moon, Globe, MessageCircle, FolderOpen, Shield, Activity, ShoppingCart,
+  ChevronRight, Sun, Moon, Globe, MessageCircle, ShoppingCart,
 } from "lucide-react";
 import logoImg from "../imports/MyPetopia/be6bd1f12e9a602c8830a9c39abaf73ad65d4682.png";
 import profileImg from "../imports/MyPetopia/0ade9078bed97f834442fbb8c3bc4424aaf43269.png";
@@ -65,7 +65,6 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "manager-requests",  label: t("nav_adoption_requests"), icon: <ClipboardList size={16} /> },
         { id: "manager-adoptions", label: t("nav_adoptions"),     icon: <Heart size={16} /> },
         { id: "manager-users",     label: t("nav_users"),         icon: <Users size={16} /> },
-        { id: "manager-analytics", label: t("nav_analytics"),     icon: <BarChart2 size={16} /> },
         { id: "manager-inventory", label: t("nav_inventory"),     icon: <Package size={16} /> },
         { id: "manager-suppliers", label: t("nav_suppliers"),     icon: <Tag size={16} /> },
         { id: "manager-reports",   label: t("nav_reports"),       icon: <FileText size={16} /> },
@@ -78,13 +77,9 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "admin-requests",  label: t("nav_adoption_requests"), icon: <ClipboardList size={16} /> },
         { id: "admin-adoptions", label: t("nav_adoptions"),     icon: <Heart size={16} /> },
         { id: "admin-users",     label: t("nav_users"),         icon: <Users size={16} /> },
-        { id: "admin-roles",     label: t("nav_roles"),         icon: <Shield size={16} /> },
         { id: "admin-inventory", label: t("nav_inventory"),     icon: <Package size={16} /> },
         { id: "admin-suppliers", label: t("nav_suppliers"),     icon: <Tag size={16} /> },
-        { id: "admin-files",     label: t("nav_files"),         icon: <FolderOpen size={16} /> },
         { id: "admin-reports",   label: t("nav_reports"),       icon: <FileText size={16} /> },
-        { id: "admin-analytics", label: t("nav_analytics"),     icon: <BarChart2 size={16} /> },
-        { id: "admin-activity",  label: t("nav_activity_log"),  icon: <Activity size={16} /> },
         { id: "notifications",   label: t("nav_notifications"), icon: <Bell size={16} /> },
       ];
   }
