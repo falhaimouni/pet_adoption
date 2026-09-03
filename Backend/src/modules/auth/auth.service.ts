@@ -358,7 +358,16 @@ export class AuthService implements OnModuleInit {
       throw new UnauthorizedException('Invalid user');
     }
 
-    return this.issueTokens(user);
+    return {
+      ...this.issueTokens(user),
+      user: {
+        id: user.userId,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roleName: user.role.roleName,
+      },
+    };
   }
 
   private issueTokens(user: User) {

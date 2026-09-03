@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException} from "@nestjs/common";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
-import { Supplier, Supply } from "src/database/entities";
+import { Product, Supplier, Supply } from "src/database/entities";
 import { DataSource, QueryFailedError, Repository } from "typeorm";
 import { InventoryQueryDto } from "../../../../../shared/dto/inventory-query.dto";
 import { SupplyStatusEnum } from "@shared/enums";
@@ -17,6 +17,12 @@ export class SupplyService{
   constructor(
     @InjectRepository(Supply)
     private readonly supplyRepo: Repository<Supply>,
+
+    @InjectRepository(Supplier)
+    private readonly supplierRepo: Repository<Supplier>,
+
+    @InjectRepository(Product)
+    private readonly productRepo: Repository<Product>,
 
     @InjectDataSource()
     private readonly dataSource: DataSource,
@@ -99,7 +105,7 @@ export class SupplyService{
 
     async createSupply(createSupplyDto: CreateSupplyDto)
     {
-      const supplier = await this.supplyRepo.findOneBy({
+      const supplier = await this.supplierRepo.findOneBy({
         supplierId:createSupplyDto.supplierId,
         isActive: true
       });
@@ -121,15 +127,32 @@ export class SupplyService{
       {
         throw new ConflictException('Supply already exists for this supplier');
       }
-      const supply = this.supplyRepo.create({
-        ...createSupplyDto,//spread operator to copy properties from createSupplyDto)
-        status: SupplyStatusEnum.AVAILABLE,
-        sellingPrice: createSupplyDto.sellingPrice.toString(),
-        purchasePrice: createSupplyDto.purchasePrice.toString(),
-      });
       let savedSupply: Supply;
       try {
-        savedSupply = await this.supplyRepo.save(supply);
+        savedSupply = await this.dataSource.transaction(async (manager) => {
+          const status = createSupplyDto.status ?? SupplyStatusEnum.AVAILABLE;
+          const product = await manager.getRepository(Product).save(
+            manager.getRepository(Product).create({
+              productName: createSupplyDto.supplyName,
+              unitPrice: createSupplyDto.sellingPrice.toString(),
+              isActive: this.isPurchasable({
+                isActive: true,
+                status,
+                quantity: createSupplyDto.quantity,
+              }),
+            }),
+          );
+
+          const supply = manager.getRepository(Supply).create({
+            ...createSupplyDto,
+            productId: product.productId,
+            status,
+            sellingPrice: createSupplyDto.sellingPrice.toString(),
+            purchasePrice: createSupplyDto.purchasePrice.toString(),
+          });
+
+          return manager.getRepository(Supply).save(supply);
+        });
       } catch (error) {
         if (error instanceof QueryFailedError && (error as any).code === '23505') {
           throw new ConflictException('Supply already exists for this supplier');
@@ -156,10 +179,15 @@ export class SupplyService{
           throw new ConflictException('Cannot update discontinued supply');
         }
         const wasLowStock = this.isLowStock(supply);
+        Object.assign(supply, updateSupplyDto);
         if (updateSupplyDto.sellingPrice !== undefined) supply.sellingPrice = updateSupplyDto.sellingPrice.toString();
         if (updateSupplyDto.purchasePrice !== undefined) supply.purchasePrice = updateSupplyDto.purchasePrice.toString();
-        Object.assign(supply, updateSupplyDto);
         const updated = await manager.getRepository(Supply).save(supply);
+        await manager.getRepository(Product).update(updated.productId, {
+          productName: updated.supplyName,
+          unitPrice: updated.sellingPrice,
+          isActive: this.isPurchasable(updated),
+        });
         return { updated, wasLowStock };
       });
       if (!savedSupply.wasLowStock && this.isLowStock(savedSupply.updated))
@@ -182,6 +210,7 @@ export class SupplyService{
       }
       supply.isActive = false;
       await this.supplyRepo.save(supply);
+      await this.productRepo.update(supply.productId, { isActive: false });
       return { 
       success: true,
       message: 'Supply deleted successfully'
@@ -218,5 +247,14 @@ export class SupplyService{
         `Minimum stock is ${supply.lowStockLimit}.`;
 
       await this.notificationsService.createInventoryAlert(title, message);
+    }
+
+    private isPurchasable(supply: Pick<Supply, 'isActive' | 'status' | 'quantity'>): boolean
+    {
+      return (
+        supply.isActive === true &&
+        supply.status === SupplyStatusEnum.AVAILABLE &&
+        supply.quantity > 0
+      );
     }
 }

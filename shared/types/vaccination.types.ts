@@ -5,6 +5,7 @@ export interface Vaccination {
   vaccinationDate: string;
   nextDueDate: string;
   veterinarianId: string;
+  batch?: string;
   status: "VACCINATED" | "PENDING" | "OVERDUE";
   notes?: string;
 }

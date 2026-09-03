@@ -1,6 +1,7 @@
 export class StoreSupplyDetailsDto
 {
   supplyId!: string;
+  productId!: string;
   supplyName!: string;
   category!: string;
   sellingPrice!: string;

@@ -2,6 +2,8 @@ export class StoreSupplyDto{
   
   supplyId!: string;
 
+  productId!: string;
+
   supplyName!: string;
 
   category!: string;

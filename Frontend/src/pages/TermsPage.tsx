@@ -102,8 +102,7 @@ export default function TermsPage({ onNavigate }: TermsPageProps) {
 
               <section>
                 <h3 className="font-semibold text-[#089D97] text-[15px] mb-1">{t("about_contact_title")}</h3>
-                <p>Email: support@petopia.com</p>
-                <p>Phone: +962 799 281 091</p>
+                <p>Email: petadoptionsystem2000@gmail.com</p>
               </section>
 
               <section>

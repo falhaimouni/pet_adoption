@@ -78,6 +78,7 @@ export class StoreService{
   
     const data: StoreSupplyDto[] = supplies.map((supply) => ({
       supplyId: supply.supplyId,
+      productId: supply.productId,
       supplyName: supply.supplyName,
       category: supply.category,
       sellingPrice: supply.sellingPrice,
@@ -100,6 +101,7 @@ export class StoreService{
 
     return {  
       supplyId: supply.supplyId,
+      productId: supply.productId,
       supplyName: supply.supplyName,
       category: supply.category,
       sellingPrice: supply.sellingPrice,

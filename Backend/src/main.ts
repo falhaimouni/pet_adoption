@@ -35,8 +35,17 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   // Allow the frontend to call this backend from a different port during development
+  const frontendOrigins = (
+    configService.get<string>('FRONTEND_URLS') ??
+    configService.get<string>('FRONTEND_URL') ??
+    'http://localhost:5173'
+  )
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   app.enableCors({
-    origin: configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5173',
+    origin: frontendOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });

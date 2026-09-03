@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+import { EmployeeLookupsController } from './employee-lookups.controller';
 import { User } from '../../database/entities/user.entity';
 import { Department } from '../../database/entities/department.entity';
 import { Employee } from '../../database/entities/employee.entity';
@@ -14,7 +15,7 @@ import { UploadsModule } from '../uploads/uploads.module';
     TypeOrmModule.forFeature([User, Role, Department, Employee]),
     UploadsModule,
   ],
-  controllers: [UsersController],
+  controllers: [UsersController, EmployeeLookupsController],
   providers: [UsersService],
 })
 export class UsersModule {}

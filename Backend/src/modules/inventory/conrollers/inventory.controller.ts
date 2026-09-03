@@ -52,7 +52,7 @@ export class InventoryController{
     return this.supplyService.updateSupply(id, updateSupplyDto);
   }
 
-  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
+  @Roles('ADMIN', 'MANAGER')
   @Delete('supplies/:id')
   deleteSupply(@Param('id') id: string)
   {
@@ -87,7 +87,7 @@ export class InventoryController{
     return this.supplierService.updateSupplier(id,updateSupplierDto);
   }
 
-  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
+  @Roles('ADMIN', 'MANAGER')
   @Delete('suppliers/:id')
   deleteSupplier(@Param('id') id: string)
   {

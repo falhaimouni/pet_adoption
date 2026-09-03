@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { Pet } from './pet.entity';
 import { User } from './user.entity';
+import { VaccineStatusEnum } from '@shared/enums/vaccine-status.enum';
 
 @Entity('vaccinations')
 export class Vaccination {
@@ -25,6 +26,19 @@ export class Vaccination {
 
   @Column({ name: 'next_due_date', type: 'date', nullable: true })
   nextDueDate?: string | null;
+
+  @Column({ type: 'varchar', length: 120, nullable: true })
+  batch?: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: VaccineStatusEnum,
+    default: VaccineStatusEnum.VACCINATED,
+  })
+  status!: VaccineStatusEnum;
+
+  @Column({ type: 'text', nullable: true })
+  notes?: string | null;
 
   @Column({ name: 'veterinarian_id', type: 'uuid' })
   veterinarianId!: string;

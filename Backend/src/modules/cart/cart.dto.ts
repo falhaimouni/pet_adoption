@@ -1,1 +1,1 @@
-export { AddCartItemDto } from '@shared/dto/cart-item.dto';
+export { AddCartItemDto, UpdateCartItemDto } from '@shared/dto/cart-item.dto';

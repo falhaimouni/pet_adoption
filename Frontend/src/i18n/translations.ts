@@ -38,7 +38,7 @@ const translations: Record<Lang, Record<string, string>> = {
     login_remember: "Remember me",
     login_forgot: "Forgot Password?",
     login_btn: "Login",
-    login_or: "or continue with",
+    login_or: "or",
     login_no_account: "Don't have an account?",
     login_signup: "Sign Up",
     login_quick: "Quick login — tap a role",
@@ -61,7 +61,7 @@ const translations: Record<Lang, Record<string, string>> = {
     signup_agree: "I agree the",
     signup_terms: "Terms & conditions",
     signup_btn: "Sign Up",
-    signup_or: "or continue with",
+    signup_or: "or",
     signup_have_account: "Already have an account!",
     signup_login_link: "login",
     signup_need_full_name: "Please enter your first and last name.",
@@ -79,7 +79,7 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // ── Pets list ──
     pets_title: "Find Your Perfect Pet",
-    pets_search_placeholder: "Search by name, breed, species, or city…",
+    pets_search_placeholder: "Search by name, breed, species, or gender…",
     pets_filters: "Filters",
     pets_clear_all: "Clear all",
     pets_clear_filters: "Clear filters",

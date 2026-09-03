@@ -39,6 +39,8 @@ interface DepartmentOption {
   departmentName: string;
 }
 
+type LookupResponse<T> = T[] | { data?: T[]; items?: T[]; roles?: T[]; departments?: T[] };
+
 const blankEmployee = {
   firstName: "",
   lastName: "",
@@ -58,6 +60,14 @@ const roleLabel = (roleName?: string) => {
   if (normalized === "EMPLOYEE") return "staff";
   return normalized.toLowerCase();
 };
+
+function normalizeLookup<T>(value: LookupResponse<T>, key: "roles" | "departments"): T[] {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value.data)) return value.data;
+  if (Array.isArray(value.items)) return value.items;
+  if (Array.isArray(value[key])) return value[key] as T[];
+  return [];
+}
 
 interface AdminUsersPageProps { onNavigate: (page: string) => void; role?: Extract<UserRole, "admin" | "manager">; activePage?: string; }
 
@@ -117,15 +127,20 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
     setFormError("");
     try {
       const [roleList, departmentList] = await Promise.all([
-        apiFetch<RoleOption[]>("/roles"),
-        apiFetch<DepartmentOption[]>("/departments"),
+        apiFetch<LookupResponse<RoleOption>>("/roles"),
+        apiFetch<LookupResponse<DepartmentOption>>("/departments"),
       ]);
-      setRoles(roleList);
-      setDepartments(departmentList);
+      const nextRoles = normalizeLookup(roleList, "roles").filter((item) => item.roleId && item.roleName);
+      const nextDepartments = normalizeLookup(departmentList, "departments").filter((item) => item.departmentId && item.departmentName);
+      setRoles(nextRoles);
+      setDepartments(nextDepartments);
+      if (nextRoles.length === 0 || nextDepartments.length === 0) {
+        setFormError("No active assignable roles or departments are available.");
+      }
       setEmployeeForm((form) => ({
         ...form,
-        roleId: form.roleId || roleList[0]?.roleId || "",
-        departmentId: form.departmentId || departmentList[0]?.departmentId || "",
+        roleId: form.roleId || nextRoles[0]?.roleId || "",
+        departmentId: form.departmentId || nextDepartments[0]?.departmentId || "",
       }));
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Unable to load roles and departments.");
@@ -193,8 +208,12 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
   async function createEmployee() {
     if (!canCreateEmployee) return;
     const required = [employeeForm.firstName, employeeForm.lastName, employeeForm.email, employeeForm.password, employeeForm.roleId, employeeForm.departmentId, employeeForm.hireDate];
-    if (required.some((value) => !value.trim())) {
+    if (required.some((value) => !String(value ?? "").trim())) {
       setFormError("First name, last name, email, password, role, department, and hire date are required.");
+      return;
+    }
+    if (!roles.some((item) => item.roleId === employeeForm.roleId) || !departments.some((item) => item.departmentId === employeeForm.departmentId)) {
+      setFormError("Choose a valid active role and department before creating the employee.");
       return;
     }
     if (employeeForm.salary && Number(employeeForm.salary) < 0) {
