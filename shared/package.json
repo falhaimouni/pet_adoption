@@ -1,0 +1,11 @@
+{
+  "name": "pet-adoption-shared",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.ts",
+  "types": "index.ts",
+  "type": "commonjs",
+  "dependencies": {
+    "class-validator": "^0.15.1"
+  }
+}

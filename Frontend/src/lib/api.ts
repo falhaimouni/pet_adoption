@@ -1,0 +1,188 @@
+import { MOCK_API_ENABLED, mockApiBlobFetch, mockApiFetch } from "./mockApi";
+
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+
+const TOKEN_STORAGE_MODE_KEY = "petopia_token_storage";
+const ACCESS_TOKEN_KEY = "petopia_access_token";
+const REFRESH_TOKEN_KEY = "petopia_refresh_token";
+
+type TokenStorageMode = "local" | "session";
+
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+export function getAccessToken() {
+  return localStorage.getItem(ACCESS_TOKEN_KEY) ?? sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? "";
+}
+
+export function getRefreshToken() {
+  return localStorage.getItem(REFRESH_TOKEN_KEY) ?? sessionStorage.getItem(REFRESH_TOKEN_KEY) ?? "";
+}
+
+function preferredStorage(mode?: TokenStorageMode): Storage {
+  const resolved = mode ?? (localStorage.getItem(TOKEN_STORAGE_MODE_KEY) as TokenStorageMode | null) ?? "session";
+  return resolved === "local" ? localStorage : sessionStorage;
+}
+
+export function setAuthTokens(accessToken: string, refreshToken: string, remember = false) {
+  clearAuthTokens();
+  const mode: TokenStorageMode = remember ? "local" : "session";
+  const storage = preferredStorage(mode);
+  storage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  storage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  localStorage.setItem(TOKEN_STORAGE_MODE_KEY, mode);
+}
+
+function updateStoredTokens(accessToken: string, refreshToken: string) {
+  const storage = preferredStorage();
+  storage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  storage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+}
+
+export function clearAuthTokens() {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem(TOKEN_STORAGE_MODE_KEY);
+  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+  sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+}
+
+export function resolveAssetUrl(url?: string | null) {
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url)) return url;
+  if (MOCK_API_ENABLED && !url.startsWith("/uploads/")) return url;
+  return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
+export interface PetImageResponse {
+  imageId: string;
+  fileId: string;
+  imageUrl: string;
+  uploadedAt: string;
+}
+
+export interface PetResponse {
+  petId: string;
+  name: string;
+  species: string;
+  breed?: string | null;
+  age?: number | null;
+  gender?: string | null;
+  color?: string | null;
+  weight?: number | null;
+  description?: string | null;
+  healthStatus?: string | null;
+  adoptionStatus: string;
+  arrivalDate?: string | null;
+  images: PetImageResponse[];
+}
+
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshAccessToken() {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return null;
+
+  if (!refreshPromise) {
+    refreshPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data?.accessToken || !data?.refreshToken) {
+          clearAuthTokens();
+          return null;
+        }
+        updateStoredTokens(data.accessToken, data.refreshToken);
+        return data.accessToken as string;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
+}
+
+async function parseResponse(res: Response) {
+  const contentType = res.headers.get("content-type") ?? "";
+  return contentType.includes("application/json") ? res.json() : res.text();
+}
+
+export async function apiFetch<T>(path: string, init: RequestInit = {}, allowRefresh = true): Promise<T> {
+  if (MOCK_API_ENABLED) return mockApiFetch<T>(path, init);
+
+  const headers = new Headers(init.headers);
+  const token = getAccessToken();
+
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  if (init.body && !(init.body instanceof FormData) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  const data = await parseResponse(res);
+
+  if (res.status === 401 && allowRefresh && path !== "/auth/refresh") {
+    const nextToken = await refreshAccessToken();
+    if (nextToken) {
+      const retryHeaders = new Headers(init.headers);
+      retryHeaders.set("Authorization", `Bearer ${nextToken}`);
+      if (init.body && !(init.body instanceof FormData) && !retryHeaders.has("Content-Type")) {
+        retryHeaders.set("Content-Type", "application/json");
+      }
+      return apiFetch<T>(path, { ...init, headers: retryHeaders }, false);
+    }
+  }
+
+  if (!res.ok) {
+    const message =
+      typeof data === "object" && data && "message" in data
+        ? Array.isArray(data.message) ? data.message.join(", ") : String(data.message)
+        : `Request failed with status ${res.status}`;
+    throw new ApiError(message, res.status);
+  }
+
+  return data as T;
+}
+
+export async function apiBlobFetch(path: string, init: RequestInit = {}, allowRefresh = true): Promise<Blob> {
+  if (MOCK_API_ENABLED) return mockApiBlobFetch(path);
+
+  const headers = new Headers(init.headers);
+  const token = getAccessToken();
+  if (token && !headers.has("Authorization")) headers.set("Authorization", `Bearer ${token}`);
+
+  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  if (res.status === 401 && allowRefresh) {
+    const nextToken = await refreshAccessToken();
+    if (nextToken) {
+      const retryHeaders = new Headers(init.headers);
+      retryHeaders.set("Authorization", `Bearer ${nextToken}`);
+      return apiBlobFetch(path, { ...init, headers: retryHeaders }, false);
+    }
+  }
+
+  if (!res.ok) {
+    const data = await parseResponse(res).catch(() => null);
+    const message =
+      typeof data === "object" && data && "message" in data
+        ? Array.isArray(data.message) ? data.message.join(", ") : String(data.message)
+        : `Request failed with status ${res.status}`;
+    throw new ApiError(message, res.status);
+  }
+
+  return res.blob();
+}

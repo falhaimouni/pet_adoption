@@ -1,0 +1,30 @@
+{
+  "name": "pet-adoption",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "Backend",
+    "Frontend",
+    "shared"
+  ],
+  "overrides": {
+    "typeorm": "0.3.20",
+    "@nestjs/typeorm": {
+      "typeorm": "0.3.20"
+    }
+  },
+  "scripts": {
+    "backend:build": "npm run build -w pet-adoption-backend",
+    "backend:dev": "npm run start:dev -w pet-adoption-backend",
+    "backend:start": "npm run start -w pet-adoption-backend",
+    "frontend:build": "npm run build -w pet-adoption-frontend",
+    "frontend:dev": "npm run dev -w pet-adoption-frontend",
+    "migration:generate": "npm run migration:generate -w pet-adoption-backend",
+    "migration:run": "npm run migration:run -w pet-adoption-backend",
+    "migration:revert": "npm run migration:revert -w pet-adoption-backend"
+  },
+  "devDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.63.1",
+    "playwright": "^1.62.1"
+  }
+}

@@ -1,0 +1,9 @@
+export enum PetStatusEnum {
+  AVAILABLE = "AVAILABLE",
+
+  PENDING = "PENDING",
+
+  ADOPTED = "ADOPTED",
+
+  MEDICAL_HOLD = "MEDICAL_HOLD",
+}

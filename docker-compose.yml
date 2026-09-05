@@ -1,0 +1,43 @@
+services:
+  postgres:
+    container_name: pet_adoption_postgres
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      POSTGRES_DB: ${POSTGRES_DB:-pet_adoption}
+    env_file:
+      - ${ENV_FILE:-.env.development}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    container_name: pet_adoption_backend
+    build:
+      context: .
+      dockerfile: Backend/Dockerfile
+    ports:
+      - "${PORT:-3000}:3000"
+    env_file:
+      - ${ENV_FILE:-.env.development}
+    environment:
+      - POSTGRES_HOST=postgres
+    depends_on:
+      - postgres
+
+  frontend:
+    container_name: pet_adoption_frontend
+    build:
+      context: .
+      dockerfile: Frontend/Dockerfile
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    env_file:
+      - ${ENV_FILE:-.env.development}
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_data:
