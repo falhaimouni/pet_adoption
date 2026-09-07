@@ -45,7 +45,6 @@ const blankEmployee = {
   firstName: "",
   lastName: "",
   email: "",
-  password: "",
   phone: "",
   roleId: "",
   departmentId: "",
@@ -61,12 +60,82 @@ const roleLabel = (roleName?: string) => {
   return normalized.toLowerCase();
 };
 
+const ASSIGNABLE_EMPLOYEE_ROLES = new Set(["MANAGER", "EMPLOYEE", "VET"]);
+const ROLE_RANK: Record<string, number> = {
+  ADMIN: 4,
+  MANAGER: 3,
+  EMPLOYEE: 2,
+  VET: 2,
+  ADOPTER: 1,
+};
+
+function canManageUser(currentRole: "admin" | "manager", targetRoleName?: string) {
+  const currentRank = ROLE_RANK[currentRole.toUpperCase()] ?? 0;
+  const targetRank = ROLE_RANK[targetRoleName?.toUpperCase() ?? ""] ?? 0;
+  return currentRank > targetRank;
+}
+
 function normalizeLookup<T>(value: LookupResponse<T>, key: "roles" | "departments"): T[] {
   if (Array.isArray(value)) return value;
   if (Array.isArray(value.data)) return value.data;
   if (Array.isArray(value.items)) return value.items;
   if (Array.isArray(value[key])) return value[key] as T[];
   return [];
+}
+
+function roleFallbackFromUsers(users: UserRecord[]): RoleOption[] {
+  const roles = new Map<string, string>();
+  users.forEach((user) => {
+    const roleName = user.role?.roleName?.toUpperCase();
+    if (user.role?.roleId && roleName && ASSIGNABLE_EMPLOYEE_ROLES.has(roleName)) {
+      roles.set(user.role.roleId, roleName);
+    }
+  });
+  return Array.from(roles, ([roleId, roleName]) => ({ roleId, roleName })).sort((a, b) => a.roleName.localeCompare(b.roleName));
+}
+
+function departmentFallbackFromUsers(users: UserRecord[]): DepartmentOption[] {
+  const departments = new Map<string, string>();
+  users.forEach((user) => {
+    const department = user.employeeProfile?.department;
+    if (department?.departmentId && department.departmentName) {
+      departments.set(department.departmentId, department.departmentName);
+    }
+  });
+  return Array.from(departments, ([departmentId, departmentName]) => ({ departmentId, departmentName })).sort((a, b) => a.departmentName.localeCompare(b.departmentName));
+}
+
+function randomChar(chars: string): string {
+  const values = new Uint32Array(1);
+  crypto.getRandomValues(values);
+  return chars[values[0] % chars.length];
+}
+
+function shuffle(value: string): string {
+  const chars = value.split("");
+  for (let i = chars.length - 1; i > 0; i -= 1) {
+    const values = new Uint32Array(1);
+    crypto.getRandomValues(values);
+    const j = values[0] % (i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join("");
+}
+
+function generateStrongPassword(): string {
+  const lower = "abcdefghijkmnopqrstuvwxyz";
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const digits = "23456789";
+  const symbols = "!@#$%^&*()-_=+";
+  const all = lower + upper + digits + symbols;
+  const required = [
+    randomChar(lower),
+    randomChar(upper),
+    randomChar(digits),
+    randomChar(symbols),
+  ];
+  while (required.length < 18) required.push(randomChar(all));
+  return shuffle(required.join(""));
 }
 
 interface AdminUsersPageProps { onNavigate: (page: string) => void; role?: Extract<UserRole, "admin" | "manager">; activePage?: string; }
@@ -130,12 +199,14 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
         apiFetch<LookupResponse<RoleOption>>("/roles"),
         apiFetch<LookupResponse<DepartmentOption>>("/departments"),
       ]);
-      const nextRoles = normalizeLookup(roleList, "roles").filter((item) => item.roleId && item.roleName);
-      const nextDepartments = normalizeLookup(departmentList, "departments").filter((item) => item.departmentId && item.departmentName);
+      const lookupRoles = normalizeLookup(roleList, "roles").filter((item) => item.roleId && ASSIGNABLE_EMPLOYEE_ROLES.has(item.roleName?.toUpperCase()));
+      const lookupDepartments = normalizeLookup(departmentList, "departments").filter((item) => item.departmentId && item.departmentName);
+      const nextRoles = lookupRoles.length > 0 ? lookupRoles : roleFallbackFromUsers(users);
+      const nextDepartments = lookupDepartments.length > 0 ? lookupDepartments : departmentFallbackFromUsers(users);
       setRoles(nextRoles);
       setDepartments(nextDepartments);
       if (nextRoles.length === 0 || nextDepartments.length === 0) {
-        setFormError("No active assignable roles or departments are available.");
+        setFormError("No active assignable roles or departments were returned by the backend.");
       }
       setEmployeeForm((form) => ({
         ...form,
@@ -143,7 +214,20 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
         departmentId: form.departmentId || nextDepartments[0]?.departmentId || "",
       }));
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Unable to load roles and departments.");
+      const nextRoles = roleFallbackFromUsers(users);
+      const nextDepartments = departmentFallbackFromUsers(users);
+      setRoles(nextRoles);
+      setDepartments(nextDepartments);
+      setEmployeeForm((form) => ({
+        ...form,
+        roleId: form.roleId || nextRoles[0]?.roleId || "",
+        departmentId: form.departmentId || nextDepartments[0]?.departmentId || "",
+      }));
+      setFormError(
+        nextRoles.length > 0 && nextDepartments.length > 0
+          ? "Lookup endpoints failed, so the dropdowns are using role and department values from loaded backend users."
+          : err instanceof Error ? err.message : "Unable to load roles and departments.",
+      );
     } finally {
       setLookupsLoading(false);
     }
@@ -166,6 +250,10 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
   }
 
   function openEdit(user: UserRecord) {
+    if (!canManageUser(role, user.role?.roleName)) {
+      setFormError("You can only edit lower-role users.");
+      return;
+    }
     setEditUser(user);
     setEditForm({ roleId: user.role.roleId, status: user.status });
     setFormError("");
@@ -173,10 +261,14 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
 
   async function saveUser() {
     if (!editUser) return;
+    if (!canManageUser(role, editUser.role?.roleName)) {
+      setFormError("You can only edit lower-role users.");
+      return;
+    }
     setSaving(true);
     setFormError("");
     const body: { status?: string; roleId?: string } = { status: editForm.status };
-    if (editForm.roleId && editForm.roleId !== editUser.role.roleId) body.roleId = editForm.roleId;
+    if (role === "admin" && editForm.roleId && editForm.roleId !== editUser.role.roleId) body.roleId = editForm.roleId;
     try {
       await apiFetch(`/users/${editUser.userId}`, {
         method: "PATCH",
@@ -207,9 +299,9 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
 
   async function createEmployee() {
     if (!canCreateEmployee) return;
-    const required = [employeeForm.firstName, employeeForm.lastName, employeeForm.email, employeeForm.password, employeeForm.roleId, employeeForm.departmentId, employeeForm.hireDate];
+    const required = [employeeForm.firstName, employeeForm.lastName, employeeForm.email, employeeForm.roleId, employeeForm.departmentId, employeeForm.hireDate];
     if (required.some((value) => !String(value ?? "").trim())) {
-      setFormError("First name, last name, email, password, role, department, and hire date are required.");
+      setFormError("First name, last name, email, role, department, and hire date are required.");
       return;
     }
     if (!roles.some((item) => item.roleId === employeeForm.roleId) || !departments.some((item) => item.departmentId === employeeForm.departmentId)) {
@@ -224,7 +316,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
       firstName: employeeForm.firstName.trim(),
       lastName: employeeForm.lastName.trim(),
       email: employeeForm.email.trim(),
-      password: employeeForm.password,
+      password: generateStrongPassword(),
       roleId: employeeForm.roleId,
       departmentId: employeeForm.departmentId,
       hireDate: employeeForm.hireDate,
@@ -296,7 +388,9 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((u) => (
+                {filtered.map((u) => {
+                  const canManageRow = canManageUser(role, u.role?.roleName);
+                  return (
                   <tr key={u.userId} className="border-b border-gray-50 hover:bg-[rgba(8,157,151,0.03)] transition-colors">
                     <td className="py-3 px-3">
                       <div className="flex items-center gap-2">
@@ -314,12 +408,13 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
                     <td className="py-3 px-3">
                       <div className="flex gap-2">
                         <button onClick={() => openView(u)} className="text-[#089D97] hover:text-[#047975] transition-colors"><Eye size={15} /></button>
-                        <button onClick={() => openEdit(u)} className="text-blue-400 hover:text-blue-600 transition-colors"><Edit size={15} /></button>
-                        {canDelete && <button onClick={() => setDeleteUser(u)} className="text-red-400 hover:text-red-600 transition-colors"><Trash2 size={15} /></button>}
+                        {canManageRow && <button onClick={() => openEdit(u)} className="text-blue-400 hover:text-blue-600 transition-colors"><Edit size={15} /></button>}
+                        {canDelete && canManageRow && <button onClick={() => setDeleteUser(u)} className="text-red-400 hover:text-red-600 transition-colors"><Trash2 size={15} /></button>}
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -357,12 +452,19 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
         {editUser && (
           <div className="space-y-4">
             {formError && <p className="text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
-            <div>
-              <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Role</label>
-              <select value={editForm.roleId} onChange={(e) => setEditForm((form) => ({ ...form, roleId: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97] transition-colors">
-                {roleOptions.map((r) => <option key={r.roleId} value={r.roleId}>{r.label}</option>)}
-              </select>
-            </div>
+            {role === "admin" ? (
+              <div>
+                <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Role</label>
+                <select value={editForm.roleId} onChange={(e) => setEditForm((form) => ({ ...form, roleId: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97] transition-colors">
+                  {roleOptions.map((r) => <option key={r.roleId} value={r.roleId}>{r.label}</option>)}
+                </select>
+              </div>
+            ) : (
+              <div>
+                <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Role</label>
+                <p className="w-full rounded-[10px] bg-gray-50 px-3 py-2 font-['Poppins',sans-serif] text-[13px] text-black/60">{roleLabel(editUser.role?.roleName)}</p>
+              </div>
+            )}
             <div>
               <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Status</label>
               <select value={editForm.status} onChange={(e) => setEditForm((form) => ({ ...form, status: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97] transition-colors">
@@ -374,23 +476,27 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
         )}
       </Modal>
 
-      <Modal title="Add Employee" open={employeeOpen} onClose={() => setEmployeeOpen(false)} onConfirm={createEmployee} confirmLabel={saving ? "Creating..." : "Create Employee"} size="md">
+      <Modal title="Add Employee" open={employeeOpen} onClose={() => setEmployeeOpen(false)} onConfirm={createEmployee} confirmLabel={saving ? "Creating..." : "Generate Password"} size="md">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {formError && <p className="sm:col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
           {lookupsLoading && <p className="sm:col-span-2 text-[13px] text-black/50 bg-gray-50 rounded-[10px] px-3 py-2">Loading roles and departments...</p>}
           <Field label="First Name" value={employeeForm.firstName} onChange={(value) => setEmployeeForm((form) => ({ ...form, firstName: value }))} />
           <Field label="Last Name" value={employeeForm.lastName} onChange={(value) => setEmployeeForm((form) => ({ ...form, lastName: value }))} />
           <Field label="Email" type="email" value={employeeForm.email} onChange={(value) => setEmployeeForm((form) => ({ ...form, email: value }))} />
-          <Field label="Password" type="password" value={employeeForm.password} onChange={(value) => setEmployeeForm((form) => ({ ...form, password: value }))} />
+          <p className="sm:col-span-2 font-['Poppins',sans-serif] text-[12px] text-black/50 bg-[#f0f8f7] rounded-[10px] px-3 py-2">
+            Use Generate Password to create the account with a strong internal password. The password is never displayed or stored in the UI.
+          </p>
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Role</label>
             <select value={employeeForm.roleId} onChange={(e) => setEmployeeForm((form) => ({ ...form, roleId: e.target.value }))} disabled={lookupsLoading || roles.length === 0} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97] transition-colors disabled:opacity-60">
+              <option value="">{lookupsLoading ? "Loading roles..." : roles.length === 0 ? "No assignable roles" : "Choose role"}</option>
               {roles.map((r) => <option key={r.roleId} value={r.roleId}>{roleLabel(r.roleName)}</option>)}
             </select>
           </div>
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Department</label>
             <select value={employeeForm.departmentId} onChange={(e) => setEmployeeForm((form) => ({ ...form, departmentId: e.target.value }))} disabled={lookupsLoading || departments.length === 0} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97] transition-colors disabled:opacity-60">
+              <option value="">{lookupsLoading ? "Loading departments..." : departments.length === 0 ? "No active departments" : "Choose department"}</option>
               {departments.map((d) => <option key={d.departmentId} value={d.departmentId}>{d.departmentName}</option>)}
             </select>
           </div>

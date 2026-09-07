@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Camera, Edit2, Save, X, User, Mail, Phone,
   ClipboardList, Heart, ChevronRight,
@@ -31,6 +31,11 @@ export default function UserProfilePage({ onNavigate }: UserProfilePageProps) {
   const [avatarPreview, setAvatarPreview] = useState<string>(user?.avatar ?? "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setForm(blank);
+    setAvatarPreview(user?.avatar ?? "");
+  }, [user?.id, user?.name, user?.email, user?.phone, user?.avatar]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];

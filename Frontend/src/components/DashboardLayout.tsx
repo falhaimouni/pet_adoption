@@ -12,7 +12,6 @@ import { useLanguage } from "../context/LanguageContext";
 import { useTheme } from "../context/ThemeContext";
 import { apiFetch } from "../lib/api";
 import { useCart } from "../context/CartContext";
-import { useWishlist } from "../context/WishlistContext";
 
 export type Role = "adopter" | "staff" | "vet" | "manager" | "admin";
 
@@ -33,7 +32,6 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "my-requests",    label: t("nav_my_requests"),   icon: <ClipboardList size={16} /> },
         { id: "my-adoptions",   label: t("nav_my_adoptions"),  icon: <Heart size={16} /> },
         { id: "chats",          label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
-        { id: "wishlist",       label: t("wishlist_title"),    icon: <Heart size={16} /> },
         { id: "notifications",  label: t("nav_notifications"), icon: <Bell size={16} /> },
       ];
     case "staff":
@@ -64,6 +62,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "manager-pets",      label: t("dash_pets"),         icon: <Heart size={16} /> },
         { id: "manager-requests",  label: t("nav_adoption_requests"), icon: <ClipboardList size={16} /> },
         { id: "manager-adoptions", label: t("nav_adoptions"),     icon: <Heart size={16} /> },
+        { id: "manager-chats",     label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
         { id: "manager-users",     label: t("nav_users"),         icon: <Users size={16} /> },
         { id: "manager-inventory", label: t("nav_inventory"),     icon: <Package size={16} /> },
         { id: "manager-suppliers", label: t("nav_suppliers"),     icon: <Tag size={16} /> },
@@ -76,6 +75,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "admin-pets",      label: t("dash_pets"),         icon: <Heart size={16} /> },
         { id: "admin-requests",  label: t("nav_adoption_requests"), icon: <ClipboardList size={16} /> },
         { id: "admin-adoptions", label: t("nav_adoptions"),     icon: <Heart size={16} /> },
+        { id: "admin-chats",     label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
         { id: "admin-users",     label: t("nav_users"),         icon: <Users size={16} /> },
         { id: "admin-inventory", label: t("nav_inventory"),     icon: <Package size={16} /> },
         { id: "admin-suppliers", label: t("nav_suppliers"),     icon: <Tag size={16} /> },
@@ -142,7 +142,6 @@ export default function DashboardLayout({
   const { t, lang, setLang } = useLanguage();
   const { isDark, toggleTheme } = useTheme();
   const { count } = useCart();
-  const { totalSaved } = useWishlist();
   const displayName = userName ?? user?.name ?? "Guest";
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const canUseShopping = role === "adopter";
@@ -251,33 +250,18 @@ export default function DashboardLayout({
             </button>
 
             {canUseShopping && (
-              <>
-                <button
-                  onClick={() => onNavigate("wishlist")}
-                  aria-label={t("wishlist_title")}
-                  className="relative hidden sm:flex w-9 h-9 rounded-[10px] items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
-                >
-                  <Heart size={17} />
-                  {totalSaved > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
-                      {totalSaved}
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => onNavigate("cart")}
-                  aria-label={t("cart_title")}
-                  className="relative hidden sm:flex w-9 h-9 rounded-[10px] items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
-                >
-                  <ShoppingCart size={17} />
-                  {count > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-[#089D97] text-white text-[10px] font-bold flex items-center justify-center">
-                      {count}
-                    </span>
-                  )}
-                </button>
-              </>
+              <button
+                onClick={() => onNavigate("cart")}
+                aria-label={t("cart_title")}
+                className="relative hidden sm:flex w-9 h-9 rounded-[10px] items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
+              >
+                <ShoppingCart size={17} />
+                {count > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-[#089D97] text-white text-[10px] font-bold flex items-center justify-center">
+                    {count}
+                  </span>
+                )}
+              </button>
             )}
 
             <button onClick={() => onNavigate("notifications")} className="relative text-black hover:text-[#089D97] transition-colors" aria-label={t("nav_notifications")}>
@@ -368,6 +352,16 @@ export default function DashboardLayout({
               <Settings size={16} />
               {t("dash_settings")}
             </button>
+            {legalLinks.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => { onNavigate(item.page); setSidebarOpen(false); }}
+                className="flex lg:hidden items-center gap-3 px-3 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[13px] text-black hover:bg-white/30 transition-colors"
+              >
+                <FileText size={16} />
+                {item.label}
+              </button>
+            ))}
             <button
               onClick={() => onNavigate("logout")}
               className="flex items-center gap-3 px-3 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[13px] text-black hover:bg-white/30 transition-colors"

@@ -6,6 +6,7 @@ import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
 import { Product, productImage } from "../data/products";
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { apiFetch } from "../lib/api";
 
@@ -52,6 +53,8 @@ function mapSupplyToProduct(supply: StoreSupply, index: number): Product {
 export default function ShopPage({ onNavigate }: ShopPageProps) {
   const { t } = useLanguage();
   const { count } = useCart();
+  const { isAuthenticated, user } = useAuth();
+  const canUseCart = isAuthenticated && user?.role === "adopter";
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [sort, setSort] = useState("featured");
@@ -145,7 +148,7 @@ export default function ShopPage({ onNavigate }: ShopPageProps) {
             ))}
           </div>
           <div className="flex items-center gap-3">
-            {count > 0 && (
+            {canUseCart && count > 0 && (
               <button onClick={() => onNavigate("cart")} className="px-3 py-2 rounded-[10px] bg-[#e0f2f0] text-[#047975] font-['Poppins',sans-serif] text-[12px] font-semibold hover:bg-[#bae0dd] transition-colors">
                 {count} {count === 1 ? t("cart_items") : t("cart_items_pl")}
               </button>

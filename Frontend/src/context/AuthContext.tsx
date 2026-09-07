@@ -15,11 +15,8 @@ export interface AuthUser {
   joinDate: string;
   lastLogin: string;
   phone?: string;
-  city?: string;
-  bio?: string;
   gender?: string;
   dob?: string;
-  address?: string;
 }
 
 interface AuthResponse {
@@ -39,7 +36,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   returnTo: string | null;
   loading: boolean;
-  login: (email: string, password: string, remember?: boolean) => Promise<AuthUser | null>;
+  login: (email: string, password: string) => Promise<AuthUser | null>;
   completeGoogleLogin: (code: string) => Promise<AuthUser>;
   logout: () => void;
   setReturnTo: (page: string | null) => void;
@@ -151,13 +148,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  async function login(email: string, password: string, remember = false): Promise<AuthUser | null> {
+  async function login(email: string, password: string): Promise<AuthUser | null> {
     try {
       const response = await apiFetch<AuthResponse>("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
-      setAuthTokens(response.accessToken, response.refreshToken, remember);
+      setAuthTokens(response.accessToken, response.refreshToken);
       const profile = await apiFetch<ProfileResponse>("/users/profile").catch(() => null);
       const account = profile ? mapProfileUser(profile) : mapAuthUser(response);
       setUser(account);
@@ -178,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: "POST",
         body: JSON.stringify({ code }),
       });
-      setAuthTokens(response.accessToken, response.refreshToken, false);
+      setAuthTokens(response.accessToken, response.refreshToken);
       const profile = await apiFetch<ProfileResponse>("/users/profile").catch(() => null);
       const account = profile ? mapProfileUser(profile) : mapAuthUser(response);
       setUser(account);
