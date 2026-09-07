@@ -29,7 +29,7 @@ ENV NODE_ENV=production
 
 WORKDIR /app
 
-COPY Backend/package.json Backend/package.json ./
+COPY Backend/package.json Backend/package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 WORKDIR /app/Backend
