@@ -8,5 +8,6 @@ export class StoreSupplyDetailsDto
   quantity!: number;
   // description!: string;
   inStock!: boolean;
+  storeListed!: boolean;
 }
 // this is a one product's detailed page

@@ -30,6 +30,9 @@ export class Supply {
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 
+  @Column({ name: 'store_listed', type: 'boolean', default: true })
+  storeListed!: boolean;
+
   @Column({ name: 'delivery_time_days', type: 'integer', nullable: true })
   deliveryTimeDays?: number | null;
 

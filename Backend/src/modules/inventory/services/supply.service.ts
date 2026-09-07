@@ -137,6 +137,7 @@ export class SupplyService{
               unitPrice: createSupplyDto.sellingPrice.toString(),
               isActive: this.isPurchasable({
                 isActive: true,
+                storeListed: createSupplyDto.storeListed ?? true,
                 status,
                 quantity: createSupplyDto.quantity,
               }),
@@ -147,6 +148,7 @@ export class SupplyService{
             ...createSupplyDto,
             productId: product.productId,
             status,
+            storeListed: createSupplyDto.storeListed ?? true,
             sellingPrice: createSupplyDto.sellingPrice.toString(),
             purchasePrice: createSupplyDto.purchasePrice.toString(),
           });
@@ -197,6 +199,34 @@ export class SupplyService{
 
       return savedSupply.updated;
     }
+
+    async deactivateSupplyFromStore(id: string)
+    {
+      const savedSupply = await this.dataSource.transaction(async (manager) => {
+        const supply = await manager.getRepository(Supply)
+          .createQueryBuilder('supply')
+          .setLock('pessimistic_write')
+          .where('supply.supplyId = :id', { id })
+          .andWhere('supply.isActive = :isActive', { isActive: true })
+          .getOne();
+
+        if (!supply) throw new NotFoundException('Supply not found');
+
+        supply.storeListed = false;
+        const updated = await manager.getRepository(Supply).save(supply);
+        await manager.getRepository(Product).update(updated.productId, {
+          isActive: false,
+        });
+
+        return updated;
+      });
+
+      return {
+        success: true,
+        message: 'Supply deactivated from store successfully',
+        supply: savedSupply,
+      };
+    }
         
     async deleteSupply(id: string)
     {
@@ -209,6 +239,7 @@ export class SupplyService{
       throw new NotFoundException('Supply not found');
       }
       supply.isActive = false;
+      supply.storeListed = false;
       await this.supplyRepo.save(supply);
       await this.productRepo.update(supply.productId, { isActive: false });
       return { 
@@ -249,10 +280,11 @@ export class SupplyService{
       await this.notificationsService.createInventoryAlert(title, message);
     }
 
-    private isPurchasable(supply: Pick<Supply, 'isActive' | 'status' | 'quantity'>): boolean
+    private isPurchasable(supply: Pick<Supply, 'isActive' | 'storeListed' | 'status' | 'quantity'>): boolean
     {
       return (
         supply.isActive === true &&
+        supply.storeListed === true &&
         supply.status === SupplyStatusEnum.AVAILABLE &&
         supply.quantity > 0
       );

@@ -78,11 +78,14 @@ const suppliers = [
 
 let supplies = PRODUCTS.map((product) => ({
   supplyId: String(product.id),
+  productId: String(product.id),
   supplyName: product.name,
   category: product.category.toUpperCase().replace(/ /g, "_").replace(/&/g, "AND"),
   quantity: product.inStock ? 24 : 0,
   sellingPrice: product.price.toFixed(2),
   purchasePrice: Math.max(product.price * 0.65, 0).toFixed(2),
+  isActive: true,
+  storeListed: true,
   lowStockLimit: 5,
   supplierId: suppliers[(product.id - 1) % suppliers.length].supplierId,
   supplier: suppliers[(product.id - 1) % suppliers.length],
@@ -209,12 +212,31 @@ function listPets(params: URLSearchParams) {
 }
 
 function listSupplies(params: URLSearchParams) {
-  let data = [...supplies];
+  let data = supplies.filter((item) => item.isActive !== false);
   data = filterByQuery(data, params, ["supplyName", "category"]);
   const category = params.get("category");
   if (category) data = data.filter((item) => item.category === category || item.category.toLowerCase() === category.toLowerCase());
   const page = Number(params.get("page") ?? 1);
   const limit = Number(params.get("limit") ?? 10);
+  const total = data.length;
+  const start = (page - 1) * limit;
+  return { data: data.slice(start, start + limit), total, page, limit };
+}
+
+function listStoreSupplies(params: URLSearchParams) {
+  const storeParams = new URLSearchParams(params);
+  let data = supplies.filter(
+    (item) =>
+      item.isActive !== false &&
+      item.storeListed !== false &&
+      item.status === "AVAILABLE" &&
+      item.quantity > 0,
+  );
+  data = filterByQuery(data, storeParams, ["supplyName", "category"]);
+  const category = storeParams.get("category");
+  if (category) data = data.filter((item) => item.category === category || item.category.toLowerCase() === category.toLowerCase());
+  const page = Number(storeParams.get("page") ?? 1);
+  const limit = Number(storeParams.get("limit") ?? 10);
   const total = data.length;
   const start = (page - 1) * limit;
   return { data: data.slice(start, start + limit), total, page, limit };
@@ -375,7 +397,40 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
   }
   if (url.pathname.match(/^\/pets\/[^/]+\/images$/) && method === "POST") return withDelay({ imageUrl: "" } as T);
 
-  if (url.pathname === "/store/supplies" && method === "GET") return withDelay(listSupplies(url.searchParams) as T);
+  if (url.pathname === "/store/supplies" && method === "GET") return withDelay(listStoreSupplies(url.searchParams) as T);
+  if (url.pathname === "/store/supplies" && method === "POST") {
+    const next = {
+      ...body,
+      supplyId: `mock-supply-${Date.now()}`,
+      productId: `mock-product-${Date.now()}`,
+      supplier: suppliers.find((s) => s.supplierId === body.supplierId),
+      isActive: true,
+      storeListed: body.storeListed !== false,
+      lastUpdated: now(),
+    };
+    supplies = [next as typeof supplies[number], ...supplies];
+    return withDelay(next as T);
+  }
+  const storeSupplyMatch = url.pathname.match(/^\/store\/supplies\/([^/]+)$/);
+  if (storeSupplyMatch && method === "GET") {
+    const supply = supplies.find(
+      (item) =>
+        item.supplyId === storeSupplyMatch[1] &&
+        item.isActive !== false &&
+        item.storeListed !== false &&
+        item.status === "AVAILABLE" &&
+        item.quantity > 0,
+    );
+    return withDelay(supply as T);
+  }
+  if (storeSupplyMatch && method === "PATCH") {
+    supplies = supplies.map((supply) => supply.supplyId === storeSupplyMatch[1] ? { ...supply, ...body, lastUpdated: now() } : supply);
+    return withDelay(supplies.find((supply) => supply.supplyId === storeSupplyMatch[1]) as T);
+  }
+  if (storeSupplyMatch && method === "DELETE") {
+    supplies = supplies.map((supply) => supply.supplyId === storeSupplyMatch[1] ? { ...supply, storeListed: false, lastUpdated: now() } : supply);
+    return withDelay({ success: true, message: "Deactivated from store in mock mode" } as T);
+  }
   if (url.pathname === "/inventory/suppliers" && method === "GET") return withDelay(suppliers as T);
   if (url.pathname === "/inventory/suppliers" && method === "POST") {
     const next = { ...body, supplierId: `mock-supplier-${Date.now()}`, isActive: true, supplies: [] };
@@ -399,7 +454,15 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
   }
   if (url.pathname === "/inventory/supplies" && method === "GET") return withDelay(listSupplies(url.searchParams) as T);
   if (url.pathname === "/inventory/supplies" && method === "POST") {
-    const next = { ...body, supplyId: `mock-supply-${Date.now()}`, supplier: suppliers.find((s) => s.supplierId === body.supplierId), lastUpdated: now() };
+    const next = {
+      ...body,
+      supplyId: `mock-supply-${Date.now()}`,
+      productId: `mock-product-${Date.now()}`,
+      supplier: suppliers.find((s) => s.supplierId === body.supplierId),
+      isActive: true,
+      storeListed: body.storeListed !== false,
+      lastUpdated: now(),
+    };
     supplies = [next as typeof supplies[number], ...supplies];
     return withDelay(next as T);
   }
@@ -409,7 +472,7 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
     return withDelay(supplies.find((supply) => supply.supplyId === supplyMatch[1]) as T);
   }
   if (supplyMatch && method === "DELETE") {
-    supplies = supplies.filter((supply) => supply.supplyId !== supplyMatch[1]);
+    supplies = supplies.map((supply) => supply.supplyId === supplyMatch[1] ? { ...supply, isActive: false, storeListed: false, lastUpdated: now() } : supply);
     return withDelay({ success: true, message: "Deleted in mock mode" } as T);
   }
 

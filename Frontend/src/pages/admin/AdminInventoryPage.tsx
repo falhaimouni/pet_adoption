@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Edit, Package, Plus, Search, Settings, Trash2 } from "lucide-react";
+import { AlertTriangle, Edit, EyeOff, Package, Plus, Search, Settings, Trash2 } from "lucide-react";
 import Badge, { statusBadge } from "../../components/Badge";
 import DashboardLayout, { Role } from "../../components/DashboardLayout";
 import EmptyState from "../../components/EmptyState";
@@ -22,6 +22,7 @@ interface Supply {
   deliveryTimeDays?: number | null;
   minimumOrderQuantity: number;
   status: SupplyStatus;
+  storeListed: boolean;
   lastUpdated?: string;
 }
 
@@ -58,6 +59,7 @@ const blankForm = {
   deliveryTimeDays: "",
   minimumOrderQuantity: "1",
   status: "AVAILABLE" as SupplyStatus,
+  storeListed: true,
 };
 
 function toMoney(value: string) {
@@ -105,6 +107,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
   const breadcrumbs = [displayRole(role), "Inventory"];
   const totalPages = Math.max(1, Math.ceil(total / 10));
   const canDeleteSupplies = role === "admin" || role === "manager";
+  const canDeactivateStoreListing = role === "staff";
 
   const alertCount = useMemo(
     () => supplies.filter((item) => item.status === "OUT_OF_STOCK" || (item.status === "AVAILABLE" && item.quantity <= item.lowStockLimit)).length,
@@ -173,6 +176,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
       deliveryTimeDays: item.deliveryTimeDays == null ? "" : String(item.deliveryTimeDays),
       minimumOrderQuantity: String(item.minimumOrderQuantity),
       status: item.status,
+      storeListed: item.storeListed !== false,
     });
     setFormError("");
     setAddOpen(true);
@@ -210,6 +214,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
       deliveryTimeDays: form.deliveryTimeDays ? toInteger(form.deliveryTimeDays) : undefined,
       minimumOrderQuantity: toInteger(form.minimumOrderQuantity),
       status: form.status,
+      storeListed: form.storeListed,
     };
     const requestBody = editing ? body : { ...body, supplierId: form.supplierId };
 
@@ -238,12 +243,13 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
     setError("");
     setSuccess("");
     try {
-      await apiFetch<{ success: boolean; message: string }>(`/inventory/supplies/${deleteItem.supplyId}`, { method: "DELETE" });
-      setSuccess("Supply removed from inventory and shop listings.");
+      const endpoint = canDeleteSupplies ? `/inventory/supplies/${deleteItem.supplyId}` : `/store/supplies/${deleteItem.supplyId}`;
+      await apiFetch<{ success: boolean; message: string }>(endpoint, { method: "DELETE" });
+      setSuccess(canDeleteSupplies ? "Supply removed from inventory and shop listings." : "Supply deactivated from store listings.");
       setDeleteItem(null);
       await loadSupplies();
     } catch (err) {
-      setError(readError(err, "Could not delete supply."));
+      setError(readError(err, canDeleteSupplies ? "Could not delete supply." : "Could not deactivate supply from store."));
     } finally {
       setSaving(false);
     }
@@ -313,7 +319,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-gray-100">
-                  {["Name", "Category", "Qty", "Low", "Supplier", "Price", "Status", "Actions"].map((heading) => (
+                  {["Name", "Category", "Qty", "Low", "Supplier", "Price", "Store", "Status", "Actions"].map((heading) => (
                     <th key={heading} className="py-2.5 px-3 font-['Poppins',sans-serif] font-semibold text-[11px] text-black/50 uppercase tracking-wider whitespace-nowrap">{heading}</th>
                   ))}
                 </tr>
@@ -332,12 +338,16 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
                       <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/50">{item.lowStockLimit}</td>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60 whitespace-nowrap">{item.supplier?.supplierName ?? item.supplierId}</td>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/70">${Number(item.sellingPrice).toFixed(2)}</td>
+                      <td className="py-3 px-3"><Badge label={item.storeListed === false ? "hidden" : "listed"} variant={item.storeListed === false ? "neutral" : "success"} /></td>
                       <td className="py-3 px-3"><Badge label={label.replace("_", " ").toLowerCase()} variant={statusBadge(label.toLowerCase())} /></td>
                       <td className="py-3 px-3">
                         <div className="flex gap-2 items-center">
                           <button onClick={() => openEdit(item)} className="text-blue-500 hover:text-blue-700 transition-colors" aria-label={`Edit ${item.supplyName}`}><Edit size={14} /></button>
                           {canDeleteSupplies && (
                             <button onClick={() => setDeleteItem(item)} className="text-red-400 hover:text-red-600 transition-colors" aria-label={`Delete ${item.supplyName}`}><Trash2 size={14} /></button>
+                          )}
+                          {canDeactivateStoreListing && item.storeListed !== false && (
+                            <button onClick={() => setDeleteItem(item)} className="text-amber-500 hover:text-amber-700 transition-colors" aria-label={`Deactivate ${item.supplyName} from store`}><EyeOff size={14} /></button>
                           )}
                         </div>
                       </td>
@@ -402,11 +412,22 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
               {statuses.map((item) => <option key={item} value={item}>{item.replace("_", " ")}</option>)}
             </select>
           </label>
+          <label className="sm:col-span-2 flex items-center gap-3 rounded-[10px] border border-gray-200 px-3 py-2">
+            <input
+              type="checkbox"
+              checked={form.storeListed}
+              onChange={(e) => setForm((f) => ({ ...f, storeListed: e.target.checked }))}
+              className="h-4 w-4 accent-[#089D97]"
+            />
+            <span className="font-['Poppins',sans-serif] text-[13px] text-black/70">Listed in store</span>
+          </label>
         </div>
       </Modal>
 
-      <Modal title="Delete Supply" open={!!deleteItem} onClose={() => setDeleteItem(null)} onConfirm={deleteSupply} confirmLabel={saving ? "Deleting..." : "Delete"} confirmDestructive size="sm">
-        <p className="font-['Poppins',sans-serif] text-[14px] text-black">Remove <span className="font-semibold">{deleteItem?.supplyName}</span> from inventory?</p>
+      <Modal title={canDeleteSupplies ? "Delete Supply" : "Deactivate Store Listing"} open={!!deleteItem} onClose={() => setDeleteItem(null)} onConfirm={deleteSupply} confirmLabel={saving ? (canDeleteSupplies ? "Deleting..." : "Deactivating...") : (canDeleteSupplies ? "Delete" : "Deactivate")} confirmDestructive size="sm">
+        <p className="font-['Poppins',sans-serif] text-[14px] text-black">
+          {canDeleteSupplies ? "Remove" : "Hide"} <span className="font-semibold">{deleteItem?.supplyName}</span> {canDeleteSupplies ? "from inventory and shop listings?" : "from the store while keeping it in inventory?"}
+        </p>
       </Modal>
     </DashboardLayout>
   );

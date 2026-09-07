@@ -11,5 +11,7 @@ export class StoreSupplyDto{
   sellingPrice!: string;
 
   inStock!: boolean;
+
+  storeListed!: boolean;
 }
 // this dto for one item in the product list
