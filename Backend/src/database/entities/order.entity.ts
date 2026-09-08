@@ -3,7 +3,6 @@ import { OrderItem } from './order-item.entity';
 import { Payment } from './payment.entity';
 import { User } from './user.entity';
 import { OrderStatusEnum } from '@shared/enums/order-status.enum';
-import { DeliveryStatusEnum } from '@shared/enums/delivery-status.enum';
 
 @Entity('orders')
 export class Order {
@@ -30,14 +29,6 @@ export class Order {
 
   @Column({ name: 'delivery_notes', type: 'text', nullable: true })
   deliveryNotes!: string | null;
-
-  @Column({
-    name: 'delivery_status',
-    type: 'enum',
-    enum: DeliveryStatusEnum,
-    default: DeliveryStatusEnum.PENDING,
-  })
-  deliveryStatus!: DeliveryStatusEnum;
 
   @ManyToOne(() => User, (user) => user.orders, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'user_id' })

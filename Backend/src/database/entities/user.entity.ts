@@ -62,6 +62,9 @@ export class User {
   @Column({ type: 'varchar', length: 30, nullable: true })
   phone?: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  address?: string | null;
+
   @Column({ type: 'varchar', length: 40, default: 'active' })
   status!: string;
 

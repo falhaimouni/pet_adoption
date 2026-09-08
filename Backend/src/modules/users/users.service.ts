@@ -259,12 +259,13 @@ export class UsersService {
     }
 
     const updateData: Partial<
-      Pick<User, 'firstName' | 'lastName' | 'phone' | 'avatar'>
+      Pick<User, 'firstName' | 'lastName' | 'phone' | 'address' | 'avatar'>
     > = {};
 
     if (data.firstName !== undefined) updateData.firstName = data.firstName;
     if (data.lastName !== undefined) updateData.lastName = data.lastName;
     if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.address !== undefined) updateData.address = data.address;
     if (data.avatar !== undefined) updateData.avatar = data.avatar;
 
     if (Object.keys(updateData).length > 0) {

@@ -21,6 +21,8 @@ import { StoreModule } from './modules/store/store.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PreventEmailChangeMiddleware } from './common/middleware/prevent-email-change.middleware';
+import { CheckoutModule } from './modules/checkout/checkout.module';
+import { OrderModule } from './modules/order/order.module';
 
 @Module({
   imports: [
@@ -63,6 +65,8 @@ import { PreventEmailChangeMiddleware } from './common/middleware/prevent-email-
     StoreModule,
     ReportsModule,
     NotificationsModule,
+    CheckoutModule,
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [AppService],

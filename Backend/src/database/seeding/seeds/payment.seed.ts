@@ -25,7 +25,7 @@ export async function seedPayments(
       paymentId: '550e8400-e29b-41d4-a716-446655442201',
       orderId: '550e8400-e29b-41d4-a716-446655442101',
       amount: '38.00',
-      paymentMethod: PaymentMethodEnum.CASH,
+      paymentMethod: PaymentMethodEnum.CARD,
       paymentStatus: PaymentStatusEnum.PENDING,
       transactionId: null,
       paidAt: null,
