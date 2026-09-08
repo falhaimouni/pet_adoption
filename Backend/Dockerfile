@@ -29,8 +29,17 @@ ENV NODE_ENV=production
 
 WORKDIR /app
 
-COPY Backend/package.json Backend/package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+# Root workspace metadata
+COPY package.json package-lock.json ./
+COPY Backend/package.json ./Backend/package.json
+COPY Frontend/package.json ./Frontend/package.json
+COPY shared/package.json ./shared/package.json
+
+RUN npm ci \
+    --omit=dev \
+    --workspace=pet-adoption-backend \
+    --workspace=pet-adoption-shared \
+    && npm cache clean --force
 
 WORKDIR /app/Backend
 
