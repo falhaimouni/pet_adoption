@@ -13,7 +13,10 @@ import { resolveUploadRoot } from './modules/uploads/upload-path.util';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    //to get the raw body of the request for stripe webhook verification
+    rawBody: true,
+  });
 
   //helps application shut down cleanly when the process is stopped. (for docker and DB connections)
   app.enableShutdownHooks();
