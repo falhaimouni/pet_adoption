@@ -22,5 +22,9 @@
     "migration:generate": "npm run migration:generate -w pet-adoption-backend",
     "migration:run": "npm run migration:run -w pet-adoption-backend",
     "migration:revert": "npm run migration:revert -w pet-adoption-backend"
+  },
+  "devDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.63.1",
+    "playwright": "^1.62.1"
   }
 }

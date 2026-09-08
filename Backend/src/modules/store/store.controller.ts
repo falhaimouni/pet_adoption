@@ -1,39 +1,53 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards} from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
 import { Roles } from "../roles/roles.decorator";
 import { RolesGuard } from "../roles/roles.guard";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { StoreService } from "./store.service";
-import { InventoryQueryDto } from "@shared/dto/inventory-query.dto";
 import { StorePagniatedSuppliesDto } from "@shared/dto/StorePaginatedSupplies.dto";
 import { StoreSupplyDetailsDto } from "@shared/dto/StoreSupplyDetails.dto";
-import { StoreHomeDto } from "@shared/dto/store-home.dto";
-import { SupplyStatusEnum } from "@shared/enums/supply-status.enum";
 import { StoreQueryDto } from "@shared/dto/StoreQuery.dto";
+import { CreateSupplyDto, UpdateSupplyDto } from "@shared/dto/supply.dto";
+import { SupplyService } from "../inventory/services/supply.service";
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('store')
 export class StoreController{
   constructor(
-          private readonly supplyService: StoreService,
+          private readonly storeService: StoreService,
+          private readonly inventorySupplyService: SupplyService,
   ){}
 
   @Get('supplies')
-  @Roles('ADMIN', 'MANAGER', 'VET', 'EMPLOYEE', 'ADOPTER')
+  @Roles('ADOPTER')
   async getSupplies(@Query() query: StoreQueryDto): Promise<StorePagniatedSuppliesDto>
   {
-    return this.supplyService.getSupplies(query);
+    return this.storeService.getSupplies(query);
   }
 
   @Get('supplies/:id')
-  @Roles('ADMIN', 'MANAGER', 'VET', 'EMPLOYEE', 'ADOPTER')
+  @Roles('ADOPTER')
   async getSupplyById(@Param('id') id: string): Promise<StoreSupplyDetailsDto>
   {
-    return this.supplyService.getSupplyById(id);
+    return this.storeService.getSupplyById(id);
   }
 
-  // @Get()
-  // @Roles('ADMIN', 'MANAGER', 'VET', 'EMPLOYEE', 'ADOPTER')
-  // async getStoreHome(): Promise<StoreHomeDto>
-  // {
-  //   return this.supplyService.getStoreHome();
-  // }
+  @Post('supplies')
+  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
+  createSupply(@Body() createSupplyDto: CreateSupplyDto)
+  {
+    return this.inventorySupplyService.createSupply(createSupplyDto);
+  }
+
+  @Patch('supplies/:id')
+  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
+  updateSupply(@Param('id') id: string, @Body() updateSupplyDto: UpdateSupplyDto)
+  {
+    return this.inventorySupplyService.updateSupply(id, updateSupplyDto);
+  }
+
+  @Delete('supplies/:id')
+  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
+  deactivateSupplyFromStore(@Param('id') id: string)
+  {
+    return this.inventorySupplyService.deactivateSupplyFromStore(id);
+  }
 }

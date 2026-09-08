@@ -160,6 +160,49 @@ export class CartService {
     return this.getMyCart(userId);
   }
 
+  async updateItemQuantity(
+    userId: string,
+    productId: string,
+    quantity: number,
+  ) {
+    return this.dataSource.transaction(async (manager) => {
+      const user = await manager.getRepository(User)
+        .createQueryBuilder('user')
+        .setLock('pessimistic_write')
+        .where('user.userId = :userId', { userId })
+        .getOne();
+      if (!user) throw new NotFoundException('User not found');
+
+      const cart = await manager.getRepository(Cart)
+        .createQueryBuilder('cart')
+        .setLock('pessimistic_write')
+        .where('cart.userId = :userId', { userId })
+        .getOne();
+      if (!cart) throw new NotFoundException('Cart not found');
+
+      const cartItemRepo = manager.getRepository(CartItem);
+      const cartItem = await cartItemRepo
+        .createQueryBuilder('cartItem')
+        .setLock('pessimistic_write')
+        .innerJoinAndSelect('cartItem.product', 'product')
+        .where('cartItem.cartId = :cartId', { cartId: cart.cartId })
+        .andWhere('cartItem.productId = :productId', { productId })
+        .getOne();
+      if (!cartItem) throw new NotFoundException('Cart item not found');
+
+      const unitPrice = Number(cartItem.product?.unitPrice ?? cartItem.unitPrice);
+      cartItem.quantity = quantity;
+      cartItem.unitPrice = unitPrice.toFixed(2);
+      cartItem.subtotal = (unitPrice * quantity).toFixed(2);
+      await cartItemRepo.save(cartItem);
+
+      return manager.getRepository(Cart).findOne({
+        where: { cartId: cart.cartId },
+        relations: ['cartItems', 'cartItems.product'],
+      });
+    });
+  }
+
   async clearCart(userId: string) {
     await this.dataSource.transaction(async (manager) => {
       const user = await manager

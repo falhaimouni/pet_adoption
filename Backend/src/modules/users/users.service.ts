@@ -305,6 +305,12 @@ export class UsersService {
         throw new NotFoundException('Role not found');
       }
 
+      this.authorizeRoleAssignment(
+        currentRole,
+        this.toRoleName(requestedRole.roleName),
+        isSelf,
+      );
+
       nextRole = requestedRole;
 
     }
@@ -480,6 +486,26 @@ export class UsersService {
 
     if (currentRole !== 'ADMIN') {
       throw new ForbiddenException('You cannot manage other users');
+    }
+  }
+
+  private authorizeRoleAssignment(
+    currentRole: RoleName,
+    requestedRole: RoleName,
+    isSelf: boolean,
+  ) {
+    if (currentRole !== 'ADMIN') {
+      throw new ForbiddenException('Only admins can assign user roles');
+    }
+
+    if (isSelf && requestedRole !== 'ADMIN') {
+      return;
+    }
+
+    if (!isSelf && !this.isLowerRole(currentRole, requestedRole)) {
+      throw new ForbiddenException(
+        'You can only assign lower-level roles',
+      );
     }
   }
 

@@ -26,7 +26,10 @@ export class StoreService{
     const queryBuilder = this.supplyRepo.createQueryBuilder('supply');
     queryBuilder.andWhere('supply.status = :status', {status: SupplyStatusEnum.AVAILABLE})
       .andWhere('supply.quantity > 0')
-      .andWhere('supply.isActive = :active', {active: true});
+      .andWhere('supply.isActive = :active', {active: true})
+      .andWhere('supply.storeListed = :storeListed', {storeListed: true})
+      .innerJoin('supply.product', 'product')
+      .andWhere('product.isActive = :productActive', { productActive: true });
 
     if (query.search)
     {
@@ -78,10 +81,12 @@ export class StoreService{
   
     const data: StoreSupplyDto[] = supplies.map((supply) => ({
       supplyId: supply.supplyId,
+      productId: supply.productId,
       supplyName: supply.supplyName,
       category: supply.category,
       sellingPrice: supply.sellingPrice,
       inStock: supply.quantity > 0,
+      storeListed: supply.storeListed,
     }));  
     return { data, total, page, limit };//here TypeORM sends the query
   }
@@ -91,8 +96,12 @@ export class StoreService{
     const supply = await this.supplyRepo.createQueryBuilder('supply')
       .where('supply.supplyId = :id', {id})
       .andWhere('supply.isActive = :active', {active: true})
+      .andWhere('supply.storeListed = :storeListed', {storeListed: true})
       .andWhere('supply.status = :status', {status: SupplyStatusEnum.AVAILABLE})
-      .andWhere('supply.quantity > 0').getOne();
+      .andWhere('supply.quantity > 0')
+      .innerJoin('supply.product', 'product')
+      .andWhere('product.isActive = :productActive', { productActive: true })
+      .getOne();
     if (!supply)
     {
       throw new NotFoundException('Supply not found');
@@ -100,11 +109,13 @@ export class StoreService{
 
     return {  
       supplyId: supply.supplyId,
+      productId: supply.productId,
       supplyName: supply.supplyName,
       category: supply.category,
       sellingPrice: supply.sellingPrice,
       quantity: supply.quantity,
       inStock: supply.quantity > 0,
+      storeListed: supply.storeListed,
     };
   }
 

@@ -1,6 +1,7 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Supplier } from './supplier.entity';
 import { SupplyStatusEnum } from '@shared/enums/supply-status.enum';
+import { Product } from './product.entity';
 
 @Entity('supplies')
 @Index('UQ_supplies_active_name_supplier', ['supplyName', 'supplierId'], {
@@ -29,6 +30,9 @@ export class Supply {
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 
+  @Column({ name: 'store_listed', type: 'boolean', default: true })
+  storeListed!: boolean;
+
   @Column({ name: 'delivery_time_days', type: 'integer', nullable: true })
   deliveryTimeDays?: number | null;
 
@@ -44,6 +48,9 @@ export class Supply {
   @Column({name: 'supplier_id', type: 'uuid'})
   supplierId!: string;
 
+  @Column({ name: 'product_id', type: 'uuid' })
+  productId!: string;
+
   @Column({type: 'enum', enum: SupplyStatusEnum, default: SupplyStatusEnum.AVAILABLE})
   status!: SupplyStatusEnum;
 
@@ -51,4 +58,8 @@ export class Supply {
 
   @JoinColumn({name: 'supplier_id'})
   supplier!: Supplier;
+
+  @ManyToOne(() => Product, (product) => product.supplies, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'product_id' })
+  product!: Product;
 }

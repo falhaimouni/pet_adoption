@@ -55,10 +55,10 @@ export class SeedService {
 
     //suppliers system
     await seedSuppliers(this.dataSource);
-    await seedSupplies(this.dataSource);
 
     //commerce system
     await seedProducts(this.dataSource);
+    await seedSupplies(this.dataSource);
     await seedCarts(this.dataSource);
     await seedCartItems(this.dataSource);
     await seedOrders(this.dataSource);

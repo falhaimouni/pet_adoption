@@ -1,4 +1,4 @@
-import { IsEnum, IsIn, IsNumber, IsOptional, IsString, IsUUID, MaxLength, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsEnum, IsIn, IsNumber, IsOptional, IsString, IsUUID, MaxLength, Min, MinLength } from 'class-validator';
 import { SUPPLY_CATEGORIES } from '../constants/supply-categories.constants';
 import { SupplyStatusEnum } from '../enums';
 
@@ -42,6 +42,10 @@ export class CreateSupplyDto {
   @IsOptional()
   @IsEnum(SupplyStatusEnum)
   status?: SupplyStatusEnum;
+
+  @IsOptional()
+  @IsBoolean()
+  storeListed?: boolean;
 }
 export class UpdateSupplyDto {
   @IsOptional()
@@ -87,4 +91,8 @@ export class UpdateSupplyDto {
   @IsOptional()
   @IsEnum(SupplyStatusEnum)
   status?: SupplyStatusEnum;
+
+  @IsOptional()
+  @IsBoolean()
+  storeListed?: boolean;
 }
