@@ -3,13 +3,18 @@
 //when running migration commands from the terminal.
 
 import 'reflect-metadata';
-import 'tsconfig-paths/register';
 import { join, resolve } from 'path';
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 
-const isProd = process.env.NODE_ENV === 'production';
+//need it in development to resolve paths based on tsconfig.json, but not in production (compiled) because the paths are already resolved in the compiled JS files.
+if (process.env.NODE_ENV !== 'production') {
+  require('tsconfig-paths/register');
+}
+
 const rootDir = process.cwd();
+//ts for development, js for production (compiled)
+const compiledExtension = __filename.endsWith('.js') ? 'js' : 'ts';
 
 //manually load environment variables based on the current environment
 let envPath = resolve(rootDir, `.env.${process.env.NODE_ENV ?? 'development'}`);
@@ -31,13 +36,14 @@ export default new DataSource({
   password: process.env.POSTGRES_PASSWORD || 'admin',
   database: process.env.POSTGRES_DB || 'pet_adoption',
 
+  //__dirname is the directory of this file (data-source.ts)
   entities: [
-    join(rootDir, isProd ? 'dist/**/*.entity.js' : 'src/**/*.entity.ts')
+    join(__dirname, 'entities', `**/*.entity.${compiledExtension}`),
   ],
 
-  migrations: isProd
-    ? [join(rootDir, 'dist/database/migrations/*.js')]
-    : [join(rootDir, 'src/database/migrations/*.ts')],
+  migrations: [
+    join(__dirname, 'migrations', `*.${compiledExtension}`),
+  ],
 
   synchronize: false,
   logging: process.env.NODE_ENV !== 'production',
