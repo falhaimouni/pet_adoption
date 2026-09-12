@@ -87,6 +87,12 @@ export class AuthService implements OnModuleInit {
     });
 
     if (existing) {
+      if (existing.provider === 'GOOGLE') {
+        throw new ConflictException(
+          'An account with this email already exists. Please sign in with Google.',
+        );
+      }
+
       throw new ConflictException(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
     }
 
@@ -123,6 +129,12 @@ export class AuthService implements OnModuleInit {
 
     if (!user || !user.role || user.role.isActive === false) {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+    }
+
+    if (user.provider === 'GOOGLE') {
+      throw new UnauthorizedException(
+        'An account with this email already exists. Please sign in with Google.',
+      );
     }
 
     if (!user.password) {
@@ -291,7 +303,7 @@ export class AuthService implements OnModuleInit {
     await this.passwordResetTokenRepo.save(tokenEntity);
 
     const frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5175';
+      this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5173';
     const resetLink = `${frontendUrl}/#/reset-password?token=${rawToken}`;
 
     await this.mailService.sendPasswordResetEmail(user.email, resetLink);

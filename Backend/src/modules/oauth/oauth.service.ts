@@ -93,6 +93,12 @@ export class OAuthService {
     if (existingOAuthAccount) {
       const user = existingOAuthAccount.user;
 
+      if (user?.provider === 'LOCAL') {
+        throw new ConflictException(
+          'An account with this email already exists. Please sign in using your existing login method.',
+        );
+      }
+
       if (
         !user ||
         user.status !== 'active' ||
@@ -112,6 +118,12 @@ export class OAuthService {
     });
 
     if (existingUser) {
+      if (existingUser.provider === 'LOCAL') {
+        throw new ConflictException(
+          'An account with this email already exists. Please sign in using your existing login method.',
+        );
+      }
+
       if (
         existingUser.status !== 'active' ||
         !existingUser.role ||
@@ -120,8 +132,8 @@ export class OAuthService {
         throw new UnauthorizedException('Inactive or invalid account');
       }
 
-      throw new UnauthorizedException(
-        'Google sign-in cannot be automatically linked to an existing local account',
+      throw new ConflictException(
+        'An account with this email already exists. Please sign in with Google.',
       );
     }
 

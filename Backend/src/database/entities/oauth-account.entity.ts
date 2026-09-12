@@ -1,5 +1,4 @@
-//when the same user signs in with different providers, we will store their oauth accounts in this table
-//ex: google gives us unique id for each user
+//Store the Google provider identity associated with a Google-only user account.
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { User } from './user.entity';
 
