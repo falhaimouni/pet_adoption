@@ -81,50 +81,40 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
 
           {/* Teal circle blob */}
           <div className="absolute inset-0 pointer-events-none hidden lg:block">
-            <svg viewBox="0 0 600 600" fill="none" className="absolute w-[520px] h-auto top-1/2 left-[5%] -translate-y-1/2">
-              <circle cx="300" cy="300" r="260" fill="#089D97" fillOpacity="0.22" />
+            <svg viewBox="0 0 600 600" fill="none" className="absolute w-[600px] h-auto top-1/2 left-0 -translate-y-1/2">
+              <circle cx="300" cy="300" r="300" fill="#089D97" fillOpacity="0.15" />
             </svg>
           </div>
 
-          {/* Brand text block */}
-          <div className="relative z-10 flex flex-col items-center lg:items-start px-8 xl:px-14 w-full max-w-[480px] lg:max-w-none">
-            <div className="flex items-end gap-2 mb-1">
-              <h2 className="font-['Prata',serif] text-[68px] text-[#047975] leading-tight">
-                Petopia
-              </h2>
-              <img
-                src={smallDogImg}
-                alt=""
-                className="w-[56px] h-auto object-contain mb-1 hidden lg:block"
-              />
-            </div>
-            <p className="font-['Poppins',sans-serif] font-semibold text-[44px] text-black rotate-[-0.7deg] mb-3">
+          {/* Brand text block — positioned at top-left */}
+          <div className="absolute top-8 left-8 lg:top-12 lg:left-14 z-10 flex flex-col items-start">
+            <h2 className="font-['Prata',serif] text-[40px] lg:text-[52px] text-[#047975] leading-tight mb-0">
+              Petopia
+            </h2>
+          </div>
+
+          {/* Welcome section — positioned left-center */}
+          <div className="absolute left-0 top-[32%] -translate-y-1/2 z-10 flex flex-col items-start px-8 lg:px-14 w-full max-w-[420px]">
+            <p className="font-['Poppins',sans-serif] font-semibold text-[32px] lg:text-[42px] text-black rotate-[-0.7deg] mb-2 leading-tight">
               {t("login_welcome_to")}
             </p>
-            <p className="font-['Poppins',sans-serif] text-[22px] text-black max-w-[300px]">
+            <p className="font-['Poppins',sans-serif] text-[16px] lg:text-[20px] text-black max-w-[300px] leading-snug">
               {t("home_hero_desc1")}
             </p>
           </div>
 
-          {/* Dog + Cat stacked together */}
-          <div className="relative z-10 flex justify-center w-full mt-2">
-            <div className="relative">
-              <img
-                src={dogImg}
-                alt=""
-                className="w-[420px] h-auto object-contain"
-              />
-              <img
-                src={catPhotoImg}
-                alt=""
-                className="absolute -top-[80px] -right-[90px] w-[180px] h-auto object-contain pointer-events-none hidden lg:block"
-              />
-            </div>
+          {/* Dog illustration */}
+          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-10 flex justify-center">
+            <img
+              src={dogImg}
+              alt=""
+              className="w-[280px] lg:w-[320px] h-auto object-contain"
+            />
           </div>
 
           {/* Tagline card */}
-          <div className="hidden lg:flex absolute z-20 bottom-[9%] left-[38%] bg-[rgba(186,216,211,0.96)] border border-white rounded-[30px] shadow-[7px_7px_1px_0px_rgba(0,0,0,0.25)] px-5 py-4 max-w-[260px]">
-              <p className="font-['Poppins',sans-serif] text-[15px] text-black leading-snug">
+          <div className="hidden lg:flex absolute z-20 bottom-6 right-30 bg-[rgba(186,216,211,0.96)] border border-white rounded-[30px] shadow-[7px_7px_1px_0px_rgba(0,0,0,0.25)] px-5 py-4 max-w-[260px]">
+              <p className="font-['Poppins',sans-serif] text-[14px] text-black leading-relaxed">
               {t("login_quote")}
             </p>
           </div>
@@ -139,7 +129,16 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
 
         {/* ── Right Panel ── */}
         <div className="flex-1 flex items-center justify-center px-10 py-10">
-          <div className="w-full max-w-[500px] bg-white rounded-[30px] shadow-xl p-10">
+          <div className="w-full max-w-[500px] bg-white rounded-[30px] shadow-xl p-10 relative">
+            {/* Cat at the top of the card */}
+            <div className="absolute -top-[55px] left-0 hidden lg:block">
+              <img
+                src={catPhotoImg}
+                alt=""
+                className="w-[180px] h-auto object-contain"
+              />
+            </div>
+            
             <h2 className="font-['Inter',sans-serif] font-semibold text-[32px] text-black mb-1">
               {t("login_welcome_back")}
             </h2>
@@ -225,7 +224,6 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
                 {t("login_signup")}
               </button>
             </p>
-
           </div>
         </div>
 
