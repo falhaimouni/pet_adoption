@@ -24,6 +24,7 @@ services:
       - ${ENV_FILE:-.env.development}
     environment:
       - POSTGRES_HOST=postgres
+      - NODE_ENV=${NODE_ENV:-development}
     depends_on:
       - postgres
 
