@@ -2,6 +2,8 @@ export class StoreSupplyDto{
   
   supplyId!: string;
 
+  productId!: string;
+
   supplyName!: string;
 
   category!: string;
@@ -9,5 +11,7 @@ export class StoreSupplyDto{
   sellingPrice!: string;
 
   inStock!: boolean;
+
+  storeListed!: boolean;
 }
 // this dto for one item in the product list

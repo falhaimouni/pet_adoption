@@ -74,7 +74,7 @@ function Group() {
         <p className="font-['Poppins:SemiBold',sans-serif] leading-[normal] mb-0 text-[#089d97] text-[15px] whitespace-pre-wrap">Liability</p>
         <p className="leading-[normal] mb-0 text-[13px] whitespace-pre-wrap">Petopia is not responsible for agreements between users or the health of adopted pets after adoption.</p>
         <p className="font-['Poppins:SemiBold',sans-serif] leading-[normal] mb-0 text-[#089d97] text-[15px] whitespace-pre-wrap">Contact</p>
-        <p className="leading-[normal] mb-0 text-[13px] whitespace-pre-wrap">📧 support@petopia.com</p>
+        <p className="leading-[normal] mb-0 text-[13px] whitespace-pre-wrap">📧 petadoptionsystem2000@gmail.com</p>
         <p className="leading-[normal] mb-0 text-[13px] whitespace-pre-wrap">📞 +962 799 281 091</p>
         <p className="leading-[normal] mb-0 text-[13px] whitespace-pre-wrap">​</p>
         <p className="leading-[normal] mb-0 text-[13px] whitespace-pre-wrap">​</p>

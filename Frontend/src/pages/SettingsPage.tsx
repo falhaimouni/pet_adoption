@@ -192,9 +192,14 @@ export default function SettingsPage({ onNavigate }: SettingsPageProps) {
                         )}
                       </div>
                     ))}
-                    <button onClick={handlePasswordSave} disabled={!pwForm.current || !pwForm.next || pwForm.next !== pwForm.confirm} className="px-6 py-2.5 rounded-[12px] bg-[#089D97] text-white font-['Poppins',sans-serif] text-[13px] font-semibold hover:bg-[#047975] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                      {t("security_update_pw")}
-                    </button>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button onClick={handlePasswordSave} disabled={!pwForm.current || !pwForm.next || pwForm.next !== pwForm.confirm} className="px-6 py-2.5 rounded-[12px] bg-[#089D97] text-white font-['Poppins',sans-serif] text-[13px] font-semibold hover:bg-[#047975] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                        {t("security_update_pw")}
+                      </button>
+                      <button onClick={() => onNavigate("forgot-password")} className="px-4 py-2.5 rounded-[12px] bg-[#f0f8f7] text-[#047975] font-['Poppins',sans-serif] text-[13px] font-semibold hover:bg-[#e0f2f0] transition-colors">
+                        {t("login_forgot")}
+                      </button>
+                    </div>
                   </div>
                 </div>
                 )}

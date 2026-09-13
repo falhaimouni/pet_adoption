@@ -3,7 +3,9 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { randomBytes } from 'crypto';
 import { DataSource, QueryFailedError, Repository } from 'typeorm';
 
 import { User } from '../../database/entities/user.entity';
@@ -19,6 +21,25 @@ type GoogleUserData = {
   lastName: string;
   avatar?: string | null;
 };
+
+type OAuthAuthResponse = {
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    roleName: string;
+  };
+};
+
+type PendingOAuthSession = {
+  auth: OAuthAuthResponse;
+  expiresAt: number;
+};
+
+const OAUTH_SESSION_TTL_MS = 60_000;
 
 @Injectable()
 export class OAuthService {
@@ -36,7 +57,11 @@ export class OAuthService {
     private readonly dataSource: DataSource,
 
     private readonly authService: AuthService,
+
+    private readonly configService: ConfigService,
   ) {}
+
+  private readonly pendingSessions = new Map<string, PendingOAuthSession>();
 
   async validateGoogleUser(googleUser: GoogleUserData) {
     const {
@@ -68,6 +93,12 @@ export class OAuthService {
     if (existingOAuthAccount) {
       const user = existingOAuthAccount.user;
 
+      if (user?.provider === 'LOCAL') {
+        throw new ConflictException(
+          'An account with this email already exists. Please sign in using your existing login method.',
+        );
+      }
+
       if (
         !user ||
         user.status !== 'active' ||
@@ -87,6 +118,12 @@ export class OAuthService {
     });
 
     if (existingUser) {
+      if (existingUser.provider === 'LOCAL') {
+        throw new ConflictException(
+          'An account with this email already exists. Please sign in using your existing login method.',
+        );
+      }
+
       if (
         existingUser.status !== 'active' ||
         !existingUser.role ||
@@ -95,26 +132,9 @@ export class OAuthService {
         throw new UnauthorizedException('Inactive or invalid account');
       }
 
-      //only an account with a local password can be linked to Google
-      if (!existingUser.password) {
-        throw new UnauthorizedException('Invalid OAuth account');
-      }
-
-      const oauthAccount = this.oauthAccountRepo.create({
-        userId: existingUser.userId,
-        provider: 'GOOGLE',
-        providerUserId,
-      });
-
-      try {
-        await this.oauthAccountRepo.save(oauthAccount);
-      } catch (error) {
-        if (!(error instanceof QueryFailedError && (error as any).code === '23505')) {
-          throw error;
-        }
-      }
-
-      return this.authService.createAuthTokens(existingUser.userId);
+      throw new ConflictException(
+        'An account with this email already exists. Please sign in with Google.',
+      );
     }
 
     //no user exists -> create a new adopter account
@@ -170,5 +190,41 @@ export class OAuthService {
 
     //issue our normal application JWTs
     return this.authService.createAuthTokens(savedUser.userId);
+  }
+
+  createFrontendRedirect(auth: OAuthAuthResponse): string {
+    const code = randomBytes(32).toString('hex');
+    this.pendingSessions.set(code, {
+      auth,
+      expiresAt: Date.now() + OAUTH_SESSION_TTL_MS,
+    });
+
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5173';
+    const redirectUrl = new URL(frontendUrl);
+    redirectUrl.hash = `/oauth-callback?code=${encodeURIComponent(code)}`;
+    return redirectUrl.toString();
+  }
+
+  consumeFrontendSession(code: string): OAuthAuthResponse {
+    this.pruneExpiredSessions();
+
+    const pending = this.pendingSessions.get(code);
+    this.pendingSessions.delete(code);
+
+    if (!pending || pending.expiresAt < Date.now()) {
+      throw new UnauthorizedException('Invalid or expired OAuth session');
+    }
+
+    return pending.auth;
+  }
+
+  private pruneExpiredSessions(): void {
+    const now = Date.now();
+    for (const [code, pending] of this.pendingSessions.entries()) {
+      if (pending.expiresAt < now) {
+        this.pendingSessions.delete(code);
+      }
+    }
   }
 }

@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Edit, Trash2, ArrowLeft, Stethoscope } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import Modal from "../../components/Modal";
 import Badge from "../../components/Badge";
 import EmptyState from "../../components/EmptyState";
-import { apiFetch } from "../../lib/api";
+import { apiFetch, PetResponse } from "../../lib/api";
 
 interface MedicalEntry {
   entryId: string;
@@ -29,7 +29,12 @@ interface VetMedicalPageProps {
 const blank = { diagnosis: "", treatment: "", vaccinationStatus: "PENDING", medicalDate: "", notes: "" };
 
 export default function VetMedicalPage({ onNavigate, params }: VetMedicalPageProps) {
-  const petId = params?.petId;
+  const routePetId = params?.petId;
+  const [selectedPetId, setSelectedPetId] = useState(routePetId ?? "");
+  const effectivePetId = routePetId ?? selectedPetId;
+  const [pets, setPets] = useState<PetResponse[]>([]);
+  const [petsLoading, setPetsLoading] = useState(true);
+  const [petsError, setPetsError] = useState("");
   const [record, setRecord] = useState<MedicalRecord | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<MedicalEntry | null>(null);
@@ -40,21 +45,45 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
   const [error, setError] = useState("");
   const [formError, setFormError] = useState("");
 
+  useEffect(() => {
+    let cancelled = false;
+    setPetsLoading(true);
+    setPetsError("");
+    apiFetch<PetResponse[]>("/pets")
+      .then((data) => {
+        if (!cancelled) {
+          setPets(data);
+          if (!routePetId && data[0]) setSelectedPetId((current) => current || data[0].petId);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setPetsError(err instanceof Error ? err.message : "Unable to load pets.");
+      })
+      .finally(() => {
+        if (!cancelled) setPetsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [routePetId]);
+
   function loadRecord() {
-    if (!petId) {
-      setError("Choose a pet before opening medical records.");
+    if (!effectivePetId) {
+      setRecord(null);
+      setError("");
       setLoading(false);
       return;
     }
     setLoading(true);
     setError("");
-    apiFetch<MedicalRecord>(`/pets/${petId}/medical-record`)
+    apiFetch<MedicalRecord>(`/pets/${effectivePetId}/medical-record`)
       .then(setRecord)
       .catch((err) => setError(err instanceof Error ? err.message : "Unable to load medical record."))
       .finally(() => setLoading(false));
   }
 
-  useEffect(loadRecord, [petId]);
+  useEffect(loadRecord, [effectivePetId]);
 
   function openEdit(entry: MedicalEntry) {
     setEditTarget(entry);
@@ -70,7 +99,10 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
   }
 
   async function saveEntry() {
-    if (!petId) return;
+    if (!effectivePetId) {
+      setFormError("Choose a pet before adding a medical entry.");
+      return;
+    }
     if (!form.diagnosis.trim() || !form.treatment.trim() || !form.medicalDate) {
       setFormError("Diagnosis, treatment, and medical date are required.");
       return;
@@ -85,7 +117,7 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
     setSaving(true);
     setFormError("");
     try {
-      await apiFetch(editTarget ? `/medical-entries/${editTarget.entryId}` : `/pets/${petId}/medical-record/entries`, {
+      await apiFetch(editTarget ? `/medical-entries/${editTarget.entryId}` : `/pets/${effectivePetId}/medical-record/entries`, {
         method: editTarget ? "PATCH" : "POST",
         body: JSON.stringify(editTarget ? body : createBody),
       });
@@ -115,22 +147,35 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
   }
 
   const pet = record?.pet;
+  const selectedPet = useMemo(() => pets.find((item) => item.petId === effectivePetId), [pets, effectivePetId]);
+  const displayPet = pet ?? selectedPet;
   const entries = record?.entries ?? [];
 
   return (
-    <DashboardLayout role="vet" activePage="vet-medical" onNavigate={onNavigate} pageTitle={`Medical Records${pet ? ` - ${pet.name}` : ""}`} breadcrumbs={["Vet", "Pets", pet?.name ?? "Medical Records"]}>
+    <DashboardLayout role="vet" activePage="vet-medical" onNavigate={onNavigate} pageTitle={`Medical Records${displayPet ? ` - ${displayPet.name}` : ""}`} breadcrumbs={["Vet", "Pets", displayPet?.name ?? "Medical Records"]}>
       <div className="max-w-3xl">
         <div className="bg-white rounded-[15px] shadow-md p-5 mb-5 flex flex-wrap gap-6 items-center">
           <button onClick={() => onNavigate("vet-pets")} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label="Back to pets"><ArrowLeft size={18} /></button>
           <div>
-            <p className="font-['Poppins',sans-serif] font-semibold text-[18px] text-black">{pet?.name ?? "Medical Record"}</p>
-            <p className="font-['Poppins',sans-serif] text-[13px] text-[#089D97]">{[pet?.breed ?? pet?.species, pet?.gender, pet?.age == null ? null : `${pet.age} years`].filter(Boolean).join(" · ")}</p>
+            <p className="font-['Poppins',sans-serif] font-semibold text-[18px] text-black">{displayPet?.name ?? "Medical Record"}</p>
+            <p className="font-['Poppins',sans-serif] text-[13px] text-[#089D97]">{[displayPet?.breed ?? displayPet?.species, displayPet?.gender, displayPet?.age == null ? null : `${displayPet.age} years`].filter(Boolean).join(" · ")}</p>
           </div>
           <div className="flex gap-4 ml-auto">
-            {petId && <button onClick={() => onNavigate("vet-vaccinations", { petId })} className="flex items-center gap-2 px-4 py-2 border border-[#089D97] text-[#089D97] rounded-[10px] font-['Poppins',sans-serif] text-[13px] hover:bg-[rgba(8,157,151,0.1)] transition-colors">Vaccinations</button>}
-            <button onClick={() => { setEditTarget(null); setForm(blank); setFormError(""); setAddOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-[#089D97] text-white rounded-[10px] font-['Poppins',sans-serif] font-medium text-[13px] hover:bg-[#047975] transition-colors"><Plus size={15} /> Add Entry</button>
+            {effectivePetId && <button onClick={() => onNavigate("vet-vaccinations", { petId: effectivePetId })} className="flex items-center gap-2 px-4 py-2 border border-[#089D97] text-[#089D97] rounded-[10px] font-['Poppins',sans-serif] text-[13px] hover:bg-[rgba(8,157,151,0.1)] transition-colors">Vaccinations</button>}
+            <button disabled={!effectivePetId} onClick={() => { setEditTarget(null); setForm(blank); setFormError(""); setAddOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-[#089D97] text-white rounded-[10px] font-['Poppins',sans-serif] font-medium text-[13px] hover:bg-[#047975] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"><Plus size={15} /> Add Entry</button>
           </div>
         </div>
+
+        {!routePetId && (
+          <div className="bg-white rounded-[15px] shadow-md p-5 mb-5">
+            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Pet</label>
+            <select value={selectedPetId} onChange={(e) => setSelectedPetId(e.target.value)} disabled={petsLoading || pets.length === 0} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] bg-white transition-colors disabled:opacity-60">
+              <option value="">{petsLoading ? "Loading pets..." : pets.length === 0 ? "No pets available" : "Choose pet"}</option>
+              {pets.map((item) => <option key={item.petId} value={item.petId}>{item.name} - {item.species}{item.breed ? `, ${item.breed}` : ""}</option>)}
+            </select>
+            {petsError && <p className="mt-2 font-['Poppins',sans-serif] text-[12px] text-red-600">{petsError}</p>}
+          </div>
+        )}
 
         {loading ? (
           <div className="space-y-3">{[1, 2, 3].map((n) => <div key={n} className="h-[110px] rounded-[15px] bg-white animate-pulse" />)}</div>
@@ -166,7 +211,7 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
           {formError && <p className="text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Medical Date</label>
-            <input type="date" value={form.medicalDate} onChange={(e) => setForm((f) => ({ ...f, medicalDate: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+            <input type="date" value={form.medicalDate} disabled={!!editTarget} onChange={(e) => setForm((f) => ({ ...f, medicalDate: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors disabled:bg-gray-50 disabled:text-black/50" />
           </div>
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Vaccination Status</label>

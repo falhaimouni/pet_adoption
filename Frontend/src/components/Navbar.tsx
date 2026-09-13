@@ -1,11 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { Menu, X, PawPrint, ChevronDown, User, Settings, LogOut, Sun, Moon, Globe, Heart, ShoppingCart, Bell, CheckCheck } from "lucide-react";
+import { Menu, X, PawPrint, ChevronDown, User, Settings, LogOut, Sun, Moon, Globe, ShoppingCart, Bell, CheckCheck } from "lucide-react";
 import logoImg from "../imports/Home/be6bd1f12e9a602c8830a9c39abaf73ad65d4682.png";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useTheme } from "../context/ThemeContext";
 import { useCart } from "../context/CartContext";
-import { useWishlist } from "../context/WishlistContext";
 import { apiFetch } from "../lib/api";
 
 interface NavbarProps {
@@ -17,7 +16,6 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
   const { t, lang, setLang } = useLanguage();
   const { isDark, toggleTheme } = useTheme();
   const { count } = useCart();
-  const { totalSaved } = useWishlist();
   const NAV_LINKS = [
     { label: t("nav_home"),  page: "home" },
     { label: t("nav_pets"),  page: "pets" },
@@ -36,7 +34,7 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
   const notificationRef = useRef<HTMLDivElement>(null);
   const { user, isAuthenticated, logout } = useAuth();
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const canUseShopping = !isAuthenticated || user?.role === "adopter";
+  const canUseShopping = isAuthenticated && user?.role === "adopter";
   const visibleNavLinks = canUseShopping
     ? NAV_LINKS
     : NAV_LINKS.filter((link) => link.page === "home");
@@ -181,25 +179,14 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
           </button>
 
           {canUseShopping && (
-            <>
-              <button
-                onClick={() => nav("wishlist")}
-                aria-label={t("wishlist_title")}
-                className="relative hidden sm:flex w-9 h-9 rounded-[10px] items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
-              >
-                <Heart size={17} />
-                {totalSaved > 0 && <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">{totalSaved}</span>}
-              </button>
-
-              <button
-                onClick={() => nav("cart")}
-                aria-label={t("cart_title")}
-                className="relative hidden sm:flex w-9 h-9 rounded-[10px] items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
-              >
-                <ShoppingCart size={17} />
-                {count > 0 && <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-[#089D97] text-white text-[10px] font-bold flex items-center justify-center">{count}</span>}
-              </button>
-            </>
+            <button
+              onClick={() => nav("cart")}
+              aria-label={t("cart_title")}
+              className="relative hidden sm:flex w-9 h-9 rounded-[10px] items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
+            >
+              <ShoppingCart size={17} />
+              {count > 0 && <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-[#089D97] text-white text-[10px] font-bold flex items-center justify-center">{count}</span>}
+            </button>
           )}
 
           {isAuthenticated && (
@@ -389,10 +376,7 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
 	              <button onClick={() => nav("settings")} className="text-start px-3 py-2.5 rounded-[10px] font-['Poppins',sans-serif] text-[14px] text-[#1a2e2d]/70 hover:bg-[#f0f9f8]">{t("nav_settings")}</button>
 	              <button onClick={() => nav("notifications")} className="text-start px-3 py-2.5 rounded-[10px] font-['Poppins',sans-serif] text-[14px] text-[#1a2e2d]/70 hover:bg-[#f0f9f8]">{t("nav_notifications")} ({unreadNotifications})</button>
               {canUseShopping && (
-                <>
-                  <button onClick={() => nav("wishlist")} className="text-start px-3 py-2.5 rounded-[10px] font-['Poppins',sans-serif] text-[14px] text-[#1a2e2d]/70 hover:bg-[#f0f9f8]">{t("wishlist_title")} ({totalSaved})</button>
-                  <button onClick={() => nav("cart")} className="text-start px-3 py-2.5 rounded-[10px] font-['Poppins',sans-serif] text-[14px] text-[#1a2e2d]/70 hover:bg-[#f0f9f8]">{t("cart_title")} ({count})</button>
-                </>
+                <button onClick={() => nav("cart")} className="text-start px-3 py-2.5 rounded-[10px] font-['Poppins',sans-serif] text-[14px] text-[#1a2e2d]/70 hover:bg-[#f0f9f8]">{t("cart_title")} ({count})</button>
               )}
               <button onClick={handleLogout} className="mt-1 px-3 py-2.5 bg-rose-50 text-rose-600 font-['Poppins',sans-serif] font-medium text-[14px] rounded-[10px] text-center hover:bg-rose-100 transition-colors">
                 {t("nav_logout")}

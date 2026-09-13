@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import {
   Users, Package, Tag, FileText,
-  BarChart2, ArrowUpRight, TrendingUp, AlertTriangle, UserCheck, Shield, FolderOpen, Activity,
+  ArrowUpRight, TrendingUp, AlertTriangle, UserCheck, Activity, PawPrint, ClipboardList, Syringe,
 } from "lucide-react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import DashboardLayout from "../../components/DashboardLayout";
 import KpiCard from "../../components/KpiCard";
 import { apiFetch } from "../../lib/api";
@@ -12,44 +12,34 @@ interface AdminDashboardPageProps {
   onNavigate: (page: string) => void;
 }
 
-const userGrowth = [
-  { month: "Jan", users: 120 },
-  { month: "Feb", users: 168 },
-  { month: "Mar", users: 210 },
-  { month: "Apr", users: 265 },
-  { month: "May", users: 330 },
-  { month: "Jun", users: 402 },
-  { month: "Jul", users: 486 },
-];
-
 interface DashboardData {
-  users: { total: number; admin?: number; manager?: number; employee: number; vet: number; adopter: number; active?: number };
-  pets: { total: number; available: number; adopted: number; pendingAdoption: number };
-  adoptions: { totalRequests: number; pending: number; approved: number };
-  medical: { petsNeedingMedicalAttention?: number };
-  supplies: { lowStockSupplies: number; totalSuppliers: number };
+  users: { total: number; admin?: number; manager?: number; employee: number; vet: number; adopter: number; active?: number; inactive?: number };
+  pets: { total: number; available: number; adopted: number; pendingAdoption: number; addedRecently?: number };
+  adoptions: { totalRequests: number; pending: number; approved: number; rejectedOrCanceled?: number };
+  medical: { totalMedicalRecords?: number; totalVaccinations?: number; petsNeedingMedicalAttention?: number };
+  supplies: { totalSupplies?: number; lowStockSupplies: number; totalSuppliers: number };
   activity: { recentActivityLogs: Array<{ logId: string; action: string; entityType: string; createdAt: string; user?: { firstName: string; lastName: string } | null }> };
 }
 
 const features = [
   { id: "admin-users", label: "Users", desc: "Manage all accounts", icon: Users, color: "text-[#089D97]", bg: "bg-[#e0f2f0]" },
-  { id: "admin-roles", label: "Roles", desc: "Review permissions", icon: Shield, color: "text-violet-600", bg: "bg-violet-50" },
   { id: "admin-inventory", label: "Inventory", desc: "Stock & products", icon: Package, color: "text-amber-600", bg: "bg-amber-50" },
   { id: "admin-suppliers", label: "Suppliers", desc: "Vendor directory", icon: Tag, color: "text-sky-600", bg: "bg-sky-50" },
-  { id: "admin-files", label: "Files", desc: "Upload documents", icon: FolderOpen, color: "text-rose-600", bg: "bg-rose-50" },
   { id: "admin-reports", label: "Reports", desc: "Generate reports", icon: FileText, color: "text-indigo-600", bg: "bg-indigo-50" },
-  { id: "admin-analytics", label: "Analytics", desc: "Platform insights", icon: BarChart2, color: "text-teal-600", bg: "bg-teal-50" },
-  { id: "admin-activity", label: "Activity", desc: "Audit actions", icon: Activity, color: "text-slate-600", bg: "bg-slate-50" },
 ];
 
 export default function AdminDashboardPage({ onNavigate }: AdminDashboardPageProps) {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    setLoading(true);
+    setError("");
     apiFetch<DashboardData>("/dashboard/admin")
       .then(setData)
-      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load dashboard."));
+      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load dashboard."))
+      .finally(() => setLoading(false));
   }, []);
 
   const roleDistribution = [
@@ -60,15 +50,40 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
     { name: "Admins", value: data?.users.admin ?? 0, color: "#1a2e2d" },
   ];
   const recentActivity = data?.activity.recentActivityLogs ?? [];
+  const overviewRows = [
+    { label: "Active users", value: data?.users.active },
+    { label: "Inactive users", value: data?.users.inactive },
+    { label: "Total pets", value: data?.pets.total },
+    { label: "Available pets", value: data?.pets.available },
+    { label: "Adopted pets", value: data?.pets.adopted },
+    { label: "Pending adoptions", value: data?.pets.pendingAdoption },
+    { label: "Adoption requests", value: data?.adoptions.totalRequests },
+    { label: "Approved requests", value: data?.adoptions.approved },
+    { label: "Rejected/canceled requests", value: data?.adoptions.rejectedOrCanceled },
+    { label: "Inventory supplies", value: data?.supplies.totalSupplies },
+    { label: "Low-stock supplies", value: data?.supplies.lowStockSupplies },
+    { label: "Suppliers", value: data?.supplies.totalSuppliers },
+    { label: "Medical records", value: data?.medical.totalMedicalRecords },
+    { label: "Vaccinations", value: data?.medical.totalVaccinations },
+    { label: "Pets needing medical attention", value: data?.medical.petsNeedingMedicalAttention },
+  ].filter((row) => row.value !== undefined);
 
   return (
     <DashboardLayout role="admin" activePage="admin-dashboard" onNavigate={onNavigate} pageTitle="Admin Dashboard" breadcrumbs={["Admin", "Dashboard"]}>
+      {error && (
+        <div className="mb-5 rounded-[14px] border border-red-100 bg-red-50 px-4 py-3 font-['Poppins',sans-serif] text-[13px] text-red-700">
+          {error}
+        </div>
+      )}
+
       {/* KPIs */}
       <div className="flex flex-wrap gap-4 mb-6">
-        <KpiCard label="Total Users" value={data?.users.total ?? "..."} icon={<Users size={20} />} trendLabel={error || "Live backend data"} />
-        <KpiCard label="Active Staff" value={(data?.users.employee ?? 0) + (data?.users.vet ?? 0) + (data?.users.manager ?? 0)} icon={<UserCheck size={20} />} accent="bg-green-50" />
-        <KpiCard label="Approved Requests" value={data?.adoptions.approved ?? "..."} icon={<TrendingUp size={20} />} accent="bg-teal-50" />
-        <KpiCard label="Inventory Alerts" value={data?.supplies.lowStockSupplies ?? "..."} icon={<AlertTriangle size={20} />} accent="bg-red-50" />
+        <KpiCard label="Total Users" value={loading ? "..." : data?.users.total ?? 0} icon={<Users size={20} />} trendLabel="From /dashboard/admin" />
+        <KpiCard label="Active Staff" value={loading ? "..." : (data?.users.employee ?? 0) + (data?.users.vet ?? 0) + (data?.users.manager ?? 0)} icon={<UserCheck size={20} />} accent="bg-green-50" />
+        <KpiCard label="Available Pets" value={loading ? "..." : data?.pets.available ?? 0} icon={<PawPrint size={20} />} accent="bg-teal-50" />
+        <KpiCard label="Pending Adoptions" value={loading ? "..." : data?.adoptions.pending ?? 0} icon={<ClipboardList size={20} />} accent="bg-sky-50" />
+        <KpiCard label="Inventory Alerts" value={loading ? "..." : data?.supplies.lowStockSupplies ?? 0} icon={<AlertTriangle size={20} />} accent="bg-red-50" />
+        <KpiCard label="Vaccinations" value={loading ? "..." : data?.medical.totalVaccinations ?? 0} icon={<Syringe size={20} />} accent="bg-indigo-50" />
       </div>
 
       {/* Feature cards */}
@@ -92,28 +107,7 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
         ))}
       </div>
 
-      {/* Charts + activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* User growth */}
-        <div className="lg:col-span-2 bg-white rounded-[16px] p-5 shadow-sm">
-          <h3 className="font-['Poppins',sans-serif] font-semibold text-[15px] text-black mb-4">User Growth</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={userGrowth}>
-              <defs>
-                <linearGradient id="uGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#089D97" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#089D97" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e0f2f0" />
-              <XAxis dataKey="month" stroke="#5a8a87" fontSize={12} />
-              <YAxis stroke="#5a8a87" fontSize={12} />
-              <Tooltip />
-              <Area type="monotone" dataKey="users" stroke="#089D97" strokeWidth={2} fill="url(#uGrad)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
         {/* Role distribution */}
         <div className="bg-white rounded-[16px] p-5 shadow-sm">
           <h3 className="font-['Poppins',sans-serif] font-semibold text-[15px] text-black mb-4">Role Distribution</h3>
@@ -139,6 +133,26 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
             ))}
           </div>
         </div>
+
+        <div className="lg:col-span-2 bg-white rounded-[16px] p-5 shadow-sm">
+          <h3 className="font-['Poppins',sans-serif] font-semibold text-[15px] text-black mb-4">System Overview</h3>
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[1, 2, 3, 4, 5, 6].map((item) => <div key={item} className="h-12 rounded-[12px] bg-[#f0f8f7] animate-pulse" />)}
+            </div>
+          ) : overviewRows.length === 0 ? (
+            <p className="font-['Poppins',sans-serif] text-[13px] text-black/40">No dashboard metrics are available from the backend.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {overviewRows.map((row) => (
+                <div key={row.label} className="flex items-center justify-between rounded-[12px] bg-[#f0f8f7] px-4 py-3">
+                  <span className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87]">{row.label}</span>
+                  <span className="font-['Poppins',sans-serif] text-[14px] font-semibold text-black">{row.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Recent activity */}
@@ -150,7 +164,8 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
           </button>
         </div>
         <div className="flex flex-col gap-3">
-          {recentActivity.length === 0 && <p className="font-['Poppins',sans-serif] text-[13px] text-black/40">No recent activity.</p>}
+          {loading && <div className="h-14 rounded-[12px] bg-[#f0f8f7] animate-pulse" />}
+          {!loading && recentActivity.length === 0 && <p className="font-['Poppins',sans-serif] text-[13px] text-black/40">No recent activity.</p>}
           {recentActivity.map((item) => (
             <div key={item.logId} className="flex items-center gap-3 py-2 border-b border-[#f0f8f7] last:border-0">
               <div className="w-9 h-9 rounded-full bg-[#f0f8f7] flex items-center justify-center flex-shrink-0">

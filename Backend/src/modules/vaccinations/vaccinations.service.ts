@@ -10,6 +10,7 @@ import { Pet } from '../../database/entities/pet.entity';
 import { MedicalRecord } from '../../database/entities/medical-record.entity';
 import { User } from '../../database/entities/user.entity';
 import { Vaccination } from '../../database/entities/vaccination.entity';
+import { VaccineStatusEnum } from '@shared/enums/vaccine-status.enum';
 
 interface VaccinationPetResponse {
   petId: string;
@@ -30,6 +31,9 @@ interface VaccinationResponse {
   vaccineName: string;
   vaccinationDate: string;
   nextDueDate?: string | null;
+  batch?: string | null;
+  status: VaccineStatusEnum;
+  notes?: string | null;
   pet: VaccinationPetResponse;
   veterinarian: VaccinationVeterinarianResponse;
 }
@@ -78,6 +82,9 @@ export class VaccinationsService {
       vaccineName: dto.vaccineName,
       vaccinationDate: dto.vaccinationDate,
       nextDueDate: dto.nextDueDate,
+      batch: dto.batch,
+      status: dto.status ?? VaccineStatusEnum.VACCINATED,
+      notes: dto.notes,
     });
 
     const savedVaccination = await this.vaccinationRepo.save(vaccination);
@@ -104,6 +111,9 @@ export class VaccinationsService {
       vaccination.vaccinationDate = dto.vaccinationDate;
     }
     if (dto.nextDueDate !== undefined) vaccination.nextDueDate = dto.nextDueDate;
+    if (dto.batch !== undefined) vaccination.batch = dto.batch;
+    if (dto.status !== undefined) vaccination.status = dto.status;
+    if (dto.notes !== undefined) vaccination.notes = dto.notes;
 
     await this.vaccinationRepo.save(vaccination);
     const updatedVaccination = await this.getVaccinationEntity(vaccinationId);
@@ -141,6 +151,9 @@ export class VaccinationsService {
       vaccineName: vaccination.vaccineName,
       vaccinationDate: vaccination.vaccinationDate,
       nextDueDate: vaccination.nextDueDate,
+      batch: vaccination.batch,
+      status: vaccination.status,
+      notes: vaccination.notes,
       pet: this.mapPetResponse(vaccination.pet),
       veterinarian: this.mapVeterinarianResponse(vaccination.veterinarian),
     };

@@ -1,20 +1,9 @@
 import { useEffect, useState } from "react";
 import { Heart, ClipboardList, ShoppingCart, Package, AlertTriangle } from "lucide-react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import DashboardLayout from "../../components/DashboardLayout";
 import KpiCard from "../../components/KpiCard";
 import Badge, { statusBadge } from "../../components/Badge";
 import { apiFetch } from "../../lib/api";
-
-const adoptionTrend = [
-  { month: "Jan", adoptions: 8 },
-  { month: "Feb", adoptions: 12 },
-  { month: "Mar", adoptions: 10 },
-  { month: "Apr", adoptions: 15 },
-  { month: "May", adoptions: 18 },
-  { month: "Jun", adoptions: 22 },
-  { month: "Jul", adoptions: 17 },
-];
 
 const inventoryAlerts: Array<{ item: string; qty: number; min: number; status: string }> = [];
 
@@ -50,27 +39,12 @@ export default function ManagerDashboardPage({ onNavigate }: ManagerDashboardPag
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
-        {/* Adoption trend chart */}
+        {/* Adoption trend */}
         <div className="lg:col-span-2 bg-white rounded-[15px] shadow-md p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black">Adoption Trend</h3>
-            <button onClick={() => onNavigate("manager-analytics")} className="font-['Poppins',sans-serif] text-[12px] text-[#089D97] hover:underline">Full analytics →</button>
           </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={adoptionTrend} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="adoptGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#089D97" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#089D97" stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" tick={{ fontFamily: "Poppins", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontFamily: "Poppins", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ fontFamily: "Poppins", fontSize: 12, borderRadius: 10, border: "1px solid #e5e7eb" }} />
-              <Area type="monotone" dataKey="adoptions" stroke="#089D97" strokeWidth={2} fill="url(#adoptGrad)" dot={{ fill: "#089D97", r: 3 }} />
-            </AreaChart>
-          </ResponsiveContainer>
+          <p className="font-['Poppins',sans-serif] text-[13px] text-black/40 py-16 text-center">Trend data is not included in the current dashboard response.</p>
         </div>
 
         {/* Inventory alerts */}

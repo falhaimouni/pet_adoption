@@ -259,12 +259,13 @@ export class UsersService {
     }
 
     const updateData: Partial<
-      Pick<User, 'firstName' | 'lastName' | 'phone' | 'avatar'>
+      Pick<User, 'firstName' | 'lastName' | 'phone' | 'address' | 'avatar'>
     > = {};
 
     if (data.firstName !== undefined) updateData.firstName = data.firstName;
     if (data.lastName !== undefined) updateData.lastName = data.lastName;
     if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.address !== undefined) updateData.address = data.address;
     if (data.avatar !== undefined) updateData.avatar = data.avatar;
 
     if (Object.keys(updateData).length > 0) {
@@ -304,6 +305,12 @@ export class UsersService {
       if (!requestedRole) {
         throw new NotFoundException('Role not found');
       }
+
+      this.authorizeRoleAssignment(
+        currentRole,
+        this.toRoleName(requestedRole.roleName),
+        isSelf,
+      );
 
       nextRole = requestedRole;
 
@@ -480,6 +487,26 @@ export class UsersService {
 
     if (currentRole !== 'ADMIN') {
       throw new ForbiddenException('You cannot manage other users');
+    }
+  }
+
+  private authorizeRoleAssignment(
+    currentRole: RoleName,
+    requestedRole: RoleName,
+    isSelf: boolean,
+  ) {
+    if (currentRole !== 'ADMIN') {
+      throw new ForbiddenException('Only admins can assign user roles');
+    }
+
+    if (isSelf && requestedRole !== 'ADMIN') {
+      return;
+    }
+
+    if (!isSelf && !this.isLowerRole(currentRole, requestedRole)) {
+      throw new ForbiddenException(
+        'You can only assign lower-level roles',
+      );
     }
   }
 

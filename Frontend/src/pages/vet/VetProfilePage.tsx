@@ -29,7 +29,6 @@ export default function VetProfilePage({ onNavigate }: VetProfilePageProps) {
     phone: user?.phone ?? VET_DEFAULT.phone,
   });
   const [avatar, setAvatar] = useState<string>("");
-  const [pwOpen, setPwOpen] = useState(false);
   const [saved, setSaved] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -205,34 +204,21 @@ export default function VetProfilePage({ onNavigate }: VetProfilePageProps) {
           {/* Change Password */}
           <div className="bg-white rounded-[20px] shadow-md p-5">
             <h3 className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black mb-3">{t("settings_security")}</h3>
-            <button onClick={() => setPwOpen(true)} className="w-full py-2.5 border border-[#089D97] text-[#089D97] rounded-[12px] font-['Poppins',sans-serif] font-medium text-[13px] hover:bg-[rgba(8,157,151,0.06)] transition-colors">
-              {t("security_change_pw")}
-            </button>
+            {user?.provider === "GOOGLE" ? (
+              <p className="font-['Poppins',sans-serif] text-[13px] text-black/60">Password management is handled through Google.</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <button onClick={() => onNavigate("settings")} className="w-full py-2.5 border border-[#089D97] text-[#089D97] rounded-[12px] font-['Poppins',sans-serif] font-medium text-[13px] hover:bg-[rgba(8,157,151,0.06)] transition-colors">
+                  {t("security_change_pw")}
+                </button>
+                <button onClick={() => onNavigate("forgot-password")} className="w-full py-2.5 bg-[#f0f8f7] text-[#047975] rounded-[12px] font-['Poppins',sans-serif] font-medium text-[13px] hover:bg-[#e0f2f0] transition-colors">
+                  {t("login_forgot")}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Change password modal */}
-      {pwOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setPwOpen(false)} />
-          <div className="relative bg-white rounded-[20px] shadow-2xl w-full max-w-sm z-10 p-6">
-            <h3 className="font-['Poppins',sans-serif] font-semibold text-[18px] text-black mb-4">{t("security_change_pw")}</h3>
-            <div className="flex flex-col gap-3">
-              {[t("security_current_pw_ph"), t("security_new_pw_ph"), t("security_confirm_pw_ph")].map((label) => (
-                <div key={label}>
-                  <label className={labelClass}>{label}</label>
-                  <input type="password" placeholder="••••••••" className={inputClass} />
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-3 mt-5 justify-end">
-              <button onClick={() => setPwOpen(false)} className="px-5 py-2 rounded-[10px] border border-gray-300 font-['Poppins',sans-serif] text-[13px] text-gray-600 hover:bg-gray-50 transition-colors">{t("action_cancel")}</button>
-              <button onClick={() => setPwOpen(false)} className="px-5 py-2 rounded-[10px] bg-[#089D97] text-white font-['Poppins',sans-serif] font-medium text-[13px] hover:bg-[#047975] transition-colors">{t("security_update_pw")}</button>
-            </div>
-          </div>
-        </div>
-      )}
     </DashboardLayout>
   );
 }

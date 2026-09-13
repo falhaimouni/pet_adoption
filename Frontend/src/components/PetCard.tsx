@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Eye, Heart, PawPrint } from "lucide-react";
+import { Eye, PawPrint } from "lucide-react";
 import { PetResponse, resolveAssetUrl } from "../lib/api";
 import { useLanguage } from "../context/LanguageContext";
-import { useWishlist } from "../context/WishlistContext";
 
 interface PetCardProps {
   pet: PetResponse;
@@ -27,7 +26,6 @@ const SPECIES_COLORS: Record<string, string> = {
 
 export default function PetCard({ pet, onViewDetails, onAdopt }: PetCardProps) {
   const { t } = useLanguage();
-  const { isPetSaved, togglePet } = useWishlist();
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
 
@@ -40,7 +38,6 @@ export default function PetCard({ pet, onViewDetails, onAdopt }: PetCardProps) {
     status === "PENDING" ? t("status_pending") :
     status === "ADOPTED" ? t("status_adopted") :
     t("common_unavailable");
-  const saved = isPetSaved(pet.petId);
 
   return (
     <article className="bg-white rounded-[22px] shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group border border-transparent hover:border-[rgba(8,157,151,0.12)] flex flex-col">
@@ -73,14 +70,6 @@ export default function PetCard({ pet, onViewDetails, onAdopt }: PetCardProps) {
         <span className={`absolute top-3 right-3 px-2.5 py-0.5 rounded-full font-['Poppins',sans-serif] text-[10px] font-semibold capitalize ${STATUS_STYLES[status] ?? STATUS_STYLES.AVAILABLE}`}>
           {statusText}
         </span>
-        <button
-          type="button"
-          onClick={() => togglePet(pet)}
-          aria-label={saved ? "Remove from wishlist" : "Save pet"}
-          className={`absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center shadow-sm transition-colors ${saved ? "bg-rose-500 text-white" : "bg-white text-[#089D97] hover:bg-rose-50 hover:text-rose-500"}`}
-        >
-          <Heart size={16} className={saved ? "fill-white" : ""} />
-        </button>
       </div>
 
       {/* Content */}

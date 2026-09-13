@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Heart, ShoppingCart, Star, ImageOff } from "lucide-react";
+import { ShoppingCart, Star, ImageOff } from "lucide-react";
 import { Product } from "../data/products";
 import { useCart } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
-import { useWishlist } from "../context/WishlistContext";
+import { useAuth } from "../context/AuthContext";
 
 interface ProductCardProps {
   product: Product;
@@ -33,11 +33,14 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
 export default function ProductCard({ product, onQuickView }: ProductCardProps) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [error, setError] = useState("");
   const { addToCart, isInCart } = useCart();
-  const { isProductSaved, toggleProduct } = useWishlist();
+  const { isAuthenticated, user } = useAuth();
   const { t } = useLanguage();
-  const inCart = isInCart(product.id);
-  const saved = isProductSaved(product.id);
+  const productId = String(product.id);
+  const inCart = isInCart(productId);
+  const canUseCart = isAuthenticated && user?.role === "adopter";
   const discount = product.originalPrice
     ? Math.round((1 - product.price / product.originalPrice) * 100)
     : null;
@@ -77,18 +80,6 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
             {product.badge === "Sale" && discount ? `-${discount}%` : product.badge}
           </span>
         )}
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            toggleProduct(product);
-          }}
-          aria-label={saved ? "Remove from wishlist" : "Save product"}
-          className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center shadow-sm transition-colors ${saved ? "bg-rose-500 text-white" : "bg-white text-[#089D97] hover:bg-rose-50 hover:text-rose-500"}`}
-        >
-          <Heart size={16} className={saved ? "fill-white" : ""} />
-        </button>
-
         {/* Out of stock overlay */}
         {!product.inStock && (
           <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
@@ -117,14 +108,27 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
         </div>
 
         {/* Add to cart */}
-        <button
-          onClick={() => addToCart(product)}
-          disabled={!product.inStock}
-          className={`w-full flex items-center justify-center gap-2 py-2.5 font-['Poppins',sans-serif] font-medium text-[13px] rounded-[11px] transition-all duration-200 ${inCart ? "bg-[#e0f2f0] text-[#089D97] border-2 border-[#089D97]" : "bg-[#089D97] text-white hover:bg-[#047975]"} disabled:opacity-40 disabled:cursor-not-allowed`}
-        >
-          <ShoppingCart size={14} />
-          {inCart ? t("product_in_cart") : t("product_add_to_cart")}
-        </button>
+        {canUseCart && (
+          <button
+            onClick={async () => {
+              setAdding(true);
+              setError("");
+              try {
+                await addToCart(product);
+              } catch (err) {
+                setError(err instanceof Error ? err.message : "Unable to add item.");
+              } finally {
+                setAdding(false);
+              }
+            }}
+            disabled={!product.inStock || adding}
+            className={`w-full flex items-center justify-center gap-2 py-2.5 font-['Poppins',sans-serif] font-medium text-[13px] rounded-[11px] transition-all duration-200 ${inCart ? "bg-[#e0f2f0] text-[#089D97] border-2 border-[#089D97]" : "bg-[#089D97] text-white hover:bg-[#047975]"} disabled:opacity-40 disabled:cursor-not-allowed`}
+          >
+            <ShoppingCart size={14} />
+            {adding ? "Adding..." : inCart ? t("product_in_cart") : t("product_add_to_cart")}
+          </button>
+        )}
+        {error && <p className="font-['Poppins',sans-serif] text-[11px] text-red-600">{error}</p>}
       </div>
     </article>
   );

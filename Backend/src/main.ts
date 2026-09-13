@@ -13,7 +13,10 @@ import { resolveUploadRoot } from './modules/uploads/upload-path.util';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    //to get the raw body of the request for stripe webhook verification
+    rawBody: true,
+  });
 
   //helps application shut down cleanly when the process is stopped. (for docker and DB connections)
   app.enableShutdownHooks();
@@ -35,8 +38,17 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   // Allow the frontend to call this backend from a different port during development
+  const frontendOrigins = (
+    configService.get<string>('FRONTEND_URLS') ??
+    configService.get<string>('FRONTEND_URL') ??
+    'http://localhost:5173'
+  )
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   app.enableCors({
-    origin: configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5173',
+    origin: frontendOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });

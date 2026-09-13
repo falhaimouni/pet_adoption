@@ -2,11 +2,8 @@ import { MOCK_API_ENABLED, mockApiBlobFetch, mockApiFetch } from "./mockApi";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 
-const TOKEN_STORAGE_MODE_KEY = "petopia_token_storage";
 const ACCESS_TOKEN_KEY = "petopia_access_token";
 const REFRESH_TOKEN_KEY = "petopia_refresh_token";
-
-type TokenStorageMode = "local" | "session";
 
 export class ApiError extends Error {
   status: number;
@@ -26,30 +23,20 @@ export function getRefreshToken() {
   return localStorage.getItem(REFRESH_TOKEN_KEY) ?? sessionStorage.getItem(REFRESH_TOKEN_KEY) ?? "";
 }
 
-function preferredStorage(mode?: TokenStorageMode): Storage {
-  const resolved = mode ?? (localStorage.getItem(TOKEN_STORAGE_MODE_KEY) as TokenStorageMode | null) ?? "session";
-  return resolved === "local" ? localStorage : sessionStorage;
-}
-
-export function setAuthTokens(accessToken: string, refreshToken: string, remember = false) {
+export function setAuthTokens(accessToken: string, refreshToken: string) {
   clearAuthTokens();
-  const mode: TokenStorageMode = remember ? "local" : "session";
-  const storage = preferredStorage(mode);
-  storage.setItem(ACCESS_TOKEN_KEY, accessToken);
-  storage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-  localStorage.setItem(TOKEN_STORAGE_MODE_KEY, mode);
+  sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
 }
 
 function updateStoredTokens(accessToken: string, refreshToken: string) {
-  const storage = preferredStorage();
-  storage.setItem(ACCESS_TOKEN_KEY, accessToken);
-  storage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
 }
 
 export function clearAuthTokens() {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
-  localStorage.removeItem(TOKEN_STORAGE_MODE_KEY);
   sessionStorage.removeItem(ACCESS_TOKEN_KEY);
   sessionStorage.removeItem(REFRESH_TOKEN_KEY);
 }

@@ -3,40 +3,48 @@ import { DataSource } from 'typeorm';
 import { Cart } from '../../entities/cart.entity';
 import { CartItem } from '../../entities/cart-item.entity';
 import { Product } from '../../entities/product.entity';
+import { User } from '../../entities/user.entity';
 
 export async function seedCartItems(
   dataSource: DataSource,
 ): Promise<void> {
   const cartRepo = dataSource.getRepository(Cart);
   const productRepo = dataSource.getRepository(Product);
+  const userRepo = dataSource.getRepository(User);
   const repo = dataSource.getRepository(CartItem);
 
   const items = [
     {
-      cartId: '550e8400-e29b-41d4-a716-446655442000',
+      userEmail: 'adopter1@test.com',
       productName: 'Dog Food',
       quantity: 2,
     },
     {
-      cartId: '550e8400-e29b-41d4-a716-446655442000',
+      userEmail: 'adopter1@test.com',
       productName: 'Pet Shampoo',
       quantity: 1,
     },
     {
-      cartId: '550e8400-e29b-41d4-a716-446655442001',
+      userEmail: 'adopter2@test.com',
       productName: 'Cat Food',
       quantity: 1,
     },
     {
-      cartId: '550e8400-e29b-41d4-a716-446655442001',
+      userEmail: 'adopter2@test.com',
       productName: 'Pet Leash',
       quantity: 2,
     },
   ];
 
   for (const item of items) {
+    const user = await userRepo.findOne({
+      where: { email: item.userEmail },
+    });
+
+    if (!user) continue;
+
     const cart = await cartRepo.findOne({
-      where: { cartId: item.cartId },
+      where: { userId: user.userId },
     });
 
     const product = await productRepo.findOne({

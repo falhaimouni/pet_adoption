@@ -54,7 +54,7 @@ export class PetsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE', 'VET')
+  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
   @Post(':petId/images')
   @UseInterceptors(
     FileInterceptor(
@@ -83,7 +83,7 @@ export class PetsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
+  @Roles('ADMIN', 'MANAGER')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.petsService.remove(id);

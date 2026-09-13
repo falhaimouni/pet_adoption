@@ -3,6 +3,7 @@ import { MessageCircle, Search } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import EmptyState from "../../components/EmptyState";
 import { apiFetch } from "../../lib/api";
+import type { Role } from "../../components/DashboardLayout";
 
 interface Conversation {
   conversationId: string;
@@ -15,9 +16,13 @@ interface Conversation {
 
 interface StaffChatsListPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
+  role?: Role;
+  activePage?: string;
+  detailPage?: string;
+  readOnly?: boolean;
 }
 
-export default function StaffChatsListPage({ onNavigate }: StaffChatsListPageProps) {
+export default function StaffChatsListPage({ onNavigate, role = "staff", activePage = "staff-chats", detailPage = "staff-chat-detail", readOnly = false }: StaffChatsListPageProps) {
   const [search, setSearch] = useState("");
   const [items, setItems] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,8 +43,13 @@ export default function StaffChatsListPage({ onNavigate }: StaffChatsListPagePro
   });
 
   return (
-    <DashboardLayout role="staff" activePage="staff-chats" onNavigate={onNavigate} pageTitle="Staff Inbox" breadcrumbs={["Staff", "Chats"]}>
+    <DashboardLayout role={role} activePage={activePage} onNavigate={onNavigate} pageTitle={readOnly ? "Chats Read Only" : "Staff Inbox"} breadcrumbs={[role.charAt(0).toUpperCase() + role.slice(1), "Chats"]}>
       <div className="max-w-2xl bg-white rounded-[15px] shadow-md overflow-hidden">
+        {readOnly && (
+          <div className="px-4 py-3 bg-amber-50 border-b border-amber-100">
+            <p className="font-['Poppins',sans-serif] text-[12px] text-amber-800">Read-only access. You can view conversations and messages, but cannot send replies.</p>
+          </div>
+        )}
         <div className="p-4 border-b border-gray-100">
           <div className="relative">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
@@ -54,7 +64,7 @@ export default function StaffChatsListPage({ onNavigate }: StaffChatsListPagePro
           <EmptyState icon={<MessageCircle size={28} />} title="No conversations" description="No conversations match your filters." />
         ) : (
           filtered.map((c) => (
-            <button key={c.conversationId} onClick={() => onNavigate("staff-chat-detail", { conversationId: c.conversationId })} className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-gray-50 hover:bg-[rgba(8,157,151,0.04)] transition-colors text-left">
+            <button key={c.conversationId} onClick={() => onNavigate(detailPage, { conversationId: c.conversationId })} className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-gray-50 hover:bg-[rgba(8,157,151,0.04)] transition-colors text-left">
               <div className="w-[44px] h-[44px] bg-[#e0f2f0] rounded-full flex items-center justify-center shrink-0"><MessageCircle size={18} className="text-[#089D97]" /></div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">

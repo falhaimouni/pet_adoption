@@ -31,16 +31,21 @@ export async function seedCarts(
       where: { userId: user.userId },
     });
 
-    const cartData = {
-      cartId: cart.cartId,
-      userId: user.userId,
-      user,
-    };
-
     if (exists) {
-      await cartRepo.save(cartRepo.merge(exists, cartData));
+      await cartRepo.save(
+        cartRepo.merge(exists, {
+          userId: user.userId,
+          user,
+        }),
+      );
     } else {
-      await cartRepo.save(cartRepo.create(cartData));
+      await cartRepo.save(
+        cartRepo.create({
+          cartId: cart.cartId,
+          userId: user.userId,
+          user,
+        }),
+      );
     }
   }
 

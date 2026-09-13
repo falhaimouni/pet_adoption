@@ -2,7 +2,6 @@ import { IsEnum, IsOptional, IsString, MaxLength, MinLength } from 'class-valida
 import { OrderItemDto } from './order-item.dto';
 import type { PaymentDto } from './payment.dto';
 import { OrderStatusEnum } from '../enums/order-status.enum';
-import { DeliveryStatusEnum } from '../enums/delivery-status.enum';
 import { PaymentMethodEnum } from '../enums/payment-method.enum';
 
 export interface OrderDto {
@@ -15,7 +14,6 @@ export interface OrderDto {
   city: string;
   postalCode: string | null;
   deliveryNotes: string | null;
-  deliveryStatus: DeliveryStatusEnum;
   orderStatus: OrderStatusEnum;
   createdAt: string;
   updatedAt: string;

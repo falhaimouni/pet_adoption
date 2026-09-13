@@ -39,7 +39,8 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   returnTo: string | null;
   loading: boolean;
-  login: (email: string, password: string, remember?: boolean) => Promise<AuthUser | null>;
+  login: (email: string, password: string) => Promise<AuthUser | null>;
+  completeGoogleLogin: (code: string) => Promise<AuthUser>;
   logout: () => void;
   setReturnTo: (page: string | null) => void;
   updateUser: (updates: Partial<AuthUser>) => void;
@@ -150,13 +151,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  async function login(email: string, password: string, remember = false): Promise<AuthUser | null> {
+  async function login(email: string, password: string): Promise<AuthUser | null> {
     try {
       const response = await apiFetch<AuthResponse>("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
-      setAuthTokens(response.accessToken, response.refreshToken, remember);
+      setAuthTokens(response.accessToken, response.refreshToken);
       const profile = await apiFetch<ProfileResponse>("/users/profile").catch(() => null);
       const account = profile ? mapProfileUser(profile) : mapAuthUser(response);
       setUser(account);
@@ -167,6 +168,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (err instanceof ApiError && err.status === 401) {
         return null;
       }
+      throw err;
+    }
+  }
+
+  async function completeGoogleLogin(code: string): Promise<AuthUser> {
+    try {
+      const response = await apiFetch<AuthResponse>("/auth/google/session", {
+        method: "POST",
+        body: JSON.stringify({ code }),
+      });
+      setAuthTokens(response.accessToken, response.refreshToken);
+      const profile = await apiFetch<ProfileResponse>("/users/profile").catch(() => null);
+      const account = profile ? mapProfileUser(profile) : mapAuthUser(response);
+      setUser(account);
+      return account;
+    } catch (err) {
+      clearAuthTokens();
+      setUser(null);
       throw err;
     }
   }
@@ -183,7 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, loading, returnTo, login, logout, setReturnTo, updateUser }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, loading, returnTo, login, completeGoogleLogin, logout, setReturnTo, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

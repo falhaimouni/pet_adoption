@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { CartProvider } from "../context/CartContext";
-import { WishlistProvider } from "../context/WishlistContext";
 import { AuthProvider, useAuth, UserRole } from "../context/AuthContext";
 import { ThemeProvider } from "../context/ThemeContext";
 import { LanguageProvider } from "../context/LanguageContext";
@@ -10,6 +9,7 @@ import AboutPage from "../pages/AboutPage";
 import TermsPage from "../pages/TermsPage";
 import PrivacyPolicyPage from "../pages/PrivacyPolicyPage";
 import LoginPage from "../pages/LoginPage";
+import OAuthCallbackPage from "../pages/OAuthCallbackPage";
 import SignUpPage from "../pages/SignUpPage";
 import ForgotPasswordPage from "../pages/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/ResetPasswordPage";
@@ -17,13 +17,10 @@ import PetsListPage from "../pages/PetsListPage";
 import PetDetailPage from "../pages/PetDetailPage";
 import ShopPage from "../pages/ShopPage";
 import CartPage from "../pages/CartPage";
-import WishlistPage from "../pages/WishlistPage";
 import NotificationsPage from "../pages/NotificationsPage";
 import UserProfilePage from "../pages/UserProfilePage";
 import SettingsPage from "../pages/SettingsPage";
 
-// Adopter pages
-import ProfilePage from "../pages/adopter/ProfilePage";
 import MyRequestsPage from "../pages/adopter/MyRequestsPage";
 import MyAdoptionsPage from "../pages/adopter/MyAdoptionsPage";
 import ChatsListPage from "../pages/adopter/ChatsListPage";
@@ -66,6 +63,7 @@ export type Role = UserRole;
 const PUBLIC_PAGES = new Set<string>([
   "home", "login", "signup", "about", "terms",
   "privacy", "forgot-password", "reset-password", "pets", "pet-detail", "shop",
+  "oauth-callback",
 ]);
 
 // Pages restricted to specific roles.
@@ -74,7 +72,6 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   pets: ["adopter"],
   "pet-detail": ["adopter", "staff", "vet", "manager", "admin"],
   shop: ["adopter"],
-  wishlist: ["adopter"],
   cart: ["adopter"],
   orders: ["adopter"],
   profile: ["adopter"],
@@ -104,6 +101,8 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   "manager-pets": ["manager"],
   "manager-requests": ["manager"],
   "manager-adoptions": ["manager"],
+  "manager-chats": ["manager"],
+  "manager-chat-detail": ["manager"],
   "manager-users": ["manager"],
   "manager-analytics": ["manager"],
   "manager-inventory": ["manager"],
@@ -113,6 +112,8 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   "admin-pets": ["admin"],
   "admin-requests": ["admin"],
   "admin-adoptions": ["admin"],
+  "admin-chats": ["admin"],
+  "admin-chat-detail": ["admin"],
   "admin-users": ["admin"],
   "admin-inventory": ["admin"],
   "admin-suppliers": ["admin"],
@@ -214,14 +215,14 @@ function readHashRoute(): { page: string; params: Params } {
   const params: Params = Object.fromEntries(search.entries());
   if (parts[1]) params.id = parts[1];
   if ((page === "pet-detail" || page === "vet-medical" || page === "vet-vaccinations") && parts[1]) params.petId = parts[1];
-  if ((page === "chat-detail" || page === "staff-chat-detail") && parts[1]) params.conversationId = parts[1];
+  if ((page === "chat-detail" || page === "staff-chat-detail" || page === "manager-chat-detail" || page === "admin-chat-detail") && parts[1]) params.conversationId = parts[1];
   return { page, params };
 }
 
 function writeHashRoute(page: string, params: Params) {
   const pathParam =
     page === "pet-detail" || page === "vet-medical" || page === "vet-vaccinations" ? params.petId :
-    page === "chat-detail" || page === "staff-chat-detail" ? params.conversationId :
+    page === "chat-detail" || page === "staff-chat-detail" || page === "manager-chat-detail" || page === "admin-chat-detail" ? params.conversationId :
     undefined;
   const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -240,13 +241,13 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "terms": return <TermsPage onNavigate={navigate} />;
     case "privacy": return <PrivacyPolicyPage onNavigate={navigate} />;
     case "login": return <LoginPage onNavigate={navigate} />;
+    case "oauth-callback": return <OAuthCallbackPage onNavigate={navigate} code={params.code as string | undefined} />;
     case "signup": return <SignUpPage onNavigate={navigate} />;
     case "forgot-password": return <ForgotPasswordPage onNavigate={navigate} />;
     case "reset-password": return <ResetPasswordPage onNavigate={navigate} token={params.token as string | undefined} />;
     case "pets": return <PetsListPage onNavigate={navigate} />;
     case "pet-detail": return <PetDetailPage onNavigate={navigate} petId={params.petId as string} />;
     case "shop": return <ShopPage onNavigate={navigate} />;
-    case "wishlist": return <WishlistPage onNavigate={navigate} />;
 
     // Shared authenticated
     case "cart": return <CartPage onNavigate={navigate} />;
@@ -255,7 +256,7 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "settings": return <SettingsPage onNavigate={navigate} />;
     case "notifications": return <NotificationsPage onNavigate={navigate} role={userRole ?? "adopter"} />;
 
-    case "profile": return <ProfilePage onNavigate={navigate} />;
+    case "profile": return <UserProfilePage onNavigate={navigate} />;
     case "my-requests": return <MyRequestsPage onNavigate={navigate} />;
     case "my-adoptions": return <MyAdoptionsPage onNavigate={navigate} />;
     case "chats": return <ChatsListPage onNavigate={navigate} />;
@@ -285,6 +286,8 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "manager-pets": return <StaffPetsPage onNavigate={navigate} role="manager" activePage="manager-pets" />;
     case "manager-requests": return <StaffRequestsPage onNavigate={navigate} role="manager" activePage="manager-requests" />;
     case "manager-adoptions": return <StaffAdoptionsPage onNavigate={navigate} role="manager" activePage="manager-adoptions" />;
+    case "manager-chats": return <StaffChatsListPage onNavigate={navigate} role="manager" activePage="manager-chats" detailPage="manager-chat-detail" readOnly />;
+    case "manager-chat-detail": return <StaffChatDetailPage onNavigate={navigate} conversationId={params.conversationId as string} role="manager" activePage="manager-chats" listPage="manager-chats" readOnly />;
     case "manager-users": return <AdminUsersPage onNavigate={navigate} role="manager" activePage="manager-users" />;
     case "manager-analytics": return <ManagerAnalyticsPage onNavigate={navigate} />;
     case "manager-inventory": return <ManagerInventoryPage onNavigate={navigate} />;
@@ -296,6 +299,8 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "admin-pets": return <StaffPetsPage onNavigate={navigate} role="admin" activePage="admin-pets" />;
     case "admin-requests": return <StaffRequestsPage onNavigate={navigate} role="admin" activePage="admin-requests" />;
     case "admin-adoptions": return <StaffAdoptionsPage onNavigate={navigate} role="admin" activePage="admin-adoptions" />;
+    case "admin-chats": return <StaffChatsListPage onNavigate={navigate} role="admin" activePage="admin-chats" detailPage="admin-chat-detail" readOnly />;
+    case "admin-chat-detail": return <StaffChatDetailPage onNavigate={navigate} conversationId={params.conversationId as string} role="admin" activePage="admin-chats" listPage="admin-chats" readOnly />;
     case "admin-users": return <AdminUsersPage onNavigate={navigate} />;
     case "admin-inventory": return <AdminInventoryPage onNavigate={navigate} role="admin" activePage="admin-inventory" />;
     case "admin-suppliers": return <AdminSuppliersPage onNavigate={navigate} />;
@@ -315,9 +320,7 @@ export default function App() {
       <LanguageProvider>
         <AuthProvider>
           <CartProvider>
-            <WishlistProvider>
-              <AppRouter />
-            </WishlistProvider>
+            <AppRouter />
           </CartProvider>
         </AuthProvider>
       </LanguageProvider>

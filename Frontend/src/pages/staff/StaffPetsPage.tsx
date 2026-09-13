@@ -29,6 +29,7 @@ export default function StaffPetsPage({ onNavigate, role = "staff", activePage =
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const canArchivePets = role === "admin" || role === "manager";
+  const canUploadPetImages = role === "admin" || role === "manager" || role === "staff";
 
   function loadPets() {
     setLoading(true);
@@ -113,9 +114,17 @@ export default function StaffPetsPage({ onNavigate, role = "staff", activePage =
 
   async function archivePet() {
     if (!deletePet) return;
-    await apiFetch(`/pets/${deletePet.petId}`, { method: "DELETE" });
-    setPets((prev) => prev.filter((p) => p.petId !== deletePet.petId));
-    setDeletePet(null);
+    setSaving(true);
+    setError("");
+    try {
+      await apiFetch(`/pets/${deletePet.petId}`, { method: "DELETE" });
+      setPets((prev) => prev.filter((p) => p.petId !== deletePet.petId));
+      setDeletePet(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to archive pet.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function uploadImage(file?: File) {
@@ -127,9 +136,17 @@ export default function StaffPetsPage({ onNavigate, role = "staff", activePage =
     }
     const body = new FormData();
     body.append("file", file);
-    await apiFetch(`/pets/${imagePet.petId}/images`, { method: "POST", body });
-    setImagePet(null);
-    loadPets();
+    setSaving(true);
+    setError("");
+    try {
+      await apiFetch(`/pets/${imagePet.petId}/images`, { method: "POST", body });
+      setImagePet(null);
+      loadPets();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to upload pet image.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -180,7 +197,7 @@ export default function StaffPetsPage({ onNavigate, role = "staff", activePage =
                       <div className="flex gap-2">
                         <button onClick={() => onNavigate("pet-detail", { petId: p.petId })} className="text-[#089D97] hover:text-[#047975]" aria-label="View pet"><Eye size={15} /></button>
                         <button onClick={() => openEdit(p)} className="text-blue-500 hover:text-blue-700" aria-label="Edit pet"><Edit size={15} /></button>
-                        <button onClick={() => setImagePet(p)} className="text-amber-500 hover:text-amber-700" aria-label="Upload pet image"><ImagePlus size={15} /></button>
+                        {canUploadPetImages && <button onClick={() => setImagePet(p)} className="text-amber-500 hover:text-amber-700" aria-label="Upload pet image"><ImagePlus size={15} /></button>}
                         {canArchivePets && (
                           <button onClick={() => setDeletePet(p)} className="text-red-400 hover:text-red-600" aria-label="Archive pet"><Trash2 size={15} /></button>
                         )}
@@ -221,13 +238,13 @@ export default function StaffPetsPage({ onNavigate, role = "staff", activePage =
         </div>
       </Modal>
 
-      <Modal title="Archive Pet" open={!!deletePet} onClose={() => setDeletePet(null)} onConfirm={archivePet} confirmLabel="Archive" confirmDestructive size="sm">
+      <Modal title="Archive Pet" open={!!deletePet} onClose={() => setDeletePet(null)} onConfirm={archivePet} confirmLabel={saving ? "Archiving..." : "Archive"} confirmDestructive size="sm">
         <p className="font-['Poppins',sans-serif] text-[14px] text-black">Archive <span className="font-semibold">{deletePet?.name}</span>?</p>
       </Modal>
 
-      <Modal title="Upload Pet Image" open={!!imagePet} onClose={() => setImagePet(null)} onConfirm={() => uploadImage(inputRef.current?.files?.[0])} confirmLabel="Upload" size="sm">
+      <Modal title="Upload Pet Image" open={!!imagePet} onClose={() => setImagePet(null)} onConfirm={() => uploadImage(inputRef.current?.files?.[0])} confirmLabel={saving ? "Uploading..." : "Upload"} size="sm">
         <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="w-full text-[13px] font-['Poppins',sans-serif]" />
-        <p className="mt-2 font-['Poppins',sans-serif] text-[12px] text-black/50">JPG, PNG or WEBP up to 5 MB. The multipart field is sent as image.</p>
+        <p className="mt-2 font-['Poppins',sans-serif] text-[12px] text-black/50">JPG, PNG or WEBP up to 5 MB. The multipart field is sent as file.</p>
       </Modal>
     </DashboardLayout>
   );

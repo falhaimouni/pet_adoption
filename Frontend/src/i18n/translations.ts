@@ -35,10 +35,9 @@ const translations: Record<Lang, Record<string, string>> = {
     login_quote: "A home without a pet is just a house.",
     login_email: "Email",
     login_password: "Password",
-    login_remember: "Remember me",
     login_forgot: "Forgot Password?",
     login_btn: "Login",
-    login_or: "or continue with",
+    login_or: "or",
     login_no_account: "Don't have an account?",
     login_signup: "Sign Up",
     login_quick: "Quick login — tap a role",
@@ -61,7 +60,7 @@ const translations: Record<Lang, Record<string, string>> = {
     signup_agree: "I agree the",
     signup_terms: "Terms & conditions",
     signup_btn: "Sign Up",
-    signup_or: "or continue with",
+    signup_or: "or",
     signup_have_account: "Already have an account!",
     signup_login_link: "login",
     signup_need_full_name: "Please enter your first and last name.",
@@ -79,7 +78,7 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // ── Pets list ──
     pets_title: "Find Your Perfect Pet",
-    pets_search_placeholder: "Search by name, breed, species, or city…",
+    pets_search_placeholder: "Search by name, breed, species, or gender…",
     pets_filters: "Filters",
     pets_clear_all: "Clear all",
     pets_clear_filters: "Clear filters",
@@ -284,20 +283,6 @@ const translations: Record<Lang, Record<string, string>> = {
     about_phone_label: "Call Us",
     about_visit: "Visit Us",
     about_footer: "© 2026 Petopia · Making the world a better place, one adoption at a time.",
-
-    // ── Wishlist ──
-    wishlist_title: "My Wishlist",
-    wishlist_saved: "saved item",
-    wishlist_saved_pl: "saved items",
-    wishlist_pets_tab: "Pets",
-    wishlist_products_tab: "Products",
-    wishlist_no_pets: "No saved pets yet",
-    wishlist_no_pets_desc: "Browse pets and tap the heart icon to save your favourites.",
-    wishlist_no_products: "No saved products yet",
-    wishlist_no_products_desc: "Browse the shop and tap the heart icon to save items.",
-    wishlist_browse_pets: "Browse Pets",
-    wishlist_browse_shop: "Browse Shop",
-    wishlist_back: "Back",
 
     // ── User Profile ──
     profile_edit: "Edit Profile",
@@ -666,7 +651,6 @@ const translations: Record<Lang, Record<string, string>> = {
     login_quote: "البيت بلا حيوان أليف مجرد منزل.",
     login_email: "البريد الإلكتروني",
     login_password: "كلمة المرور",
-    login_remember: "تذكرني",
     login_forgot: "نسيت كلمة المرور؟",
     login_btn: "تسجيل الدخول",
     login_or: "أو تابع عبر",
@@ -915,20 +899,6 @@ const translations: Record<Lang, Record<string, string>> = {
     about_phone_label: "اتصل بنا",
     about_visit: "زرنا",
     about_footer: "© 2026 بيتوبيا · نجعل العالم مكاناً أفضل، تبنياً تلو الآخر.",
-
-    // ── Wishlist ──
-    wishlist_title: "قائمة أمنياتي",
-    wishlist_saved: "عنصر محفوظ",
-    wishlist_saved_pl: "عناصر محفوظة",
-    wishlist_pets_tab: "الحيوانات",
-    wishlist_products_tab: "المنتجات",
-    wishlist_no_pets: "لا يوجد حيوانات محفوظة بعد",
-    wishlist_no_pets_desc: "تصفح الحيوانات واضغط على أيقونة القلب لحفظ المفضلة لديك.",
-    wishlist_no_products: "لا يوجد منتجات محفوظة بعد",
-    wishlist_no_products_desc: "تصفح المتجر واضغط على أيقونة القلب لحفظ العناصر.",
-    wishlist_browse_pets: "تصفح الحيوانات",
-    wishlist_browse_shop: "تصفح المتجر",
-    wishlist_back: "رجوع",
 
     // ── User Profile ──
     profile_edit: "تعديل الملف",

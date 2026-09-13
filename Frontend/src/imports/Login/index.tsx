@@ -143,7 +143,6 @@ export default function Login() {
         </svg>
       </div>
       <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[normal] left-[819px] not-italic text-[16px] text-black top-[836px] whitespace-pre">{`Don’t have  an account?  `}</p>
-      <p className="[word-break:break-word] absolute font-['Inter:Extra_Light',sans-serif] font-extralight h-[18px] leading-[normal] left-[783px] not-italic text-[16px] text-black top-[464px] w-[108px]">Remember me</p>
       <p className="[word-break:break-word] absolute font-['Inter:Light',sans-serif] font-light leading-[normal] left-[810px] not-italic text-[20px] text-black top-[204px] whitespace-nowrap">Login to continue to Petopia</p>
       <p className="[word-break:break-word] absolute font-['Inter:Semi_Bold',sans-serif] font-semibold leading-[normal] left-[823px] not-italic text-[32px] text-black top-[159px] whitespace-nowrap">Welcome back!</p>
       <div className="absolute flex h-[121.402px] items-center justify-center left-[45px] top-[154px] w-[360.41px]">

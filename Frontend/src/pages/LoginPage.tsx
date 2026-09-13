@@ -30,7 +30,6 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
   const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -44,7 +43,7 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
     setLoading(true);
     let loggedInUser: Awaited<ReturnType<typeof login>>;
     try {
-      loggedInUser = await login(email.trim().toLowerCase(), password, rememberMe);
+      loggedInUser = await login(email.trim().toLowerCase(), password);
     } catch (err) {
       setLoading(false);
       setError(err instanceof Error ? err.message : t("error_backend_connect"));
@@ -164,18 +163,7 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
                 onChange={setPassword}
               />
 
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 accent-[#089D97]"
-                  />
-                  <span className="font-['Inter',sans-serif] font-extralight text-[15px] text-black">
-                    {t("login_remember")}
-                  </span>
-                </label>
+              <div className="flex items-center justify-end">
                 <button
                   type="button"
                   onClick={() => onNavigate("forgot-password")}
