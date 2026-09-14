@@ -41,7 +41,7 @@
     "pdfkit": "^0.19.1",
     "pg": "^8.13.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2",
+    "rxjs": "^7.8.2", 
     "socket.io": "^4.8.3",
     "stripe": "^22.6.1",
     "typeorm": "^0.3.20",
