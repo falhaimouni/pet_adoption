@@ -29,6 +29,14 @@ export const API_ENDPOINTS = {
     SUPPLIES: "/inventory/supplies",
     SUPPLIERS: "/inventory/suppliers",
   },
+  DEPARTMENTS: {
+    LIST: "/departments",
+    CREATE: "/departments",
+    GET: "/departments/:id",
+    UPDATE: "/departments/:id",
+    DELETE: "/departments/:id",
+    ASSIGN_USERS: "/departments/:id/users",
+  },
   MESSAGES: {
     CONVERSATIONS: "/messages/conversations",
     SEND: "/messages/send",

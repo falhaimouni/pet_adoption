@@ -197,7 +197,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
     try {
       const [roleList, departmentList] = await Promise.all([
         apiFetch<LookupResponse<RoleOption>>("/roles"),
-        apiFetch<LookupResponse<DepartmentOption>>("/departments"),
+        apiFetch<LookupResponse<DepartmentOption>>("/departments?active=true"),
       ]);
       const lookupRoles = normalizeLookup(roleList, "roles").filter((item) => item.roleId && ASSIGNABLE_EMPLOYEE_ROLES.has(item.roleName?.toUpperCase()));
       const lookupDepartments = normalizeLookup(departmentList, "departments").filter((item) => item.departmentId && item.departmentName);

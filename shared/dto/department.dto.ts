@@ -1,4 +1,12 @@
-import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class CreateDepartmentDto {
   @IsString()
@@ -23,4 +31,11 @@ export class UpdateDepartmentDto {
   @IsString()
   @MaxLength(1000)
   description?: string;
+}
+
+export class AssignDepartmentUsersDto {
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsUUID('4', { each: true })
+  userIds!: string[];
 }
