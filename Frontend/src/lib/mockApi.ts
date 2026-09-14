@@ -76,6 +76,36 @@ const suppliers = [
   { supplierId: "supplier-3", supplierName: "Animal Care Co.", isActive: true },
 ];
 
+let departments = [
+  {
+    departmentId: "department-veterinary",
+    departmentName: "Veterinary",
+    description: "Medical care, vaccination tracking, and health checks.",
+    isActive: true,
+    createdAt: "2026-01-03T09:00:00.000Z",
+    manager: mockProfile("manager@petopia.test"),
+    employees: [] as Array<Record<string, unknown>>,
+  },
+  {
+    departmentId: "department-operations",
+    departmentName: "Operations",
+    description: "Shelter operations, adoption coordination, and daily care.",
+    isActive: true,
+    createdAt: "2026-01-04T09:00:00.000Z",
+    manager: mockProfile("admin@petopia.test"),
+    employees: [] as Array<Record<string, unknown>>,
+  },
+  {
+    departmentId: "department-customer-service",
+    departmentName: "Customer Service",
+    description: "Adopter support, chats, and request follow-up.",
+    isActive: true,
+    createdAt: "2026-01-05T09:00:00.000Z",
+    manager: null,
+    employees: [] as Array<Record<string, unknown>>,
+  },
+];
+
 let supplies = PRODUCTS.map((product) => ({
   supplyId: String(product.id),
   productId: String(product.id),
@@ -131,6 +161,17 @@ let users = [
     hireDate: "2026-01-10",
     address: "Amman",
   },
+}));
+
+departments = departments.map((department) => ({
+  ...department,
+  employees: users
+    .filter((user) => user.employeeProfile?.departmentId === department.departmentId)
+    .map((user) => ({
+      employeeId: `employee-${user.userId}`,
+      userId: user.userId,
+      user,
+    })),
 }));
 
 let medicalEntries = [
@@ -474,6 +515,57 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
   if (supplyMatch && method === "DELETE") {
     supplies = supplies.map((supply) => supply.supplyId === supplyMatch[1] ? { ...supply, isActive: false, storeListed: false, lastUpdated: now() } : supply);
     return withDelay({ success: true, message: "Deleted in mock mode" } as T);
+  }
+
+  if (url.pathname === "/departments" && method === "GET") {
+    const activeOnly = url.searchParams.get("active") === "true";
+    const rows = activeOnly ? departments.filter((department) => department.isActive !== false) : departments;
+    return withDelay(rows as T);
+  }
+  if (url.pathname === "/departments" && method === "POST") {
+    const departmentName = String(body.departmentName ?? "").trim();
+    if (!departmentName) throw new Error("Department name cannot be blank");
+    if (departments.some((department) => department.departmentName.trim().toLowerCase() === departmentName.toLowerCase())) {
+      throw new Error("Department name already exists");
+    }
+    const next = {
+      departmentId: `mock-department-${Date.now()}`,
+      departmentName,
+      description: typeof body.description === "string" ? body.description : null,
+      isActive: true,
+      createdAt: now(),
+      manager: null,
+      employees: [] as Array<Record<string, unknown>>,
+    };
+    departments = [next, ...departments];
+    return withDelay(next as T);
+  }
+  const departmentMatch = url.pathname.match(/^\/departments\/([^/]+)$/);
+  if (departmentMatch && method === "GET") {
+    const department = departments.find((item) => item.departmentId === departmentMatch[1]);
+    return withDelay(department as T);
+  }
+  if (departmentMatch && method === "PATCH") {
+    const departmentName = typeof body.departmentName === "string" ? body.departmentName.trim() : undefined;
+    if (departmentName !== undefined && !departmentName) throw new Error("Department name cannot be blank");
+    if (
+      departmentName &&
+      departments.some((department) => department.departmentId !== departmentMatch[1] && department.departmentName.trim().toLowerCase() === departmentName.toLowerCase())
+    ) {
+      throw new Error("Department name already exists");
+    }
+    departments = departments.map((department) => department.departmentId === departmentMatch[1] ? {
+      ...department,
+      ...body,
+      ...(departmentName === undefined ? {} : { departmentName }),
+    } : department);
+    return withDelay(departments.find((department) => department.departmentId === departmentMatch[1]) as T);
+  }
+  if (departmentMatch && method === "DELETE") {
+    const department = departments.find((item) => item.departmentId === departmentMatch[1]);
+    if (department && department.employees.length > 0) throw new Error("Move or remove department users before deleting the department");
+    departments = departments.map((item) => item.departmentId === departmentMatch[1] ? { ...item, isActive: false } : item);
+    return withDelay({ success: true, message: "Department deleted in mock mode" } as T);
   }
 
   if (url.pathname === "/adoption/requests" && method === "GET") return withDelay(adoptionRequests as T);

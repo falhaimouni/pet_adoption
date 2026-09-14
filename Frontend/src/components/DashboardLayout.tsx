@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Home, User, Heart, Bell, Settings,
   LogOut, Menu, X, Syringe, BarChart2, Package, Users,
-  FileText, ClipboardList, Stethoscope, Tag,
+  FileText, ClipboardList, Stethoscope, Tag, Building2,
   ChevronRight, Sun, Moon, Globe, MessageCircle, ShoppingCart,
 } from "lucide-react";
 import logoImg from "../imports/MyPetopia/be6bd1f12e9a602c8830a9c39abaf73ad65d4682.png";
@@ -77,6 +77,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "admin-adoptions", label: t("nav_adoptions"),     icon: <Heart size={16} /> },
         { id: "admin-chats",     label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
         { id: "admin-users",     label: t("nav_users"),         icon: <Users size={16} /> },
+        { id: "admin-departments", label: "Departments",        icon: <Building2 size={16} /> },
         { id: "admin-inventory", label: t("nav_inventory"),     icon: <Package size={16} /> },
         { id: "admin-suppliers", label: t("nav_suppliers"),     icon: <Tag size={16} /> },
         { id: "admin-reports",   label: t("nav_reports"),       icon: <FileText size={16} /> },
