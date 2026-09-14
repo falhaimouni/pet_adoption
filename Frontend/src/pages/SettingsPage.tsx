@@ -5,6 +5,7 @@ import {
   CheckCircle, AlertTriangle, ExternalLink,
 } from "lucide-react";
 import Navbar from "../components/Navbar";
+import BackHomeButton from "../components/BackHomeButton";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -13,12 +14,13 @@ import { isStrongPassword } from "../lib/validation";
 
 interface SettingsPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
+  embedded?: boolean;
 }
 
 type SettingsTab = "account" | "appearance" | "language" | "security" | "help";
 
-export default function SettingsPage({ onNavigate }: SettingsPageProps) {
-  const { user, logout } = useAuth();
+export default function SettingsPage({ onNavigate, embedded = false }: SettingsPageProps) {
+  const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const { lang, setLang, t } = useLanguage();
   const locale = lang === "ar" ? "ar-JO" : "en-US";
@@ -66,10 +68,13 @@ export default function SettingsPage({ onNavigate }: SettingsPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f0f8f7]">
-      <Navbar onNavigate={onNavigate} />
+    <div className={embedded ? "" : "min-h-screen bg-[#f0f8f7]"}>
+      {!embedded && <Navbar onNavigate={onNavigate} />}
       <div className="max-w-5xl mx-auto px-5 py-8 pb-16">
-        <h1 className="font-['Prata',serif] text-[28px] text-[#1a2e2d] mb-6">{t("settings_title")}</h1>
+        <div className="mb-6 flex items-center gap-3">
+          <BackHomeButton onNavigate={onNavigate} />
+          <h1 className="font-['Prata',serif] text-[28px] text-[#1a2e2d]">{t("settings_title")}</h1>
+        </div>
 
         <div className="flex flex-col md:flex-row gap-6">
           <div className="w-full md:w-56 flex-shrink-0">
@@ -102,7 +107,7 @@ export default function SettingsPage({ onNavigate }: SettingsPageProps) {
                   {t("settings_edit_profile")} <ChevronRight size={16} className="text-[#5a8a87]" />
                 </button>
                 <Divider />
-                <button onClick={() => { logout(); onNavigate("home"); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-[12px] bg-[#fff5f5] hover:bg-[#ffe8e8] transition-colors font-['Poppins',sans-serif] text-[14px] text-rose-600 font-medium">
+                <button onClick={() => onNavigate("logout")} className="w-full flex items-center gap-3 px-4 py-3 rounded-[12px] bg-[#fff5f5] hover:bg-[#ffe8e8] transition-colors font-['Poppins',sans-serif] text-[14px] text-rose-600 font-medium">
                   <LogOut size={16} /> {t("settings_logout_btn")}
                 </button>
               </Section>

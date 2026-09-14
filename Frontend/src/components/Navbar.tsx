@@ -107,7 +107,7 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
     : user?.role === "manager" ? "manager-dashboard"
     : user?.role === "staff" ? "staff-dashboard"
     : user?.role === "vet" ? "vet-dashboard"
-    : "profile";
+    : "adopter-dashboard";
 
   async function markAllNotificationsRead() {
     await apiFetch("/notifications/read-all", { method: "PATCH" });

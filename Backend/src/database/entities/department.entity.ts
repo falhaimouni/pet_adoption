@@ -10,6 +10,9 @@ export class Department {
   @Column({ name: 'department_name', type: 'varchar', length: 120 })
   departmentName!: string;
 
+  @Column({ type: 'text', nullable: true })
+  description?: string | null;
+
   @Column({ name: 'manager_id', type: 'uuid', nullable: true })
   managerId?: string | null;
 

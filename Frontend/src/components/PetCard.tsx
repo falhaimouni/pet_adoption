@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { Eye, PawPrint } from "lucide-react";
-import { PetResponse, resolveAssetUrl } from "../lib/api";
+import { useEffect, useState } from "react";
+import { Eye } from "lucide-react";
+import { PetResponse } from "../lib/api";
 import { useLanguage } from "../context/LanguageContext";
+import { getPetImageUrl, defaultPetImage } from "../lib/petImages";
 
 interface PetCardProps {
   pet: PetResponse;
@@ -31,13 +32,18 @@ export default function PetCard({ pet, onViewDetails, onAdopt }: PetCardProps) {
 
   const speciesColor = SPECIES_COLORS[pet.species] ?? SPECIES_COLORS.default;
   const status = pet.adoptionStatus.toUpperCase();
-  const imageUrl = resolveAssetUrl(pet.images?.[0]?.imageUrl);
+  const imageUrl = getPetImageUrl(pet.images?.[0]?.imageUrl);
   const formattedAge = pet.age == null ? t("common_unknown") : `${pet.age} ${pet.age === 1 ? t("common_year") : t("common_years")}`;
   const statusText =
     status === "AVAILABLE" ? t("status_available") :
     status === "PENDING" ? t("status_pending") :
     status === "ADOPTED" ? t("status_adopted") :
     t("common_unavailable");
+
+  useEffect(() => {
+    setImgLoaded(false);
+    setImgError(false);
+  }, [pet.petId, pet.images?.[0]?.imageUrl]);
 
   return (
     <article className="bg-white rounded-[22px] shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group border border-transparent hover:border-[rgba(8,157,151,0.12)] flex flex-col">
@@ -46,20 +52,13 @@ export default function PetCard({ pet, onViewDetails, onAdopt }: PetCardProps) {
         {!imgLoaded && !imgError && (
           <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-[#e0f2f0] via-[#f0f9f8] to-[#e0f2f0] bg-[length:200%_100%]" />
         )}
-        {imgError || !imageUrl ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-[#089D97]/40">
-            <PawPrint size={36} />
-            <span className="font-['Poppins',sans-serif] text-[12px]">{t("common_no_image")}</span>
-          </div>
-        ) : (
-          <img
-            src={imageUrl}
-            alt={pet.name}
-            onLoad={() => setImgLoaded(true)}
-            onError={() => { setImgLoaded(true); setImgError(true); }}
-            className={`w-full h-full object-contain transition-transform duration-500 group-hover:scale-110 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
-          />
-        )}
+        <img
+          src={imgError ? defaultPetImage : imageUrl}
+          alt={pet.name}
+          onLoad={() => setImgLoaded(true)}
+          onError={() => { setImgLoaded(true); setImgError(true); }}
+          className={`w-full h-full object-contain transition-transform duration-500 group-hover:scale-110 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+        />
 
         {/* Species pill — top-left */}
         <span className={`absolute top-3 left-3 px-2.5 py-0.5 rounded-full font-['Poppins',sans-serif] text-[11px] font-semibold ${speciesColor}`}>
