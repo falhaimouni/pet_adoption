@@ -7,9 +7,10 @@ import { useLanguage } from "../context/LanguageContext";
 
 interface CartPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
+  embedded?: boolean;
 }
 
-export default function CartPage({ onNavigate }: CartPageProps) {
+export default function CartPage({ onNavigate, embedded = false }: CartPageProps) {
   const { items, total, count, loading, error: cartError, updateQuantity, removeFromCart, clearCart, refreshCart } = useCart();
   const { t } = useLanguage();
   const [mutationError, setMutationError] = useState("");
@@ -46,8 +47,8 @@ export default function CartPage({ onNavigate }: CartPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f0f8f7]">
-      <Navbar onNavigate={onNavigate} activePage="cart" />
+    <div className={embedded ? "" : "min-h-screen bg-[#f0f8f7]"}>
+      {!embedded && <Navbar onNavigate={onNavigate} activePage="cart" />}
 
       <main className="max-w-6xl mx-auto px-5 pt-6 pb-16">
         <button onClick={() => onNavigate("shop")} className="flex items-center gap-1.5 font-['Poppins',sans-serif] text-[13px] text-[#5a8a87] hover:text-[#089D97] transition-colors group mb-6">

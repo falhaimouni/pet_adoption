@@ -12,6 +12,7 @@ import { apiFetch } from "../lib/api";
 
 interface ShopPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
+  embedded?: boolean;
 }
 
 interface StoreSupply {
@@ -50,7 +51,7 @@ function mapSupplyToProduct(supply: StoreSupply, index: number): Product {
   };
 }
 
-export default function ShopPage({ onNavigate }: ShopPageProps) {
+export default function ShopPage({ onNavigate, embedded = false }: ShopPageProps) {
   const { t } = useLanguage();
   const { count } = useCart();
   const { isAuthenticated, user } = useAuth();
@@ -112,8 +113,8 @@ export default function ShopPage({ onNavigate }: ShopPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f0f8f7]">
-      <Navbar onNavigate={onNavigate} activePage="shop" />
+    <div className={embedded ? "" : "min-h-screen bg-[#f0f8f7]"}>
+      {!embedded && <Navbar onNavigate={onNavigate} activePage="shop" />}
 
       <div className="bg-gradient-to-br from-[#047975] to-[#089D97] text-white py-10 px-5">
         <div className="max-w-6xl mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">

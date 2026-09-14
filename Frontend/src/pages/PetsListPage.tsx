@@ -4,8 +4,10 @@ import Navbar from "../components/Navbar";
 import PetCard from "../components/PetCard";
 import EmptyState from "../components/EmptyState";
 import { useLanguage } from "../context/LanguageContext";
-import { apiFetch, PetResponse, resolveAssetUrl } from "../lib/api";
+import { apiFetch, PetResponse } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import { PET_SPECIES_OPTIONS } from "../lib/formOptions";
+import { getPetImageUrl } from "../lib/petImages";
 
 // Re-export for backward compat
 export type Pet = PetResponse;
@@ -18,7 +20,7 @@ const SPECIES_ICONS: Record<string, string> = {
   Bird: "🐦",
 };
 
-const ALL_SPECIES = ["Dog", "Cat", "Rabbit", "Bird"];
+const ALL_SPECIES = [...PET_SPECIES_OPTIONS];
 
 const SPECIES_KEY: Record<string, string> = {
   Dog: "species_dog", Cat: "species_cat", Rabbit: "species_rabbit",
@@ -89,9 +91,10 @@ function CheckboxOption({
 
 interface PetsListPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
+  embedded?: boolean;
 }
 
-export default function PetsListPage({ onNavigate }: PetsListPageProps) {
+export default function PetsListPage({ onNavigate, embedded = false }: PetsListPageProps) {
   const { t } = useLanguage();
   const { isAuthenticated } = useAuth();
   const [search, setSearch] = useState("");
@@ -223,8 +226,8 @@ export default function PetsListPage({ onNavigate }: PetsListPageProps) {
   );
 
   return (
-    <div className="min-h-screen bg-[#f0f8f7]">
-      <Navbar onNavigate={onNavigate} />
+    <div className={embedded ? "" : "min-h-screen bg-[#f0f8f7]"}>
+      {!embedded && <Navbar onNavigate={onNavigate} />}
 
       {/* Hero header */}
       <div className="bg-gradient-to-br from-[#089D97] to-[#047975] text-white py-10 px-5">
@@ -386,7 +389,7 @@ export default function PetsListPage({ onNavigate }: PetsListPageProps) {
               <>
                 <div className="flex items-center gap-3 mb-5 pb-5 border-b border-gray-100">
                   <div className="w-14 h-14 rounded-[12px] bg-[#e8f5f4] overflow-hidden flex items-center justify-center">
-                    <img src={resolveAssetUrl(adoptModalPet.images?.[0]?.imageUrl)} alt={adoptModalPet.name} className="w-full h-full object-contain" />
+                    <img src={getPetImageUrl(adoptModalPet.images?.[0]?.imageUrl)} alt={adoptModalPet.name} className="w-full h-full object-contain" />
                   </div>
                   <div>
                     <h3 className="font-['Poppins',sans-serif] font-semibold text-[18px] text-[#1a2e2d]">{t("pet_adopt_btn")} {adoptModalPet.name}</h3>

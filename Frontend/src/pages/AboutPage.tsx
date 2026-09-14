@@ -4,9 +4,10 @@ import { Heart, Home, CheckCircle, Users, Globe, ArrowRight, Mail, Phone, MapPin
 
 interface AboutPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
+  embedded?: boolean;
 }
 
-export default function AboutPage({ onNavigate }: AboutPageProps) {
+export default function AboutPage({ onNavigate, embedded = false }: AboutPageProps) {
   const { t } = useLanguage();
 
   const stats = [
@@ -39,8 +40,8 @@ export default function AboutPage({ onNavigate }: AboutPageProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f0f8f7]">
-      <Navbar activePage="about" onNavigate={onNavigate} />
+    <div className={embedded ? "" : "min-h-screen bg-[#f0f8f7]"}>
+      {!embedded && <Navbar activePage="about" onNavigate={onNavigate} />}
 
       {/* Hero */}
       <section className="bg-gradient-to-br from-[#047975] to-[#089D97] text-white py-20 px-5 relative overflow-hidden">

@@ -2,13 +2,15 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, CheckCircle, PawPrint, X } from "lucide-react";
 import Navbar from "../components/Navbar";
 import EmptyState from "../components/EmptyState";
-import { apiFetch, PetResponse, resolveAssetUrl } from "../lib/api";
+import { apiFetch, PetResponse } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { getPetImageUrl, defaultPetImage } from "../lib/petImages";
 
 interface PetDetailPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
   petId?: string;
+  embedded?: boolean;
 }
 
 function valueOrDash(value?: string | number | null) {
@@ -28,7 +30,7 @@ interface PetFullResponse extends PetResponse {
   vaccinations?: Array<{ vaccinationId: string; vaccineName: string; vaccinationDate: string; nextDueDate?: string | null }>;
 }
 
-export default function PetDetailPage({ onNavigate, petId }: PetDetailPageProps) {
+export default function PetDetailPage({ onNavigate, petId, embedded = false }: PetDetailPageProps) {
   const { isAuthenticated, user } = useAuth();
   const { t } = useLanguage();
   const [pet, setPet] = useState<PetFullResponse | null>(null);
@@ -39,6 +41,7 @@ export default function PetDetailPage({ onNavigate, petId }: PetDetailPageProps)
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     if (!petId) {
@@ -55,6 +58,10 @@ export default function PetDetailPage({ onNavigate, petId }: PetDetailPageProps)
       .catch((err) => setError(err instanceof Error ? err.message : t("pet_not_found_desc")))
       .finally(() => setLoading(false));
   }, [isAuthenticated, petId, t, user?.role]);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [pet?.petId, pet?.images?.[0]?.imageUrl]);
 
   async function submitAdoptionRequest() {
     if (!pet) return;
@@ -84,11 +91,11 @@ export default function PetDetailPage({ onNavigate, petId }: PetDetailPageProps)
   }
 
   const status = pet?.adoptionStatus.toUpperCase() ?? "";
-  const imageUrl = resolveAssetUrl(pet?.images?.[0]?.imageUrl);
+  const imageUrl = getPetImageUrl(pet?.images?.[0]?.imageUrl);
 
   return (
-    <div className="min-h-screen bg-[#f0f8f7]">
-      <Navbar onNavigate={onNavigate} />
+    <div className={embedded ? "" : "min-h-screen bg-[#f0f8f7]"}>
+      {!embedded && <Navbar onNavigate={onNavigate} />}
 
       <div className="max-w-5xl mx-auto px-5 pt-6 pb-16">
         <button
@@ -109,14 +116,12 @@ export default function PetDetailPage({ onNavigate, petId }: PetDetailPageProps)
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="flex flex-col gap-4">
               <div className="relative bg-white rounded-[24px] shadow-sm overflow-hidden aspect-[4/3] flex items-center justify-center">
-                {imageUrl ? (
-                  <img src={imageUrl} alt={pet.name} className="w-full h-full object-contain" />
-                ) : (
-                  <div className="flex flex-col items-center gap-2 text-[#089D97]/45">
-                    <PawPrint size={44} />
-                    <span className="font-['Poppins',sans-serif] text-[13px]">{t("common_no_image")}</span>
-                  </div>
-                )}
+                <img
+                  src={imageError ? defaultPetImage : imageUrl}
+                  alt={pet.name}
+                  onError={() => setImageError(true)}
+                  className="w-full h-full object-contain"
+                />
                 <span className={`absolute top-4 left-4 px-3 py-1 rounded-full font-['Poppins',sans-serif] text-[12px] font-semibold capitalize ${status === "AVAILABLE" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
                   {statusLabel(pet.adoptionStatus, t)}
                 </span>

@@ -20,11 +20,13 @@ import CartPage from "../pages/CartPage";
 import NotificationsPage from "../pages/NotificationsPage";
 import UserProfilePage from "../pages/UserProfilePage";
 import SettingsPage from "../pages/SettingsPage";
+import DashboardLayout from "../components/DashboardLayout";
 
 import MyRequestsPage from "../pages/adopter/MyRequestsPage";
 import MyAdoptionsPage from "../pages/adopter/MyAdoptionsPage";
 import ChatsListPage from "../pages/adopter/ChatsListPage";
 import ChatDetailPage from "../pages/adopter/ChatDetailPage";
+import AdopterDashboardPage from "../pages/adopter/AdopterDashboardPage";
 
 // Staff pages
 import StaffDashboardPage from "../pages/staff/StaffDashboardPage";
@@ -74,6 +76,7 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   shop: ["adopter"],
   cart: ["adopter"],
   orders: ["adopter"],
+  "adopter-dashboard": ["adopter"],
   profile: ["adopter"],
   "my-requests": ["adopter"],
   "my-adoptions": ["adopter"],
@@ -130,7 +133,7 @@ function homePageForRole(role: UserRole): string {
     case "manager": return "manager-dashboard";
     case "staff": return "staff-dashboard";
     case "vet": return "vet-dashboard";
-    default: return "pets";
+    default: return "adopter-dashboard";
   }
 }
 
@@ -153,7 +156,7 @@ function AppRouter() {
   }, []);
 
   // When auth state settles (login or page load with saved session),
-  // redirect non-adopters away from home/login to their role dashboard.
+  // redirect authenticated users away from home/login to their role landing page.
   useEffect(() => {
     if (isAuthenticated && user && (currentPage === "home" || currentPage === "login")) {
       writeHashRoute(homePageForRole(user.role), {});
@@ -182,8 +185,8 @@ function AppRouter() {
 
     let target = page;
 
-    // Redirect authenticated non-adopter users away from public "home" to their dashboard
-    if (target === "home" && isAuthenticated && user && user.role !== "adopter") {
+    // Redirect authenticated users away from public "home" to their role landing page.
+    if (target === "home" && isAuthenticated && user) {
       target = homePageForRole(user.role);
     }
 
@@ -237,7 +240,9 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
   switch (page) {
     // Public
     case "home": return <HomePage onNavigate={navigate} />;
-    case "about": return <AboutPage onNavigate={navigate} />;
+    case "about": return userRole === "adopter"
+      ? <DashboardLayout role="adopter" activePage="about" onNavigate={navigate}><AboutPage onNavigate={navigate} embedded /></DashboardLayout>
+      : <AboutPage onNavigate={navigate} />;
     case "terms": return <TermsPage onNavigate={navigate} />;
     case "privacy": return <PrivacyPolicyPage onNavigate={navigate} />;
     case "login": return <LoginPage onNavigate={navigate} />;
@@ -245,18 +250,33 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "signup": return <SignUpPage onNavigate={navigate} />;
     case "forgot-password": return <ForgotPasswordPage onNavigate={navigate} />;
     case "reset-password": return <ResetPasswordPage onNavigate={navigate} token={params.token as string | undefined} />;
-    case "pets": return <PetsListPage onNavigate={navigate} />;
-    case "pet-detail": return <PetDetailPage onNavigate={navigate} petId={params.petId as string} />;
-    case "shop": return <ShopPage onNavigate={navigate} />;
+    case "pets": return userRole === "adopter"
+      ? <DashboardLayout role="adopter" activePage="pets" onNavigate={navigate}><PetsListPage onNavigate={navigate} embedded /></DashboardLayout>
+      : <PetsListPage onNavigate={navigate} />;
+    case "pet-detail": return userRole === "adopter"
+      ? <DashboardLayout role="adopter" activePage="pets" onNavigate={navigate}><PetDetailPage onNavigate={navigate} petId={params.petId as string} embedded /></DashboardLayout>
+      : <PetDetailPage onNavigate={navigate} petId={params.petId as string} />;
+    case "shop": return userRole === "adopter"
+      ? <DashboardLayout role="adopter" activePage="shop" onNavigate={navigate}><ShopPage onNavigate={navigate} embedded /></DashboardLayout>
+      : <ShopPage onNavigate={navigate} />;
 
     // Shared authenticated
-    case "cart": return <CartPage onNavigate={navigate} />;
+    case "cart": return userRole === "adopter"
+      ? <DashboardLayout role="adopter" activePage="shop" onNavigate={navigate}><CartPage onNavigate={navigate} embedded /></DashboardLayout>
+      : <CartPage onNavigate={navigate} />;
     case "orders": return <CartPage onNavigate={navigate} />;
-    case "user-profile": return <UserProfilePage onNavigate={navigate} />;
-    case "settings": return <SettingsPage onNavigate={navigate} />;
+    case "user-profile": return userRole === "adopter"
+      ? <DashboardLayout role="adopter" activePage="user-profile" onNavigate={navigate}><UserProfilePage onNavigate={navigate} embedded /></DashboardLayout>
+      : <UserProfilePage onNavigate={navigate} />;
+    case "settings": return userRole === "adopter"
+      ? <DashboardLayout role="adopter" activePage="settings" onNavigate={navigate}><SettingsPage onNavigate={navigate} embedded /></DashboardLayout>
+      : <SettingsPage onNavigate={navigate} />;
     case "notifications": return <NotificationsPage onNavigate={navigate} role={userRole ?? "adopter"} />;
 
-    case "profile": return <UserProfilePage onNavigate={navigate} />;
+    case "adopter-dashboard": return <DashboardLayout role="adopter" activePage="adopter-dashboard" onNavigate={navigate}><AdopterDashboardPage onNavigate={navigate} /></DashboardLayout>;
+    case "profile": return userRole === "adopter"
+      ? <DashboardLayout role="adopter" activePage="user-profile" onNavigate={navigate}><UserProfilePage onNavigate={navigate} embedded /></DashboardLayout>
+      : <UserProfilePage onNavigate={navigate} />;
     case "my-requests": return <MyRequestsPage onNavigate={navigate} />;
     case "my-adoptions": return <MyAdoptionsPage onNavigate={navigate} />;
     case "chats": return <ChatsListPage onNavigate={navigate} />;
