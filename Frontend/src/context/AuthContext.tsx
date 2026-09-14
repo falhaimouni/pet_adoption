@@ -15,8 +15,11 @@ export interface AuthUser {
   joinDate: string;
   lastLogin: string;
   phone?: string;
+  city?: string;
+  bio?: string;
   gender?: string;
   dob?: string;
+  address?: string;
 }
 
 interface AuthResponse {
@@ -77,6 +80,7 @@ type ProfileResponse = {
   firstName: string;
   lastName: string;
   phone?: string | null;
+  address?: string | null;
   avatar?: string | null;
   provider?: "LOCAL" | "GOOGLE";
   status?: string;
@@ -97,6 +101,7 @@ function mapProfileUser(profile: ProfileResponse): AuthUser {
     provider: profile.provider,
     status: profile.status,
     phone: profile.phone ?? undefined,
+    address: profile.address ?? undefined,
     joinDate: profile.createdAt ?? new Date().toISOString(),
     lastLogin: profile.updatedAt ?? new Date().toISOString(),
   };

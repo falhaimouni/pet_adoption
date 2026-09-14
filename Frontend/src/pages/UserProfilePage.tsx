@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import {
   Camera, Edit2, Save, X, User, Mail, Phone,
-  ClipboardList, Heart, ChevronRight,
+  ClipboardList, Heart, ChevronRight, MapPin,
 } from "lucide-react";
 import Navbar from "../components/Navbar";
+import BackHomeButton from "../components/BackHomeButton";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { apiFetch, resolveAssetUrl } from "../lib/api";
@@ -11,9 +12,10 @@ import { validateImageFile } from "../lib/validation";
 
 interface UserProfilePageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
+  embedded?: boolean;
 }
 
-export default function UserProfilePage({ onNavigate }: UserProfilePageProps) {
+export default function UserProfilePage({ onNavigate, embedded = false }: UserProfilePageProps) {
   const { user, updateUser } = useAuth();
   const { lang, t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
@@ -26,6 +28,7 @@ export default function UserProfilePage({ onNavigate }: UserProfilePageProps) {
     lastName: lastParts.join(" "),
     email: user?.email ?? "",
     phone: user?.phone ?? "",
+    address: user?.address ?? "",
   };
   const [form, setForm] = useState(blank);
   const [avatarPreview, setAvatarPreview] = useState<string>(user?.avatar ?? "");
@@ -35,7 +38,7 @@ export default function UserProfilePage({ onNavigate }: UserProfilePageProps) {
   useEffect(() => {
     setForm(blank);
     setAvatarPreview(user?.avatar ?? "");
-  }, [user?.id, user?.name, user?.email, user?.phone, user?.avatar]);
+  }, [user?.id, user?.name, user?.email, user?.phone, user?.address, user?.avatar]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -64,6 +67,7 @@ export default function UserProfilePage({ onNavigate }: UserProfilePageProps) {
         firstName: string;
         lastName: string;
         phone?: string | null;
+        address?: string | null;
         avatar?: string | null;
       }>("/users/profile", {
         method: "PATCH",
@@ -71,6 +75,7 @@ export default function UserProfilePage({ onNavigate }: UserProfilePageProps) {
           firstName: form.firstName.trim(),
           lastName: form.lastName.trim(),
           phone: form.phone || undefined,
+          address: form.address.trim(),
         }),
       });
       let nextAvatar = profile.avatar ? resolveAssetUrl(profile.avatar) : user?.avatar;
@@ -83,7 +88,7 @@ export default function UserProfilePage({ onNavigate }: UserProfilePageProps) {
         });
         nextAvatar = uploaded.avatar ? resolveAssetUrl(uploaded.avatar) : undefined;
       }
-      updateUser({ name: `${profile.firstName} ${profile.lastName}`.trim(), phone: profile.phone ?? undefined, avatar: nextAvatar });
+      updateUser({ name: `${profile.firstName} ${profile.lastName}`.trim(), phone: profile.phone ?? undefined, address: profile.address ?? undefined, avatar: nextAvatar });
       setAvatarPreview(nextAvatar ?? "");
       setAvatarFile(null);
       setIsEditing(false);
@@ -151,8 +156,8 @@ export default function UserProfilePage({ onNavigate }: UserProfilePageProps) {
   const readClass = "w-full px-4 py-3 rounded-[12px] font-['Poppins',sans-serif] text-[14px] text-[#1a2e2d] bg-transparent";
 
   return (
-    <div className="min-h-screen bg-[#f0f8f7]">
-      <Navbar onNavigate={onNavigate} />
+    <div className={embedded ? "" : "min-h-screen bg-[#f0f8f7]"}>
+      {!embedded && <Navbar onNavigate={onNavigate} />}
       <div className="bg-gradient-to-br from-[#047975] to-[#089D97] h-36" />
 
       <div className="max-w-4xl mx-auto px-5 pb-16 -mt-16 relative z-10">
@@ -188,6 +193,7 @@ export default function UserProfilePage({ onNavigate }: UserProfilePageProps) {
           </div>
 
           <div className="flex gap-2 sm:self-start">
+            <BackHomeButton onNavigate={onNavigate} />
             {isEditing ? (
               <>
                 <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-5 py-2.5 rounded-[12px] bg-[#089D97] text-white font-['Poppins',sans-serif] text-[13px] font-semibold hover:bg-[#047975] transition-colors shadow-sm disabled:opacity-60">
@@ -235,6 +241,9 @@ export default function UserProfilePage({ onNavigate }: UserProfilePageProps) {
               </Field>
               <Field label={t("profile_phone")} icon={Phone}>
                 {isEditing ? <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={fieldClass} /> : <p className={readClass}>{form.phone || "—"}</p>}
+              </Field>
+              <Field label="Address" icon={MapPin}>
+                {isEditing ? <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} rows={3} maxLength={1000} className={`${fieldClass} resize-none sm:col-span-2`} /> : <p className={readClass}>{form.address || "—"}</p>}
               </Field>
             </div>
           </div>

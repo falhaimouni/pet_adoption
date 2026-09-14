@@ -6,6 +6,14 @@ import EmptyState from "../../components/EmptyState";
 import Modal from "../../components/Modal";
 import { apiFetch, PetResponse } from "../../lib/api";
 import { validateImageFile } from "../../lib/validation";
+import {
+  COMMON_BREED_OPTIONS,
+  COMMON_COLOR_OPTIONS,
+  PET_GENDER_OPTIONS,
+  PET_HEALTH_STATUS_OPTIONS,
+  PET_SPECIES_OPTIONS,
+  PET_STATUS_OPTIONS,
+} from "../../lib/formOptions";
 
 interface StaffPetsPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
@@ -13,7 +21,7 @@ interface StaffPetsPageProps {
   activePage?: string;
 }
 
-const blank = { name: "", species: "Dog", breed: "", age: "", gender: "", color: "", weight: "", description: "", adoptionStatus: "AVAILABLE", healthStatus: "" };
+const blank = { name: "", species: PET_SPECIES_OPTIONS[0], breed: "", age: "", gender: "", color: "", weight: "", description: "", adoptionStatus: PET_STATUS_OPTIONS[0], healthStatus: "" };
 
 export default function StaffPetsPage({ onNavigate, role = "staff", activePage = "staff-pets" }: StaffPetsPageProps) {
   const [pets, setPets] = useState<PetResponse[]>([]);
@@ -164,7 +172,7 @@ export default function StaffPetsPage({ onNavigate, role = "staff", activePage =
             <input placeholder="Search pets..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
           </div>
           <div className="flex gap-2 flex-wrap">
-            {["all", "Dog", "Cat", "Rabbit", "Bird", "Other"].map((s) => <button key={s} onClick={() => setSpeciesFilter(s)} className={`px-3 py-1.5 rounded-[20px] font-['Poppins',sans-serif] text-[12px] transition-colors ${speciesFilter === s ? "bg-[#089D97] text-white" : "bg-gray-100 text-black/70 hover:bg-gray-200"}`}>{s}</button>)}
+            {["all", ...PET_SPECIES_OPTIONS].map((s) => <button key={s} onClick={() => setSpeciesFilter(s)} className={`px-3 py-1.5 rounded-[20px] font-['Poppins',sans-serif] text-[12px] transition-colors ${speciesFilter === s ? "bg-[#089D97] text-white" : "bg-gray-100 text-black/70 hover:bg-gray-200"}`}>{s}</button>)}
           </div>
           <button onClick={() => setAddOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-[#089D97] text-white font-['Poppins',sans-serif] font-medium text-[13px] rounded-[10px] hover:bg-[#047975] transition-colors ml-auto">
             <Plus size={16} /> Add Pet
@@ -215,19 +223,23 @@ export default function StaffPetsPage({ onNavigate, role = "staff", activePage =
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {error && <p className="sm:col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{error}</p>}
           {[
-            ["Name", "name"], ["Breed", "breed"], ["Age", "age"], ["Gender", "gender"], ["Color", "color"], ["Weight", "weight"], ["Health Status", "healthStatus"],
+            ["Name", "name"], ["Age", "age"], ["Weight", "weight"],
           ].map(([label, field]) => <Field key={field} label={label} value={form[field as keyof typeof form]} onChange={(value) => setForm((p) => ({ ...p, [field]: value }))} type={field === "age" || field === "weight" ? "number" : "text"} />)}
+          <DatalistField id="pet-breeds" label="Breed" value={form.breed} options={COMMON_BREED_OPTIONS} onChange={(value) => setForm((p) => ({ ...p, breed: value }))} />
+          <DatalistField id="pet-colors" label="Color" value={form.color} options={COMMON_COLOR_OPTIONS} onChange={(value) => setForm((p) => ({ ...p, color: value }))} />
+          <SelectField label="Gender" value={form.gender} options={["", ...PET_GENDER_OPTIONS]} placeholder="Choose gender" onChange={(value) => setForm((p) => ({ ...p, gender: value }))} />
+          <SelectField label="Health Status" value={form.healthStatus} options={["", ...PET_HEALTH_STATUS_OPTIONS]} placeholder="Choose health status" onChange={(value) => setForm((p) => ({ ...p, healthStatus: value }))} />
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Species</label>
             <select value={form.species} onChange={(e) => setForm((p) => ({ ...p, species: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97]">
-              {["Dog", "Cat", "Rabbit", "Bird", "Other"].map((s) => <option key={s}>{s}</option>)}
+              {PET_SPECIES_OPTIONS.map((s) => <option key={s}>{s}</option>)}
             </select>
           </div>
           {editing && (
             <div>
               <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Adoption Status</label>
               <select value={form.adoptionStatus} onChange={(e) => setForm((p) => ({ ...p, adoptionStatus: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97]">
-                {["AVAILABLE", "PENDING", "ADOPTED", "MEDICAL_HOLD"].map((s) => <option key={s}>{s}</option>)}
+                {PET_STATUS_OPTIONS.map((s) => <option key={s}>{s}</option>)}
               </select>
             </div>
           )}
@@ -255,6 +267,29 @@ function Field({ label, value, onChange, type = "text" }: { label: string; value
     <div>
       <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{label}</label>
       <input type={type} min={type === "number" ? 0 : undefined} value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97]" />
+    </div>
+  );
+}
+
+function SelectField({ label, value, options, placeholder, onChange }: { label: string; value: string; options: readonly string[]; placeholder: string; onChange: (value: string) => void }) {
+  return (
+    <div>
+      <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{label}</label>
+      <select value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97]">
+        {options.map((option) => <option key={option || "blank"} value={option}>{option || placeholder}</option>)}
+      </select>
+    </div>
+  );
+}
+
+function DatalistField({ id, label, value, options, onChange }: { id: string; label: string; value: string; options: readonly string[]; onChange: (value: string) => void }) {
+  return (
+    <div>
+      <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{label}</label>
+      <input list={id} value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97]" />
+      <datalist id={id}>
+        {options.map((option) => <option key={option} value={option} />)}
+      </datalist>
     </div>
   );
 }

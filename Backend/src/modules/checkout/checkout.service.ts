@@ -27,7 +27,7 @@ export class CheckoutService {
     dto: CreateOrderDto,
   ) {
     const order = await this.dataSource.transaction(async (manager) => {
-      
+
        //lock the user (if the user sent more than one request at the same time).
 
       const user = await manager
