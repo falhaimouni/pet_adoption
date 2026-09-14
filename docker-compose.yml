@@ -27,6 +27,8 @@ services:
       - NODE_ENV=${NODE_ENV:-development}
     depends_on:
       - postgres
+    volumes:
+      - backend_uploads:/app/Backend/uploads
 
   frontend:
     container_name: pet_adoption_frontend
@@ -42,3 +44,4 @@ services:
 
 volumes:
   postgres_data:
+  backend_uploads:
