@@ -36,7 +36,7 @@ services:
       context: .
       dockerfile: Frontend/Dockerfile
     ports:
-      - "${FRONTEND_PORT:-5173}:5173"
+      - "${FRONTEND_PORT:-5173}:80"
     env_file:
       - ${ENV_FILE:-.env.development}
     stdin_open: true
