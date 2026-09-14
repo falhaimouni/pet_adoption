@@ -23,6 +23,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { PreventEmailChangeMiddleware } from './common/middleware/prevent-email-change.middleware';
 import { CheckoutModule } from './modules/checkout/checkout.module';
 import { OrderModule } from './modules/order/order.module';
+import { DepartmentsModule } from './modules/departments/departments.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { OrderModule } from './modules/order/order.module';
     NotificationsModule,
     CheckoutModule,
     OrderModule,
+    DepartmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
