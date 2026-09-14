@@ -52,7 +52,7 @@ export class SupplyService{
         },
       );
     }
-    
+
     if (query.isActive !== undefined)
     {
       queryBuilder.andWhere(
@@ -166,7 +166,7 @@ export class SupplyService{
       return savedSupply;
     }
 
-    
+
     async updateSupply(id: string, updateSupplyDto: UpdateSupplyDto)
     {
       const savedSupply = await this.dataSource.transaction(async (manager) => {
@@ -227,7 +227,7 @@ export class SupplyService{
         supply: savedSupply,
       };
     }
-        
+
     async deleteSupply(id: string)
     {
       const supply = await this.supplyRepo.findOneBy({
@@ -242,7 +242,7 @@ export class SupplyService{
       supply.storeListed = false;
       await this.supplyRepo.save(supply);
       await this.productRepo.update(supply.productId, { isActive: false });
-      return { 
+      return {
       success: true,
       message: 'Supply deleted successfully'
       };

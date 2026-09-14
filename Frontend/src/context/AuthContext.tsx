@@ -15,9 +15,11 @@ export interface AuthUser {
   joinDate: string;
   lastLogin: string;
   phone?: string;
-  address?: string;
+  city?: string;
+  bio?: string;
   gender?: string;
   dob?: string;
+  address?: string;
 }
 
 interface AuthResponse {

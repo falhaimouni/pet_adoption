@@ -34,9 +34,7 @@ export default function AboutPage({ onNavigate, embedded = false }: AboutPagePro
   ];
 
   const contacts = [
-    { icon: Mail,   label: t("about_email"),       value: "support@petopia.com" },
-    { icon: Phone,  label: t("about_phone_label"), value: "+962 799 281 091" },
-    { icon: MapPin, label: t("about_visit"),        value: "123 Paw Street, Portland OR" },
+    { icon: Mail,   label: t("about_email"),       value: "petadoptionsystem2000@gmail.com" },
   ];
 
   return (
