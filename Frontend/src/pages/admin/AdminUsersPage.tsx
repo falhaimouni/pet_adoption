@@ -61,6 +61,11 @@ const roleLabel = (roleName?: string) => {
 };
 
 const ASSIGNABLE_EMPLOYEE_ROLES = new Set(["MANAGER", "EMPLOYEE", "VET"]);
+const ROLE_DEPARTMENT_NAMES: Record<string, string> = {
+  EMPLOYEE: "Customer Service",
+  VET: "Veterinary",
+  MANAGER: "Management",
+};
 const ROLE_RANK: Record<string, number> = {
   ADMIN: 4,
   MANAGER: 3,
@@ -171,6 +176,12 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
   }, [users]);
 
   const filterRoles = ["all", ...Array.from(new Set(users.map((u) => roleLabel(u.role?.roleName))))];
+  const selectedEmployeeRole = roles.find((item) => item.roleId === employeeForm.roleId);
+  const selectedEmployeeRoleName = selectedEmployeeRole?.roleName?.toUpperCase() ?? "";
+  const expectedDepartmentName = ROLE_DEPARTMENT_NAMES[selectedEmployeeRoleName];
+  const departmentOptions = expectedDepartmentName
+    ? departments.filter((item) => item.departmentName.trim().toLowerCase() === expectedDepartmentName.toLowerCase())
+    : [];
   const filtered = users.filter((u) => {
     const name = `${u.firstName} ${u.lastName}`.toLowerCase();
     const ms = name.includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
@@ -179,16 +190,18 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
     return ms && mr && mt;
   });
 
-  function loadUsers() {
+  function loadUsers(nextStatus = statusFilter) {
     setLoading(true);
     setError("");
-    apiFetch<UserRecord[]>(`/users?status=${statusFilter}`)
+    apiFetch<UserRecord[]>(`/users?status=${nextStatus}`)
       .then(setUsers)
       .catch((err) => setError(err instanceof Error ? err.message : "Unable to load users."))
       .finally(() => setLoading(false));
   }
 
-  useEffect(loadUsers, [statusFilter]);
+  useEffect(() => {
+    loadUsers(statusFilter);
+  }, [statusFilter]);
 
   async function loadEmployeeLookups() {
     if (!canCreateEmployee || lookupsLoading) return;
@@ -210,8 +223,8 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
       }
       setEmployeeForm((form) => ({
         ...form,
-        roleId: form.roleId || nextRoles[0]?.roleId || "",
-        departmentId: form.departmentId || nextDepartments[0]?.departmentId || "",
+        roleId: nextRoles.some((item) => item.roleId === form.roleId) ? form.roleId : "",
+        departmentId: nextDepartments.some((item) => item.departmentId === form.departmentId) ? form.departmentId : "",
       }));
     } catch (err) {
       const nextRoles = roleFallbackFromUsers(users);
@@ -220,8 +233,8 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
       setDepartments(nextDepartments);
       setEmployeeForm((form) => ({
         ...form,
-        roleId: form.roleId || nextRoles[0]?.roleId || "",
-        departmentId: form.departmentId || nextDepartments[0]?.departmentId || "",
+        roleId: nextRoles.some((item) => item.roleId === form.roleId) ? form.roleId : "",
+        departmentId: nextDepartments.some((item) => item.departmentId === form.departmentId) ? form.departmentId : "",
       }));
       setFormError(
         nextRoles.length > 0 && nextDepartments.length > 0
@@ -304,7 +317,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
       setFormError("First name, last name, email, role, department, and hire date are required.");
       return;
     }
-    if (!roles.some((item) => item.roleId === employeeForm.roleId) || !departments.some((item) => item.departmentId === employeeForm.departmentId)) {
+    if (!roles.some((item) => item.roleId === employeeForm.roleId) || !departmentOptions.some((item) => item.departmentId === employeeForm.departmentId)) {
       setFormError("Choose a valid active role and department before creating the employee.");
       return;
     }
@@ -328,13 +341,16 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
     setSaving(true);
     setFormError("");
     try {
-      await apiFetch("/users/employees", {
+      const createdUser = await apiFetch<UserRecord>("/users/employees", {
         method: "POST",
         body: JSON.stringify(body),
       });
       setEmployeeOpen(false);
       setEmployeeForm(blankEmployee);
-      loadUsers();
+      setStatusFilter("active");
+      setRoleFilter("all");
+      setUsers((current) => [createdUser, ...current.filter((user) => user.userId !== createdUser.userId)]);
+      loadUsers("active");
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Unable to create employee.");
     } finally {
@@ -488,17 +504,20 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
           </p>
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Role</label>
-            <select value={employeeForm.roleId} onChange={(e) => setEmployeeForm((form) => ({ ...form, roleId: e.target.value }))} disabled={lookupsLoading || roles.length === 0} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97] transition-colors disabled:opacity-60">
-              <option value="">{lookupsLoading ? "Loading roles..." : roles.length === 0 ? "No assignable roles" : "Choose role"}</option>
+            <select value={employeeForm.roleId} onChange={(e) => setEmployeeForm((form) => ({ ...form, roleId: e.target.value, departmentId: "" }))} disabled={lookupsLoading || roles.length === 0} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97] transition-colors disabled:opacity-60">
+              <option value="" disabled>{lookupsLoading ? "Loading roles..." : roles.length === 0 ? "No assignable roles" : "Choose role"}</option>
               {roles.map((r) => <option key={r.roleId} value={r.roleId}>{roleLabel(r.roleName)}</option>)}
             </select>
           </div>
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Department</label>
-            <select value={employeeForm.departmentId} onChange={(e) => setEmployeeForm((form) => ({ ...form, departmentId: e.target.value }))} disabled={lookupsLoading || departments.length === 0} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97] transition-colors disabled:opacity-60">
-              <option value="">{lookupsLoading ? "Loading departments..." : departments.length === 0 ? "No active departments" : "Choose department"}</option>
-              {departments.map((d) => <option key={d.departmentId} value={d.departmentId}>{d.departmentName}</option>)}
+            <select value={employeeForm.departmentId} onChange={(e) => setEmployeeForm((form) => ({ ...form, departmentId: e.target.value }))} disabled={lookupsLoading || !employeeForm.roleId || departmentOptions.length === 0} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97] transition-colors disabled:opacity-60">
+              <option value="" disabled>{lookupsLoading ? "Loading departments..." : !employeeForm.roleId ? "Choose role first" : departmentOptions.length === 0 ? "No matching department" : "Choose department"}</option>
+              {departmentOptions.map((d) => <option key={d.departmentId} value={d.departmentId}>{d.departmentName}</option>)}
             </select>
+            {employeeForm.roleId && expectedDepartmentName && departmentOptions.length === 0 && (
+              <p className="mt-1 font-['Poppins',sans-serif] text-[11px] text-red-500">Create an active {expectedDepartmentName} department first.</p>
+            )}
           </div>
           <Field label="Hire Date" type="date" value={employeeForm.hireDate} onChange={(value) => setEmployeeForm((form) => ({ ...form, hireDate: value }))} />
           <Field label="Phone" value={employeeForm.phone} onChange={(value) => setEmployeeForm((form) => ({ ...form, phone: value }))} />

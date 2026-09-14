@@ -58,6 +58,7 @@ import AdminAnalyticsPage from "../pages/admin/AdminAnalyticsPage";
 import AdminRolesPage from "../pages/admin/AdminRolesPage";
 import AdminFilesPage from "../pages/admin/AdminFilesPage";
 import ActivityLogPage from "../pages/admin/ActivityLogPage";
+import AdminDepartmentsPage from "../pages/admin/AdminDepartmentsPage";
 
 export type Role = UserRole;
 
@@ -118,6 +119,7 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   "admin-chats": ["admin"],
   "admin-chat-detail": ["admin"],
   "admin-users": ["admin"],
+  "admin-departments": ["admin"],
   "admin-inventory": ["admin"],
   "admin-suppliers": ["admin"],
   "admin-reports": ["admin"],
@@ -322,6 +324,7 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "admin-chats": return <StaffChatsListPage onNavigate={navigate} role="admin" activePage="admin-chats" detailPage="admin-chat-detail" readOnly />;
     case "admin-chat-detail": return <StaffChatDetailPage onNavigate={navigate} conversationId={params.conversationId as string} role="admin" activePage="admin-chats" listPage="admin-chats" readOnly />;
     case "admin-users": return <AdminUsersPage onNavigate={navigate} />;
+    case "admin-departments": return <AdminDepartmentsPage onNavigate={navigate} />;
     case "admin-inventory": return <AdminInventoryPage onNavigate={navigate} role="admin" activePage="admin-inventory" />;
     case "admin-suppliers": return <AdminSuppliersPage onNavigate={navigate} />;
     case "admin-reports": return <AdminReportsPage onNavigate={navigate} />;
