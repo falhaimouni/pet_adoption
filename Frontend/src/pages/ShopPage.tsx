@@ -22,7 +22,8 @@ interface StoreSupply {
   category: string;
   sellingPrice: string;
   quantity?: number;
-  inStock: boolean;
+  inStock?: boolean;
+  status?: string;
 }
 
 interface StoreResponse {
@@ -33,6 +34,10 @@ interface StoreResponse {
 }
 
 function mapSupplyToProduct(supply: StoreSupply, index: number): Product {
+  const inStock =
+    supply.inStock ??
+    ((supply.quantity ?? 0) > 0 && (supply.status == null || supply.status === "AVAILABLE"));
+
   return {
     id: supply.productId,
     productId: supply.productId,
@@ -45,7 +50,7 @@ function mapSupplyToProduct(supply: StoreSupply, index: number): Product {
     image: productImage(index),
     rating: 0,
     reviewCount: 0,
-    inStock: supply.inStock,
+    inStock,
     description: `${supply.supplyName} · ${supply.category}`,
     forSpecies: [],
   };
