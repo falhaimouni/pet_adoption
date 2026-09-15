@@ -41,7 +41,7 @@ export default function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps
             </section>
             <section>
               <h2 className="font-semibold text-[#089D97] mb-1">Contact</h2>
-              <p>Questions about this policy can be sent to support@petopia.com.</p>
+              <p>Questions about this policy can be sent to petadoptionsystem2000@gmail.com.</p>
             </section>
           </div>
         </article>

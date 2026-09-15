@@ -4,9 +4,10 @@ import { Heart, Home, CheckCircle, Users, Globe, ArrowRight, Mail, Phone, MapPin
 
 interface AboutPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
+  embedded?: boolean;
 }
 
-export default function AboutPage({ onNavigate }: AboutPageProps) {
+export default function AboutPage({ onNavigate, embedded = false }: AboutPageProps) {
   const { t } = useLanguage();
 
   const stats = [
@@ -33,14 +34,12 @@ export default function AboutPage({ onNavigate }: AboutPageProps) {
   ];
 
   const contacts = [
-    { icon: Mail,   label: t("about_email"),       value: "support@petopia.com" },
-    { icon: Phone,  label: t("about_phone_label"), value: "+962 799 281 091" },
-    { icon: MapPin, label: t("about_visit"),        value: "123 Paw Street, Portland OR" },
+    { icon: Mail,   label: t("about_email"),       value: "petadoptionsystem2000@gmail.com" },
   ];
 
   return (
-    <div className="min-h-screen bg-[#f0f8f7]">
-      <Navbar activePage="about" onNavigate={onNavigate} />
+    <div className={embedded ? "" : "min-h-screen bg-[#f0f8f7]"}>
+      {!embedded && <Navbar activePage="about" onNavigate={onNavigate} />}
 
       {/* Hero */}
       <section className="bg-gradient-to-br from-[#047975] to-[#089D97] text-white py-20 px-5 relative overflow-hidden">

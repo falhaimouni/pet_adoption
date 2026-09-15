@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Home, User, Heart, Bell, Settings,
   LogOut, Menu, X, Syringe, BarChart2, Package, Users,
-  FileText, ClipboardList, Stethoscope, Tag,
+  FileText, ClipboardList, Stethoscope, Tag, Building2,
   ChevronRight, Sun, Moon, Globe, MessageCircle, ShoppingCart,
 } from "lucide-react";
 import logoImg from "../imports/MyPetopia/be6bd1f12e9a602c8830a9c39abaf73ad65d4682.png";
@@ -28,7 +28,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
   switch (role) {
     case "adopter":
       return [
-        { id: "profile",        label: t("nav_my_profile"),    icon: <User size={16} /> },
+        { id: "user-profile",   label: t("nav_my_profile"),    icon: <User size={16} /> },
         { id: "my-requests",    label: t("nav_my_requests"),   icon: <ClipboardList size={16} /> },
         { id: "my-adoptions",   label: t("nav_my_adoptions"),  icon: <Heart size={16} /> },
         { id: "chats",          label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
@@ -77,6 +77,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "admin-adoptions", label: t("nav_adoptions"),     icon: <Heart size={16} /> },
         { id: "admin-chats",     label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
         { id: "admin-users",     label: t("nav_users"),         icon: <Users size={16} /> },
+        { id: "admin-departments", label: "Departments",        icon: <Building2 size={16} /> },
         { id: "admin-inventory", label: t("nav_inventory"),     icon: <Package size={16} /> },
         { id: "admin-suppliers", label: t("nav_suppliers"),     icon: <Tag size={16} /> },
         { id: "admin-reports",   label: t("nav_reports"),       icon: <FileText size={16} /> },
@@ -98,7 +99,7 @@ function petsPageForRole(role: Role) {
 
 function homePageForRole(role: Role) {
   const map: Record<Role, string> = {
-    adopter: "profile",
+    adopter: "adopter-dashboard",
     staff: "staff-dashboard",
     vet: "vet-dashboard",
     manager: "manager-dashboard",
@@ -187,15 +188,17 @@ export default function DashboardLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-[rgba(186,216,211,0.99)] flex flex-col">
+    <div className="h-screen bg-[rgba(186,216,211,0.99)] flex flex-col overflow-hidden">
       {/* Top Navbar */}
-      <header className="w-full bg-white shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] z-20 relative">
+      <header className="w-full bg-white shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] z-20 relative shrink-0">
         <div className="flex items-center justify-between h-[80px] px-4">
           <div className="flex items-center gap-3">
             <button className="lg:hidden text-black" onClick={() => setSidebarOpen((p) => !p)}>
               <Menu size={24} />
             </button>
-            <img src={logoImg} alt="Petopia" className="h-[70px] w-auto object-contain" />
+            <button type="button" onClick={() => onNavigate(homePageForRole(role))} className="flex items-center">
+              <img src={logoImg} alt="Petopia" className="h-[70px] w-auto object-contain" />
+            </button>
           </div>
 
           <div className="hidden lg:flex items-center gap-1">
@@ -285,7 +288,7 @@ export default function DashboardLayout({
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Sidebar overlay on mobile */}
         {sidebarOpen && (
           <div className="fixed inset-0 bg-black/40 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
@@ -297,10 +300,9 @@ export default function DashboardLayout({
             fixed lg:relative top-0 lg:top-auto left-0 z-40 lg:z-auto
             w-[240px] bg-[#80bdba] rounded-r-[10px] lg:rounded-[10px]
             flex flex-col pt-4 pb-4 mt-0 lg:mt-[16px] lg:ml-[14px] mb-[16px]
-            transition-transform duration-300 h-full lg:h-auto
+            transition-transform duration-300 h-full lg:h-[calc(100vh-112px)] lg:shrink-0
             ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
           `}
-          style={{ minHeight: "calc(100vh - 80px)" }}
         >
           <button className="lg:hidden absolute top-3 right-3 text-black" onClick={() => setSidebarOpen(false)}>
             <X size={20} />
@@ -347,7 +349,9 @@ export default function DashboardLayout({
           <div className="px-3 flex flex-col gap-1 border-t border-white/30 pt-3 mt-3">
             <button
               onClick={() => { onNavigate("settings"); setSidebarOpen(false); }}
-              className="flex items-center gap-3 px-3 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[13px] text-black hover:bg-white/30 transition-colors"
+              className={`flex items-center gap-3 px-3 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[13px] transition-colors ${
+                activePage === "settings" ? "bg-[#089D97] text-white" : "text-black hover:bg-white/30"
+              }`}
             >
               <Settings size={16} />
               {t("dash_settings")}
@@ -373,7 +377,7 @@ export default function DashboardLayout({
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-5">
+        <main className="flex-1 min-h-0 overflow-y-auto p-4 lg:p-5">
           {/* Breadcrumb / Page title */}
           {(pageTitle || breadcrumbs) && (
             <div className="mb-4">

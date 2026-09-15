@@ -7,6 +7,7 @@ import Pagination from "../../components/Pagination";
 import EmptyState from "../../components/EmptyState";
 import { apiFetch } from "../../lib/api";
 import type { UserRole } from "../../context/AuthContext";
+import { COMMON_CITY_OPTIONS, COMMON_COUNTRY_OPTIONS } from "../../lib/formOptions";
 
 interface Supplier {
   supplierId: string;
@@ -21,6 +22,23 @@ interface Supplier {
 }
 
 const emptyForm = { supplierName: "", phone: "", email: "", address: "", city: "", country: "" };
+
+type SupplierFormField = {
+  label: string;
+  field: keyof typeof emptyForm;
+  span: 1 | 2;
+  list?: string;
+  options?: readonly string[];
+};
+
+const supplierFormFields: SupplierFormField[] = [
+  { label: "Supplier Name", field: "supplierName", span: 2 },
+  { label: "City", field: "city", span: 1, list: "supplier-cities", options: COMMON_CITY_OPTIONS },
+  { label: "Country", field: "country", span: 1, list: "supplier-countries", options: COMMON_COUNTRY_OPTIONS },
+  { label: "Phone", field: "phone", span: 1 },
+  { label: "Email", field: "email", span: 1 },
+  { label: "Address", field: "address", span: 2 },
+];
 
 interface AdminSuppliersPageProps {
   onNavigate: (page: string) => void;
@@ -222,10 +240,15 @@ export default function AdminSuppliersPage({ onNavigate, role = "admin", activeP
       <Modal title={editItem ? "Edit Supplier" : "Add Supplier"} open={addOpen || !!editItem} onClose={() => { setAddOpen(false); setEditItem(null); }} onConfirm={saveSupplier} confirmLabel={saving ? "Saving..." : "Save"} size="md">
         <div className="grid grid-cols-2 gap-4">
           {formError && <p className="col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
-          {[{ label: "Supplier Name", field: "supplierName" as const, span: 2 }, { label: "City", field: "city" as const, span: 1 }, { label: "Country", field: "country" as const, span: 1 }, { label: "Phone", field: "phone" as const, span: 1 }, { label: "Email", field: "email" as const, span: 1 }, { label: "Address", field: "address" as const, span: 2 }].map(({ label, field, span }) => (
+          {supplierFormFields.map(({ label, field, span, list, options }) => (
             <div key={field} className={span === 2 ? "col-span-2" : ""}>
               <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{label}</label>
-              <input value={form[field]} onChange={(e) => setForm((f) => ({ ...f, [field]: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+              <input list={list} value={form[field]} onChange={(e) => setForm((f) => ({ ...f, [field]: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+              {list && options && (
+                <datalist id={list}>
+                  {options.map((option) => <option key={option} value={option} />)}
+                </datalist>
+              )}
             </div>
           ))}
         </div>
