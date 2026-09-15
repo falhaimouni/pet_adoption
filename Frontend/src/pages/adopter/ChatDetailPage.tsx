@@ -4,6 +4,7 @@ import DashboardLayout from "../../components/DashboardLayout";
 import EmptyState from "../../components/EmptyState";
 import { apiFetch } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface Message {
   messageId: string;
@@ -26,6 +27,7 @@ interface ChatDetailPageProps {
 
 export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetailPageProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [conversation, setConversation] = useState<ConversationDetail | null>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
@@ -35,7 +37,7 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
 
   useEffect(() => {
     if (!conversationId) {
-      setError("Conversation id is missing.");
+      setError(t("chat_missing_conversation"));
       setLoading(false);
       return;
     }
@@ -46,7 +48,7 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
         setConversation(detail);
         void apiFetch(`/messages/conversations/${conversationId}/read`, { method: "PATCH" }).catch(() => undefined);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load conversation."))
+      .catch((err) => setError(err instanceof Error ? err.message : t("chat_load_error")))
       .finally(() => setLoading(false));
   }, [conversationId]);
 
@@ -66,7 +68,7 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
       setConversation((prev) => prev ? { ...prev, messages: [...prev.messages, sent] } : prev);
       setInput("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to send message.");
+      setError(err instanceof Error ? err.message : t("chat_send_error"));
     } finally {
       setSending(false);
     }
@@ -78,21 +80,21 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
     <DashboardLayout role="adopter" activePage="chats" onNavigate={onNavigate}>
       <div className="max-w-2xl flex flex-col h-[calc(100vh-160px)] bg-white rounded-[15px] shadow-md overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white">
-          <button onClick={() => onNavigate("chats")} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label="Back to conversations">
+          <button onClick={() => onNavigate("chats")} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label={t("chat_back_conversations")}>
             <ArrowLeft size={20} />
           </button>
           <MessageCircle size={20} className="text-[#089D97]" />
-          <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black">Conversation</p>
+          <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black">{t("chat_conversation")}</p>
         </div>
 
         {loading ? (
           <div className="flex-1 p-4 space-y-3 bg-[rgba(186,216,211,0.15)]">{[1, 2, 3].map((n) => <div key={n} className="h-12 rounded-[16px] bg-white animate-pulse" />)}</div>
         ) : error && !conversation ? (
-          <EmptyState icon={<MessageCircle size={28} />} title="Conversation unavailable" description={error} actionLabel="Back to Messages" onAction={() => onNavigate("chats")} />
+          <EmptyState icon={<MessageCircle size={28} />} title={t("chat_unavailable")} description={error} actionLabel={t("chat_back_messages")} onAction={() => onNavigate("chats")} />
         ) : (
           <>
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[rgba(186,216,211,0.15)]">
-              {conversation?.messages.length === 0 && <EmptyState icon={<MessageCircle size={28} />} title="No messages yet" description="Send the first message when you are ready." />}
+              {conversation?.messages.length === 0 && <EmptyState icon={<MessageCircle size={28} />} title={t("chats_no_messages_yet")} description={t("chat_first_message")} />}
               {conversation?.messages.map((m) => {
                 const fromMe = m.senderId === user?.id;
                 return (
@@ -115,10 +117,10 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
                   onKeyDown={(e) => e.key === "Enter" && send()}
                   maxLength={5000}
                   disabled={closed}
-                  placeholder={closed ? "Conversation is closed" : "Type a message..."}
+                  placeholder={closed ? t("chat_closed") : t("chat_type_message")}
                   className="flex-1 bg-[rgba(8,157,151,0.06)] rounded-[20px] px-4 py-2.5 font-['Poppins',sans-serif] text-[13px] outline-none focus:ring-1 focus:ring-[#089D97] transition-all disabled:opacity-60"
                 />
-                <button onClick={send} disabled={sending || closed || !input.trim()} className="w-[38px] h-[38px] bg-[#089D97] disabled:opacity-40 rounded-full flex items-center justify-center text-white hover:bg-[#047975] transition-colors shrink-0" aria-label="Send message">
+                <button onClick={send} disabled={sending || closed || !input.trim()} className="w-[38px] h-[38px] bg-[#089D97] disabled:opacity-40 rounded-full flex items-center justify-center text-white hover:bg-[#047975] transition-colors shrink-0" aria-label={t("chat_send_message")}>
                   <Send size={16} />
                 </button>
               </div>

@@ -3,6 +3,7 @@ import { Plus, Edit, Trash2, CheckSquare, XSquare } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import Badge from "../../components/Badge";
 import Modal from "../../components/Modal";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface RoleDef {
   id: number;
@@ -44,16 +45,17 @@ const pGroup: Record<string, string[]> = {
 interface AdminRolesPageProps { onNavigate: (page: string) => void; }
 
 export default function AdminRolesPage({ onNavigate }: AdminRolesPageProps) {
+  const { t } = useLanguage();
   const [selected, setSelected] = useState<RoleDef>(ROLES[0]);
   const [editOpen, setEditOpen] = useState(false);
 
   return (
-    <DashboardLayout role="admin" activePage="admin-roles" onNavigate={onNavigate} pageTitle="Role Management" breadcrumbs={["Admin", "Roles"]}>
+    <DashboardLayout role="admin" activePage="admin-roles" onNavigate={onNavigate} pageTitle={t("admin_role_mgmt")} breadcrumbs={[t("role_admin"), t("nav_roles")]}>
       <div className="flex flex-col lg:flex-row gap-5">
         {/* Roles list */}
         <div className="w-full lg:w-[260px] shrink-0 bg-white rounded-[15px] shadow-md p-4 flex flex-col gap-2">
           <div className="flex items-center justify-between mb-2">
-            <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black">Roles</p>
+            <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black">{t("nav_roles")}</p>
             <button className="w-7 h-7 bg-[rgba(8,157,151,0.1)] text-[#089D97] rounded-[8px] flex items-center justify-center hover:bg-[rgba(8,157,151,0.2)] transition-colors">
               <Plus size={14} />
             </button>
@@ -65,8 +67,8 @@ export default function AdminRolesPage({ onNavigate }: AdminRolesPageProps) {
               className={`flex items-center justify-between px-3 py-2.5 rounded-[10px] text-left transition-colors ${selected.id === r.id ? "bg-[#089D97] text-white" : "hover:bg-[rgba(8,157,151,0.08)] text-black"}`}
             >
               <div>
-                <p className="font-['Poppins',sans-serif] font-medium text-[13px]">{r.label}</p>
-                <p className={`font-['Poppins',sans-serif] text-[11px] ${selected.id === r.id ? "text-white/70" : "text-black/50"}`}>{r.userCount} users</p>
+                <p className="font-['Poppins',sans-serif] font-medium text-[13px]">{t(`role_${r.name}`)}</p>
+                <p className={`font-['Poppins',sans-serif] text-[11px] ${selected.id === r.id ? "text-white/70" : "text-black/50"}`}>{t("roles_users_count").replace("{count}", String(r.userCount))}</p>
               </div>
               <Badge label={r.name} variant={selected.id === r.id ? "neutral" : "teal"} />
             </button>
@@ -77,14 +79,14 @@ export default function AdminRolesPage({ onNavigate }: AdminRolesPageProps) {
         <div className="flex-1 bg-white rounded-[15px] shadow-md p-5">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="font-['Poppins',sans-serif] font-semibold text-[18px] text-black">{selected.label}</h3>
-              <p className="font-['Poppins',sans-serif] text-[13px] text-black/50">{selected.userCount} users · {selected.permissions.length} permissions</p>
+              <h3 className="font-['Poppins',sans-serif] font-semibold text-[18px] text-black">{t(`role_${selected.name}`)}</h3>
+              <p className="font-['Poppins',sans-serif] text-[13px] text-black/50">{t("roles_detail_count").replace("{users}", String(selected.userCount)).replace("{permissions}", String(selected.permissions.length))}</p>
             </div>
             <button
               onClick={() => setEditOpen(true)}
               className="flex items-center gap-2 px-4 py-2 border border-[#089D97] text-[#089D97] font-['Poppins',sans-serif] font-medium text-[13px] rounded-[10px] hover:bg-[rgba(8,157,151,0.1)] transition-colors"
             >
-              <Edit size={14} /> Edit Permissions
+              <Edit size={14} /> {t("roles_edit_permissions")}
             </button>
           </div>
 
@@ -113,8 +115,8 @@ export default function AdminRolesPage({ onNavigate }: AdminRolesPageProps) {
         </div>
       </div>
 
-      <Modal title={`Edit: ${selected.label}`} open={editOpen} onClose={() => setEditOpen(false)} onConfirm={() => setEditOpen(false)} confirmLabel="Save Permissions" size="lg">
-        <p className="font-['Poppins',sans-serif] text-[13px] text-black/50 mb-4">Toggle permissions for the <span className="font-semibold text-black">{selected.label}</span> role.</p>
+      <Modal title={`${t("action_edit")}: ${t(`role_${selected.name}`)}`} open={editOpen} onClose={() => setEditOpen(false)} onConfirm={() => setEditOpen(false)} confirmLabel={t("roles_save_permissions")} size="lg">
+        <p className="font-['Poppins',sans-serif] text-[13px] text-black/50 mb-4">{t("roles_toggle_permissions").replace("{role}", t(`role_${selected.name}`))}</p>
         <div className="grid grid-cols-2 gap-x-6 gap-y-2 max-h-[340px] overflow-y-auto pr-2">
           {ALL_PERMISSIONS.map((p) => (
             <label key={p} className="flex items-center gap-2 cursor-pointer group">

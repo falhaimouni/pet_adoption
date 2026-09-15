@@ -200,7 +200,7 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
               disabled={loading}
               className="w-full border border-gray-200 bg-white text-black font-['Inter',sans-serif] font-semibold text-[15px] py-3 rounded-[16px] hover:bg-gray-50 transition-colors disabled:opacity-60"
             >
-              Continue with Google
+              {t("auth_continue_google")}
             </button>
 
             <p className="text-center mt-6 font-['Inter',sans-serif] text-[15px] text-black">

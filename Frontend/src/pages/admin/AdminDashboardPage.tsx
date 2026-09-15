@@ -7,6 +7,7 @@ import { Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import DashboardLayout from "../../components/DashboardLayout";
 import KpiCard from "../../components/KpiCard";
 import { apiFetch } from "../../lib/api";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface AdminDashboardPageProps {
   onNavigate: (page: string) => void;
@@ -22,13 +23,14 @@ interface DashboardData {
 }
 
 const features = [
-  { id: "admin-users", label: "Users", desc: "Manage all accounts", icon: Users, color: "text-[#089D97]", bg: "bg-[#e0f2f0]" },
-  { id: "admin-inventory", label: "Inventory", desc: "Stock & products", icon: Package, color: "text-amber-600", bg: "bg-amber-50" },
-  { id: "admin-suppliers", label: "Suppliers", desc: "Vendor directory", icon: Tag, color: "text-sky-600", bg: "bg-sky-50" },
-  { id: "admin-reports", label: "Reports", desc: "Generate reports", icon: FileText, color: "text-indigo-600", bg: "bg-indigo-50" },
+  { id: "admin-users", labelKey: "nav_users", descKey: "admin_users_desc", icon: Users, color: "text-[#089D97]", bg: "bg-[#e0f2f0]" },
+  { id: "admin-inventory", labelKey: "nav_inventory", descKey: "admin_inventory_desc", icon: Package, color: "text-amber-600", bg: "bg-amber-50" },
+  { id: "admin-suppliers", labelKey: "nav_suppliers", descKey: "admin_suppliers_desc", icon: Tag, color: "text-sky-600", bg: "bg-sky-50" },
+  { id: "admin-reports", labelKey: "nav_reports", descKey: "admin_reports_desc", icon: FileText, color: "text-indigo-600", bg: "bg-indigo-50" },
 ];
 
 export default function AdminDashboardPage({ onNavigate }: AdminDashboardPageProps) {
+  const { t } = useLanguage();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -38,38 +40,38 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
     setError("");
     apiFetch<DashboardData>("/dashboard/admin")
       .then(setData)
-      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load dashboard."))
+      .catch((err) => setError(err instanceof Error ? err.message : t("dashboard_load_error")))
       .finally(() => setLoading(false));
   }, []);
 
   const roleDistribution = [
-    { name: "Adopters", value: data?.users.adopter ?? 0, color: "#089D97" },
-    { name: "Staff", value: data?.users.employee ?? 0, color: "#047975" },
-    { name: "Vets", value: data?.users.vet ?? 0, color: "#80bdba" },
-    { name: "Managers", value: data?.users.manager ?? 0, color: "#bae0dd" },
-    { name: "Admins", value: data?.users.admin ?? 0, color: "#1a2e2d" },
+    { name: t("role_adopters"), value: data?.users.adopter ?? 0, color: "#089D97" },
+    { name: t("role_staff_plural"), value: data?.users.employee ?? 0, color: "#047975" },
+    { name: t("role_vets"), value: data?.users.vet ?? 0, color: "#80bdba" },
+    { name: t("role_managers"), value: data?.users.manager ?? 0, color: "#bae0dd" },
+    { name: t("role_admins"), value: data?.users.admin ?? 0, color: "#1a2e2d" },
   ];
   const recentActivity = data?.activity.recentActivityLogs ?? [];
   const overviewRows = [
-    { label: "Active users", value: data?.users.active },
-    { label: "Inactive users", value: data?.users.inactive },
-    { label: "Total pets", value: data?.pets.total },
-    { label: "Available pets", value: data?.pets.available },
-    { label: "Adopted pets", value: data?.pets.adopted },
-    { label: "Pending adoptions", value: data?.pets.pendingAdoption },
-    { label: "Adoption requests", value: data?.adoptions.totalRequests },
-    { label: "Approved requests", value: data?.adoptions.approved },
-    { label: "Rejected/canceled requests", value: data?.adoptions.rejectedOrCanceled },
-    { label: "Inventory supplies", value: data?.supplies.totalSupplies },
-    { label: "Low-stock supplies", value: data?.supplies.lowStockSupplies },
-    { label: "Suppliers", value: data?.supplies.totalSuppliers },
-    { label: "Medical records", value: data?.medical.totalMedicalRecords },
-    { label: "Vaccinations", value: data?.medical.totalVaccinations },
-    { label: "Pets needing medical attention", value: data?.medical.petsNeedingMedicalAttention },
+    { label: t("metric_active_users"), value: data?.users.active },
+    { label: t("metric_inactive_users"), value: data?.users.inactive },
+    { label: t("metric_total_pets"), value: data?.pets.total },
+    { label: t("metric_available_pets"), value: data?.pets.available },
+    { label: t("metric_adopted_pets"), value: data?.pets.adopted },
+    { label: t("metric_pending_adoptions"), value: data?.pets.pendingAdoption },
+    { label: t("metric_adoption_requests"), value: data?.adoptions.totalRequests },
+    { label: t("metric_approved_requests"), value: data?.adoptions.approved },
+    { label: t("metric_rejected_canceled_requests"), value: data?.adoptions.rejectedOrCanceled },
+    { label: t("metric_inventory_supplies"), value: data?.supplies.totalSupplies },
+    { label: t("metric_low_stock_supplies"), value: data?.supplies.lowStockSupplies },
+    { label: t("metric_suppliers"), value: data?.supplies.totalSuppliers },
+    { label: t("metric_medical_records"), value: data?.medical.totalMedicalRecords },
+    { label: t("metric_vaccinations"), value: data?.medical.totalVaccinations },
+    { label: t("metric_pets_medical_attention"), value: data?.medical.petsNeedingMedicalAttention },
   ].filter((row) => row.value !== undefined);
 
   return (
-    <DashboardLayout role="admin" activePage="admin-dashboard" onNavigate={onNavigate} pageTitle="Admin Dashboard" breadcrumbs={["Admin", "Dashboard"]}>
+    <DashboardLayout role="admin" activePage="admin-dashboard" onNavigate={onNavigate} pageTitle={t("admin_dashboard_title")} breadcrumbs={[t("admin"), t("admin_dashboard_crumb")]}>
       {error && (
         <div className="mb-5 rounded-[14px] border border-red-100 bg-red-50 px-4 py-3 font-['Poppins',sans-serif] text-[13px] text-red-700">
           {error}
@@ -78,18 +80,18 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
 
       {/* KPIs */}
       <div className="flex flex-wrap gap-4 mb-6">
-        <KpiCard label="Total Users" value={loading ? "..." : data?.users.total ?? 0} icon={<Users size={20} />} trendLabel="From /dashboard/admin" />
-        <KpiCard label="Active Staff" value={loading ? "..." : (data?.users.employee ?? 0) + (data?.users.vet ?? 0) + (data?.users.manager ?? 0)} icon={<UserCheck size={20} />} accent="bg-green-50" />
-        <KpiCard label="Available Pets" value={loading ? "..." : data?.pets.available ?? 0} icon={<PawPrint size={20} />} accent="bg-teal-50" />
-        <KpiCard label="Pending Adoptions" value={loading ? "..." : data?.adoptions.pending ?? 0} icon={<ClipboardList size={20} />} accent="bg-sky-50" />
-        <KpiCard label="Inventory Alerts" value={loading ? "..." : data?.supplies.lowStockSupplies ?? 0} icon={<AlertTriangle size={20} />} accent="bg-red-50" />
-        <KpiCard label="Vaccinations" value={loading ? "..." : data?.medical.totalVaccinations ?? 0} icon={<Syringe size={20} />} accent="bg-indigo-50" />
+        <KpiCard label={t("admin_total_users")} value={loading ? "..." : data?.users.total ?? 0} icon={<Users size={20} />} trendLabel={t("admin_from_dashboard")} />
+        <KpiCard label={t("admin_active_staff")} value={loading ? "..." : (data?.users.employee ?? 0) + (data?.users.vet ?? 0) + (data?.users.manager ?? 0)} icon={<UserCheck size={20} />} accent="bg-green-50" />
+        <KpiCard label={t("admin_available_pets")} value={loading ? "..." : data?.pets.available ?? 0} icon={<PawPrint size={20} />} accent="bg-teal-50" />
+        <KpiCard label={t("admin_pending_adoptions")} value={loading ? "..." : data?.adoptions.pending ?? 0} icon={<ClipboardList size={20} />} accent="bg-sky-50" />
+        <KpiCard label={t("admin_inventory_alerts")} value={loading ? "..." : data?.supplies.lowStockSupplies ?? 0} icon={<AlertTriangle size={20} />} accent="bg-red-50" />
+        <KpiCard label={t("admin_vaccinations")} value={loading ? "..." : data?.medical.totalVaccinations ?? 0} icon={<Syringe size={20} />} accent="bg-indigo-50" />
       </div>
 
       {/* Feature cards */}
-      <h2 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-3">Management Tools</h2>
+      <h2 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-3">{t("admin_management_tools")}</h2>
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
-        {features.map(({ id, label, desc, icon: Icon, color, bg }) => (
+        {features.map(({ id, labelKey, descKey, icon: Icon, color, bg }) => (
           <button
             key={id}
             onClick={() => onNavigate(id)}
@@ -101,8 +103,8 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
               </div>
               <ArrowUpRight size={16} className="text-gray-300 group-hover:text-[#089D97] transition-colors" />
             </div>
-            <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black">{label}</p>
-            <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87]">{desc}</p>
+            <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black">{t(labelKey)}</p>
+            <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87]">{t(descKey)}</p>
           </button>
         ))}
       </div>
@@ -110,7 +112,7 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Role distribution */}
         <div className="bg-white rounded-[16px] p-5 shadow-sm">
-          <h3 className="font-['Poppins',sans-serif] font-semibold text-[15px] text-black mb-4">Role Distribution</h3>
+          <h3 className="font-['Poppins',sans-serif] font-semibold text-[15px] text-black mb-4">{t("admin_role_distribution")}</h3>
           <ResponsiveContainer width="100%" height={180}>
             <PieChart>
               <Pie data={roleDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2}>
@@ -135,13 +137,13 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
         </div>
 
         <div className="lg:col-span-2 bg-white rounded-[16px] p-5 shadow-sm">
-          <h3 className="font-['Poppins',sans-serif] font-semibold text-[15px] text-black mb-4">System Overview</h3>
+          <h3 className="font-['Poppins',sans-serif] font-semibold text-[15px] text-black mb-4">{t("admin_system_overview")}</h3>
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[1, 2, 3, 4, 5, 6].map((item) => <div key={item} className="h-12 rounded-[12px] bg-[#f0f8f7] animate-pulse" />)}
             </div>
           ) : overviewRows.length === 0 ? (
-            <p className="font-['Poppins',sans-serif] text-[13px] text-black/40">No dashboard metrics are available from the backend.</p>
+            <p className="font-['Poppins',sans-serif] text-[13px] text-black/40">{t("admin_no_metrics")}</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {overviewRows.map((row) => (
@@ -158,14 +160,14 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
       {/* Recent activity */}
       <div className="bg-white rounded-[16px] p-5 shadow-sm mt-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-['Poppins',sans-serif] font-semibold text-[15px] text-black">Recent Activity</h3>
+          <h3 className="font-['Poppins',sans-serif] font-semibold text-[15px] text-black">{t("admin_recent_activity")}</h3>
           <button onClick={() => onNavigate("admin-reports")} className="font-['Poppins',sans-serif] text-[13px] text-[#089D97] hover:underline">
-            View all
+            {t("admin_view_all")}
           </button>
         </div>
         <div className="flex flex-col gap-3">
           {loading && <div className="h-14 rounded-[12px] bg-[#f0f8f7] animate-pulse" />}
-          {!loading && recentActivity.length === 0 && <p className="font-['Poppins',sans-serif] text-[13px] text-black/40">No recent activity.</p>}
+          {!loading && recentActivity.length === 0 && <p className="font-['Poppins',sans-serif] text-[13px] text-black/40">{t("admin_no_recent_activity")}</p>}
           {recentActivity.map((item) => (
             <div key={item.logId} className="flex items-center gap-3 py-2 border-b border-[#f0f8f7] last:border-0">
               <div className="w-9 h-9 rounded-full bg-[#f0f8f7] flex items-center justify-center flex-shrink-0">
@@ -173,7 +175,7 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
               </div>
               <div className="flex-1">
                 <p className="font-['Poppins',sans-serif] font-medium text-[13px] text-black">{item.action}</p>
-                <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87]">{item.entityType} {item.user ? `by ${item.user.firstName} ${item.user.lastName}` : ""}</p>
+                <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87]">{translateActivity(item.entityType, t)} {item.user ? `${t("admin_activity_by")} ${item.user.firstName} ${item.user.lastName}` : ""}</p>
               </div>
               <span className="font-['Poppins',sans-serif] text-[11px] text-gray-400 whitespace-nowrap">{item.createdAt.slice(0, 10)}</span>
             </div>
@@ -182,4 +184,9 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
       </div>
     </DashboardLayout>
   );
+}
+
+function translateActivity(value: string, t: (key: string) => string) {
+  if (value === "dashboard") return t("admin_dashboard_crumb");
+  return value;
 }

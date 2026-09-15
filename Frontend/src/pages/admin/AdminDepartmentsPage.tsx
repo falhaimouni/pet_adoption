@@ -6,6 +6,7 @@ import EmptyState from "../../components/EmptyState";
 import Modal from "../../components/Modal";
 import Pagination from "../../components/Pagination";
 import { apiFetch } from "../../lib/api";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface DepartmentUser {
   firstName?: string | null;
@@ -47,6 +48,7 @@ function employeeCount(department: DepartmentRecord) {
 }
 
 export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page: string) => void }) {
+  const { t } = useLanguage();
   const [departments, setDepartments] = useState<DepartmentRecord[]>([]);
   const [search, setSearch] = useState("");
   const [viewItem, setViewItem] = useState<DepartmentRecord | null>(null);
@@ -73,7 +75,7 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
     setError("");
     apiFetch<DepartmentRecord[]>("/departments")
       .then(setDepartments)
-      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load departments."))
+      .catch((err) => setError(err instanceof Error ? err.message : t("departments_unable_load")))
       .finally(() => setLoading(false));
   }
 
@@ -113,15 +115,15 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
     const departmentName = form.departmentName.trim();
     const description = form.description.trim();
     if (!departmentName) {
-      setFormError("Department name is required.");
+      setFormError(t("error_department_name_required"));
       return;
     }
     if (departmentName.length > 120) {
-      setFormError("Department name must be 120 characters or fewer.");
+      setFormError(t("error_department_name_length"));
       return;
     }
     if (description.length > 1000) {
-      setFormError("Description must be 1000 characters or fewer.");
+      setFormError(t("error_department_desc_length"));
       return;
     }
 
@@ -139,7 +141,7 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
       closeForm();
       loadDepartments();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Unable to save department.");
+      setFormError(err instanceof Error ? err.message : t("error_save_department"));
     } finally {
       setSaving(false);
     }
@@ -154,42 +156,42 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
       setDeleteItem(null);
       loadDepartments();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to delete department.");
+      setError(err instanceof Error ? err.message : t("error_delete_department"));
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <DashboardLayout role="admin" activePage="admin-departments" onNavigate={onNavigate} pageTitle="Departments" breadcrumbs={["Admin", "Departments"]}>
+    <DashboardLayout role="admin" activePage="admin-departments" onNavigate={onNavigate} pageTitle={t("departments_title")} breadcrumbs={[t("admin"), t("departments_title")]}>
       <div className="bg-white rounded-[15px] shadow-md p-5">
         <div className="flex flex-wrap gap-3 mb-5 items-center">
           <div className="flex-1 min-w-[200px] relative">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
             <input
-              placeholder="Search by name or description..."
+              placeholder={t("departments_search")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors"
             />
           </div>
           <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 bg-[#089D97] text-white font-['Poppins',sans-serif] font-medium text-[13px] rounded-[10px] hover:bg-[#047975] transition-colors ml-auto">
-            <Plus size={15} /> Add Department
+            <Plus size={15} /> {t("action_add_department")}
           </button>
         </div>
 
         {loading ? (
           <div className="space-y-2">{[1, 2, 3, 4].map((n) => <div key={n} className="h-12 rounded-[10px] bg-gray-50 animate-pulse" />)}</div>
         ) : error ? (
-          <EmptyState icon={<Building2 size={26} />} title="Unable to load departments" description={error} actionLabel="Try again" onAction={loadDepartments} />
+          <EmptyState icon={<Building2 size={26} />} title={t("departments_unable_load")} description={error} actionLabel={t("action_try_again")} onAction={loadDepartments} />
         ) : filtered.length === 0 ? (
-          <EmptyState icon={<Building2 size={26} />} title="No departments found" description="Department records will appear here after they are added." />
+          <EmptyState icon={<Building2 size={26} />} title={t("departments_empty_title")} description={t("departments_empty_desc")} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-gray-100">
-                  {["Department", "Description", "Manager", "Employees", "Created", "Status", "Actions"].map((h) => (
+                  {[t("table_department"), t("table_description"), t("table_manager"), t("table_employees"), t("table_created"), t("table_status"), t("table_actions")].map((h) => (
                     <th key={h} className="py-2.5 px-3 font-['Poppins',sans-serif] font-semibold text-[11px] text-black/50 uppercase tracking-wider whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -204,12 +206,12 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
                       <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60 whitespace-nowrap">{fullName(department.manager)}</td>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60 whitespace-nowrap">{employeeCount(department)}</td>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60 whitespace-nowrap">{formatDate(department.createdAt)}</td>
-                      <td className="py-3 px-3"><Badge label={active ? "active" : "inactive"} variant={statusBadge(active ? "active" : "inactive")} /></td>
+                      <td className="py-3 px-3"><Badge label={active ? t("status_active") : t("status_inactive")} variant={statusBadge(active ? "active" : "inactive")} /></td>
                       <td className="py-3 px-3">
                         <div className="flex gap-2">
-                          <button onClick={() => openView(department)} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label={`View ${department.departmentName}`}><Eye size={14} /></button>
-                          <button onClick={() => openEdit(department)} className="text-blue-400 hover:text-blue-600 transition-colors" aria-label={`Edit ${department.departmentName}`}><Edit size={14} /></button>
-                          <button onClick={() => setDeleteItem(department)} className="text-red-400 hover:text-red-600 transition-colors" aria-label={`Delete ${department.departmentName}`}><Trash2 size={14} /></button>
+                          <button onClick={() => openView(department)} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label={t("aria_view_item").replace("{name}", department.departmentName)}><Eye size={14} /></button>
+                          <button onClick={() => openEdit(department)} className="text-blue-400 hover:text-blue-600 transition-colors" aria-label={t("aria_edit_item").replace("{name}", department.departmentName)}><Edit size={14} /></button>
+                          <button onClick={() => setDeleteItem(department)} className="text-red-400 hover:text-red-600 transition-colors" aria-label={t("aria_delete_item").replace("{name}", department.departmentName)}><Trash2 size={14} /></button>
                         </div>
                       </td>
                     </tr>
@@ -220,47 +222,47 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
           </div>
         )}
         <div className="flex items-center justify-between mt-3">
-          <p className="font-['Poppins',sans-serif] text-[12px] text-black/40">{filtered.length} departments</p>
+          <p className="font-['Poppins',sans-serif] text-[12px] text-black/40">{t("departments_count").replace("{count}", String(filtered.length))}</p>
           <Pagination page={page} totalPages={1} onPage={setPage} />
         </div>
       </div>
 
-      <Modal title="Department Details" open={!!viewItem} onClose={() => setViewItem(null)} size="md">
+      <Modal title={t("department_details")} open={!!viewItem} onClose={() => setViewItem(null)} size="md">
         {viewItem && (
           <div className="space-y-4">
             <div className="pb-3 border-b border-gray-100">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-['Poppins',sans-serif] font-semibold text-[18px] text-black">{viewItem.departmentName}</p>
-                  <p className="font-['Poppins',sans-serif] text-[12px] text-black/50">Created {formatDate(viewItem.createdAt)}</p>
+                  <p className="font-['Poppins',sans-serif] text-[12px] text-black/50">{t("created_on").replace("{date}", formatDate(viewItem.createdAt))}</p>
                 </div>
-                <Badge label={viewItem.isActive === false ? "inactive" : "active"} variant={statusBadge(viewItem.isActive === false ? "inactive" : "active")} />
+                <Badge label={viewItem.isActive === false ? t("status_inactive") : t("status_active")} variant={statusBadge(viewItem.isActive === false ? "inactive" : "active")} />
               </div>
             </div>
             <div>
-              <span className="font-['Poppins',sans-serif] text-[12px] text-black/50 block mb-1">Description</span>
+              <span className="font-['Poppins',sans-serif] text-[12px] text-black/50 block mb-1">{t("field_description")}</span>
               <p className="font-['Poppins',sans-serif] text-[13px] text-black/70 whitespace-pre-wrap">{viewItem.description || "-"}</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-gray-100">
               <div>
-                <span className="font-['Poppins',sans-serif] text-[12px] text-black/50 block mb-1">Manager</span>
+                <span className="font-['Poppins',sans-serif] text-[12px] text-black/50 block mb-1">{t("field_manager")}</span>
                 <p className="font-['Poppins',sans-serif] text-[13px] text-black">{fullName(viewItem.manager)}</p>
               </div>
               <div>
-                <span className="font-['Poppins',sans-serif] text-[12px] text-black/50 block mb-1">Employees</span>
+                <span className="font-['Poppins',sans-serif] text-[12px] text-black/50 block mb-1">{t("field_employees")}</span>
                 <p className="font-['Poppins',sans-serif] text-[13px] text-black">{employeeCount(viewItem)}</p>
               </div>
             </div>
             <div>
-              <span className="font-['Poppins',sans-serif] text-[12px] text-black/50 block mb-2">Department Users</span>
+              <span className="font-['Poppins',sans-serif] text-[12px] text-black/50 block mb-2">{t("department_users")}</span>
               {(viewItem.employees ?? []).length === 0 ? (
-                <div className="flex items-center gap-2 text-[13px] font-['Poppins',sans-serif] text-black/50"><Users size={14} className="text-[#089D97]" /> No assigned employees</div>
+                <div className="flex items-center gap-2 text-[13px] font-['Poppins',sans-serif] text-black/50"><Users size={14} className="text-[#089D97]" /> {t("no_assigned_employees")}</div>
               ) : (
                 <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1">
                   {viewItem.employees?.map((employee) => (
                     <div key={employee.employeeId ?? employee.userId} className="flex items-center justify-between gap-3 rounded-[10px] bg-gray-50 px-3 py-2">
                       <span className="font-['Poppins',sans-serif] text-[13px] text-black">{fullName(employee.user)}</span>
-                      <span className="font-['Poppins',sans-serif] text-[11px] text-black/45">{employee.user?.role?.roleName ?? "Employee"}</span>
+                      <span className="font-['Poppins',sans-serif] text-[11px] text-black/45">{employee.user?.role?.roleName ?? t("employee_role_fallback")}</span>
                     </div>
                   ))}
                 </div>
@@ -270,11 +272,11 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
         )}
       </Modal>
 
-      <Modal title={editItem ? "Edit Department" : "Add Department"} open={addOpen || !!editItem} onClose={closeForm} onConfirm={saveDepartment} confirmLabel={saving ? "Saving..." : "Save"} size="md">
+      <Modal title={editItem ? t("edit_department") : t("action_add_department")} open={addOpen || !!editItem} onClose={closeForm} onConfirm={saveDepartment} confirmLabel={saving ? t("common_saving") : t("action_save")} size="md">
         <div className="space-y-4">
           {formError && <p className="text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
           <div>
-            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Department Name</label>
+            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("field_department_name")}</label>
             <input
               value={form.departmentName}
               onChange={(event) => setForm((next) => ({ ...next, departmentName: event.target.value }))}
@@ -284,7 +286,7 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
             <p className="mt-1 font-['Poppins',sans-serif] text-[11px] text-black/40">{form.departmentName.length}/120</p>
           </div>
           <div>
-            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Description</label>
+            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("field_description")}</label>
             <textarea
               value={form.description}
               onChange={(event) => setForm((next) => ({ ...next, description: event.target.value }))}
@@ -297,9 +299,9 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
         </div>
       </Modal>
 
-      <Modal title="Delete Department" open={!!deleteItem} onClose={() => setDeleteItem(null)} onConfirm={deleteDepartment} confirmLabel={saving ? "Deleting..." : "Delete"} confirmDestructive size="sm">
+      <Modal title={t("delete_department")} open={!!deleteItem} onClose={() => setDeleteItem(null)} onConfirm={deleteDepartment} confirmLabel={saving ? t("common_deleting") : t("action_delete")} confirmDestructive size="sm">
         <p className="font-['Poppins',sans-serif] text-[14px] text-black">
-          Delete <span className="font-semibold">{deleteItem?.departmentName}</span>? Departments with assigned users cannot be deleted until users are moved or removed.
+          {t("confirm_delete_department").replace("{department}", deleteItem?.departmentName ?? "")}
         </p>
       </Modal>
     </DashboardLayout>

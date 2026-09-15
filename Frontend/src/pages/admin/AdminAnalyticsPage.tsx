@@ -7,6 +7,7 @@ import {
 import DashboardLayout from "../../components/DashboardLayout";
 import KpiCard from "../../components/KpiCard";
 import { Users, PawPrint, Heart, MessageSquare } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
 
 const userGrowth = [
   { month: "Jan", users: 95, adopters: 80, staff: 10, vets: 3, managers: 1, admins: 1 },
@@ -48,10 +49,11 @@ const COLORS = ["#089D97", "#47BDB8", "#80CECE", "#047975", "#B2E0DF"];
 interface AdminAnalyticsPageProps { onNavigate: (page: string) => void; }
 
 export default function AdminAnalyticsPage({ onNavigate }: AdminAnalyticsPageProps) {
+  const { t } = useLanguage();
   const [period, setPeriod] = useState("7m");
 
   return (
-    <DashboardLayout role="admin" activePage="admin-analytics" onNavigate={onNavigate} pageTitle="System Analytics" breadcrumbs={["Admin", "Analytics"]}>
+    <DashboardLayout role="admin" activePage="admin-analytics" onNavigate={onNavigate} pageTitle={t("analytics_system")} breadcrumbs={[t("role_admin"), t("nav_analytics")]}>
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="flex gap-2">
@@ -60,21 +62,21 @@ export default function AdminAnalyticsPage({ onNavigate }: AdminAnalyticsPagePro
           ))}
         </div>
         <button className="flex items-center gap-2 px-4 py-2 border border-[#089D97] text-[#089D97] font-['Poppins',sans-serif] text-[13px] rounded-[10px] hover:bg-[rgba(8,157,151,0.1)] transition-colors">
-          <Download size={15} /> Export
+          <Download size={15} /> {t("action_export")}
         </button>
       </div>
 
       {/* KPI row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard icon={<Users size={20} />} label="Total Users" value="137" trend="up" trendValue="+12% this month" />
-        <KpiCard icon={<PawPrint size={20} />} label="Pets Listed" value="64" trend="up" trendValue="+4 this week" />
-        <KpiCard icon={<Heart size={20} />} label="Adoptions" value="102" trend="up" trendValue="+18 this month" />
-        <KpiCard icon={<MessageSquare size={20} />} label="Active Chats" value="23" trend="up" trendValue="+7 open" />
+        <KpiCard icon={<Users size={20} />} label={t("admin_total_users")} value="137" trend="up" trendValue={t("analytics_trend_month").replace("{value}", "+12%")} />
+        <KpiCard icon={<PawPrint size={20} />} label={t("analytics_pets_listed")} value="64" trend="up" trendValue={t("analytics_trend_week").replace("{value}", "+4")} />
+        <KpiCard icon={<Heart size={20} />} label={t("nav_adoptions")} value="102" trend="up" trendValue={t("analytics_trend_month").replace("{value}", "+18")} />
+        <KpiCard icon={<MessageSquare size={20} />} label={t("analytics_active_chats")} value="23" trend="up" trendValue={t("analytics_open_count").replace("{count}", "+7")} />
       </div>
 
       {/* User growth */}
       <div className="bg-white rounded-[15px] shadow-md p-5 mb-5">
-        <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-4">User Growth</h3>
+        <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-4">{t("analytics_user_growth")}</h3>
         <ResponsiveContainer width="100%" height={240}>
           <AreaChart data={userGrowth} margin={{ top: 5, right: 20, left: -20, bottom: 0 }}>
             <defs>
@@ -96,7 +98,7 @@ export default function AdminAnalyticsPage({ onNavigate }: AdminAnalyticsPagePro
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         {/* Role distribution */}
         <div className="bg-white rounded-[15px] shadow-md p-5">
-          <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-4">Role Distribution</h3>
+          <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-4">{t("admin_role_distribution")}</h3>
           <div className="flex items-center gap-4">
             <ResponsiveContainer width="55%" height={180}>
               <PieChart>
@@ -110,7 +112,7 @@ export default function AdminAnalyticsPage({ onNavigate }: AdminAnalyticsPagePro
               {roleDistribution.map((r, i) => (
                 <div key={r.name} className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: COLORS[i] }} />
-                  <span className="font-['Poppins',sans-serif] text-[12px] text-black/70">{r.name}</span>
+                  <span className="font-['Poppins',sans-serif] text-[12px] text-black/70">{t(`role_${r.name.toLowerCase()}`) === `role_${r.name.toLowerCase()}` ? r.name : t(`role_${r.name.toLowerCase()}`)}</span>
                   <span className="font-['Poppins',sans-serif] text-[12px] font-semibold text-black ml-auto">{r.value}</span>
                 </div>
               ))}
@@ -120,7 +122,7 @@ export default function AdminAnalyticsPage({ onNavigate }: AdminAnalyticsPagePro
 
         {/* Adoption vs rejection */}
         <div className="bg-white rounded-[15px] shadow-md p-5">
-          <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-4">Adoptions vs Rejections</h3>
+          <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-4">{t("analytics_adoptions_rejections")}</h3>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={adoptionTrend} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -138,8 +140,8 @@ export default function AdminAnalyticsPage({ onNavigate }: AdminAnalyticsPagePro
       {/* Storage */}
       <div className="bg-white rounded-[15px] shadow-md p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black">Storage Usage</h3>
-          <p className="font-['Poppins',sans-serif] text-[13px] text-black/50">6.8 GB / 50 GB used</p>
+          <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black">{t("analytics_storage_usage")}</h3>
+          <p className="font-['Poppins',sans-serif] text-[13px] text-black/50">{t("analytics_storage_used").replace("{used}", "6.8 GB").replace("{total}", "50 GB")}</p>
         </div>
         <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden mb-4">
           <div className="h-full bg-[#089D97] rounded-full" style={{ width: "13.6%" }} />
@@ -151,7 +153,7 @@ export default function AdminAnalyticsPage({ onNavigate }: AdminAnalyticsPagePro
                 <div className="w-3 h-3 rounded-full mx-auto mt-2.5" style={{ background: COLORS[i] }} />
               </div>
               <p className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black">{s.gb} GB</p>
-              <p className="font-['Poppins',sans-serif] text-[11px] text-black/50">{s.category}</p>
+              <p className="font-['Poppins',sans-serif] text-[11px] text-black/50">{t(`storage_${s.category.toLowerCase()}`)}</p>
             </div>
           ))}
         </div>

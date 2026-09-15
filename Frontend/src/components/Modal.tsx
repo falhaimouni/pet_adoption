@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 interface ModalProps {
   title: string;
@@ -16,11 +17,12 @@ export default function Modal({
   open,
   onClose,
   onConfirm,
-  confirmLabel = "Confirm",
+  confirmLabel,
   confirmDestructive = false,
   children,
   size = "md",
 }: ModalProps) {
+  const { t } = useLanguage();
   if (!open) return null;
 
   const maxW = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl" }[size];
@@ -47,7 +49,7 @@ export default function Modal({
               onClick={onClose}
               className="px-5 py-2 rounded-[12px] border border-gray-300 font-['Poppins',sans-serif] font-medium text-[14px] text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              Cancel
+              {t("action_cancel")}
             </button>
             <button
               onClick={onConfirm}
@@ -57,7 +59,7 @@ export default function Modal({
                   : "bg-[#089D97] hover:bg-[#047975]"
               }`}
             >
-              {confirmLabel}
+              {confirmLabel ?? t("action_confirm")}
             </button>
           </div>
         )}

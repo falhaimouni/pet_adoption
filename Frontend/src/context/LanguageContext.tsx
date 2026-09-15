@@ -12,7 +12,8 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => {
-    return (localStorage.getItem("petopia_lang") as Lang) ?? "en";
+    const stored = localStorage.getItem("petopia_lang") as Lang | null;
+    return stored && stored in translations ? stored : "en";
   });
 
   const isRtl = lang === "ar";

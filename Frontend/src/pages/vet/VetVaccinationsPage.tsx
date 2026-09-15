@@ -5,6 +5,7 @@ import Badge, { statusBadge } from "../../components/Badge";
 import Modal from "../../components/Modal";
 import EmptyState from "../../components/EmptyState";
 import { apiFetch, PetResponse } from "../../lib/api";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface Vaccination {
   vaccinationId: string;
@@ -32,6 +33,7 @@ function displayStatus(vaccine: Vaccination) {
 }
 
 export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinationsPageProps) {
+  const { t } = useLanguage();
   const routePetId = params?.petId;
   const [selectedPetId, setSelectedPetId] = useState(routePetId ?? "");
   const effectivePetId = routePetId ?? selectedPetId;
@@ -60,7 +62,7 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
         }
       })
       .catch((err) => {
-        if (!cancelled) setPetsError(err instanceof Error ? err.message : "Unable to load pets.");
+        if (!cancelled) setPetsError(err instanceof Error ? err.message : t("pets_load_error"));
       })
       .finally(() => {
         if (!cancelled) setPetsLoading(false);
@@ -82,14 +84,14 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
     setError("");
     apiFetch<Vaccination[]>(`/pets/${effectivePetId}/vaccinations`)
       .then(setVaccines)
-      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load vaccinations."))
+      .catch((err) => setError(err instanceof Error ? err.message : t("vaccinations_load_error")))
       .finally(() => setLoading(false));
   }
 
   useEffect(loadVaccines, [effectivePetId]);
 
   const selectedPet = useMemo(() => pets.find((item) => item.petId === effectivePetId), [pets, effectivePetId]);
-  const petName = vaccines[0]?.pet?.name ?? selectedPet?.name ?? "Pet";
+  const petName = vaccines[0]?.pet?.name ?? selectedPet?.name ?? t("req_pet");
 
   function openEdit(vaccine: Vaccination) {
     setEditTarget(vaccine);
@@ -107,11 +109,11 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
 
   async function saveVaccine() {
     if (!effectivePetId) {
-      setFormError("Choose a pet before adding a vaccination.");
+      setFormError(t("vaccination_choose_pet_error"));
       return;
     }
     if (!form.vaccineName.trim() || !form.vaccinationDate) {
-      setFormError("Vaccine name and vaccination date are required.");
+      setFormError(t("vaccination_required_error"));
       return;
     }
     const body = {
@@ -134,7 +136,7 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
       setAddOpen(false);
       loadVaccines();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Unable to save vaccination.");
+      setFormError(err instanceof Error ? err.message : t("vaccination_save_error"));
     } finally {
       setSaving(false);
     }
@@ -148,28 +150,28 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
       setDeleteTarget(null);
       loadVaccines();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to delete vaccination.");
+      setError(err instanceof Error ? err.message : t("vaccination_delete_error"));
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <DashboardLayout role="vet" activePage="vet-vaccinations" onNavigate={onNavigate} pageTitle={`Vaccinations - ${petName}`} breadcrumbs={["Vet", "Pets", petName, "Vaccinations"]}>
+    <DashboardLayout role="vet" activePage="vet-vaccinations" onNavigate={onNavigate} pageTitle={`${t("vet_vaccinations")} - ${petName}`} breadcrumbs={[t("role_vet"), t("dash_pets"), petName, t("vet_vaccinations")]}>
       <div className="max-w-3xl">
         <div className="bg-white rounded-[15px] shadow-md p-5">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black">Vaccination Records</h3>
+            <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black">{t("vaccination_records")}</h3>
             <button disabled={!effectivePetId} onClick={() => { setEditTarget(null); setForm(blank); setFormError(""); setAddOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-[#089D97] text-white rounded-[10px] font-['Poppins',sans-serif] font-medium text-[13px] hover:bg-[#047975] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-              <Plus size={15} /> Add Vaccine
+              <Plus size={15} /> {t("vaccination_add_vaccine")}
             </button>
           </div>
 
           {!routePetId && (
             <div className="mb-5">
-              <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Pet</label>
+              <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("req_pet")}</label>
               <select value={selectedPetId} onChange={(e) => setSelectedPetId(e.target.value)} disabled={petsLoading || pets.length === 0} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] bg-white transition-colors disabled:opacity-60">
-                <option value="">{petsLoading ? "Loading pets..." : pets.length === 0 ? "No pets available" : "Choose pet"}</option>
+                <option value="">{petsLoading ? t("loading_pets") : pets.length === 0 ? t("no_pets_available") : t("choose_pet")}</option>
                 {pets.map((item) => <option key={item.petId} value={item.petId}>{item.name} - {item.species}{item.breed ? `, ${item.breed}` : ""}</option>)}
               </select>
               {petsError && <p className="mt-2 font-['Poppins',sans-serif] text-[12px] text-red-600">{petsError}</p>}
@@ -179,15 +181,15 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
           {loading ? (
             <div className="space-y-2">{[1, 2, 3].map((n) => <div key={n} className="h-[56px] rounded-[10px] bg-gray-50 animate-pulse" />)}</div>
           ) : error ? (
-            <EmptyState icon={<Syringe size={28} />} title="Unable to load vaccinations" description={error} actionLabel="Try again" onAction={loadVaccines} />
+            <EmptyState icon={<Syringe size={28} />} title={t("vaccinations_load_error")} description={error} actionLabel={t("common_try_again")} onAction={loadVaccines} />
           ) : vaccines.length === 0 ? (
-            <EmptyState icon={<Syringe size={28} />} title="No vaccinations found" description="Add the first vaccination record for this pet." />
+            <EmptyState icon={<Syringe size={28} />} title={t("vaccinations_empty_title")} description={t("vaccinations_empty_desc")} />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-gray-100">
-                    {["Vaccine", "Date Given", "Next Due", "Batch", "Vet", "Status", "Notes", "Actions"].map((h) => (
+                    {[t("th_vaccine"), t("th_date_given"), t("th_next_due"), t("th_batch"), t("role_vet"), t("th_status"), t("th_notes"), t("th_actions")].map((h) => (
                       <th key={h} className="py-2.5 px-3 font-['Poppins',sans-serif] font-semibold text-[11px] text-black/50 uppercase tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -220,40 +222,40 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
         </div>
       </div>
 
-      <Modal title={editTarget ? "Edit Vaccination" : "Add Vaccination"} open={addOpen} onClose={() => { setAddOpen(false); setEditTarget(null); }} onConfirm={saveVaccine} confirmLabel={saving ? "Saving..." : editTarget ? "Save Changes" : "Add"} size="md">
+      <Modal title={editTarget ? t("vet_edit_vaccination") : t("vet_add_vaccination")} open={addOpen} onClose={() => { setAddOpen(false); setEditTarget(null); }} onConfirm={saveVaccine} confirmLabel={saving ? t("common_saving") : editTarget ? t("action_save_changes") : t("action_add")} size="md">
         <div className="grid grid-cols-2 gap-4">
           {formError && <p className="col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
           <div className="col-span-2">
-            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Vaccine Name</label>
-            <input value={form.vaccineName} onChange={(e) => setForm((f) => ({ ...f, vaccineName: e.target.value }))} placeholder="e.g. Rabies" className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("vaccination_vaccine_name")}</label>
+            <input value={form.vaccineName} onChange={(e) => setForm((f) => ({ ...f, vaccineName: e.target.value }))} placeholder={t("vaccination_vaccine_name_ph")} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
           </div>
           <div>
-            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Date Given</label>
+            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_date_given")}</label>
             <input type="date" value={form.vaccinationDate} onChange={(e) => setForm((f) => ({ ...f, vaccinationDate: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
           </div>
           <div>
-            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Next Due</label>
+            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_next_due")}</label>
             <input type="date" value={form.nextDueDate} onChange={(e) => setForm((f) => ({ ...f, nextDueDate: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
           </div>
           <div>
-            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Batch</label>
+            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_batch")}</label>
             <input value={form.batch} onChange={(e) => setForm((f) => ({ ...f, batch: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
           </div>
           <div>
-            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Status</label>
+            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_status")}</label>
             <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] bg-white transition-colors">
-              {["VACCINATED", "PENDING", "OVERDUE"].map((s) => <option key={s} value={s}>{s}</option>)}
+              {["VACCINATED", "PENDING", "OVERDUE"].map((s) => <option key={s} value={s}>{t(`vaccination_status_${s.toLowerCase()}`)}</option>)}
             </select>
           </div>
           <div className="col-span-2">
-            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Notes</label>
+            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_notes")}</label>
             <textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} rows={3} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />
           </div>
         </div>
       </Modal>
 
-      <Modal title="Delete Vaccine" open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={deleteVaccine} confirmLabel={saving ? "Deleting..." : "Delete"} confirmDestructive size="sm">
-        <p className="font-['Poppins',sans-serif] text-[14px] text-black">Delete the <span className="font-semibold">{deleteTarget?.vaccineName}</span> vaccination record?</p>
+      <Modal title={t("vaccination_delete_vaccine")} open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={deleteVaccine} confirmLabel={saving ? t("common_deleting") : t("action_delete")} confirmDestructive size="sm">
+        <p className="font-['Poppins',sans-serif] text-[14px] text-black">{t("vaccination_delete_confirm").replace("{name}", deleteTarget?.vaccineName ?? "")}</p>
       </Modal>
     </DashboardLayout>
   );

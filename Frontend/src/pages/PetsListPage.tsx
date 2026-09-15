@@ -382,7 +382,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
                 <h3 className="font-['Poppins',sans-serif] font-semibold text-[20px] text-[#1a2e2d] mb-1">{t("pet_sent_title")}</h3>
                 <p className="font-['Poppins',sans-serif] text-[14px] text-[#5a8a87]">{t("pet_sent_desc")}</p>
                 <button onClick={() => setAdoptModalPet(null)} className="mt-5 px-6 py-2.5 bg-[#089D97] text-white font-['Poppins',sans-serif] font-medium rounded-[12px] hover:bg-[#047975] transition-colors">
-                  Done
+                  {t("pet_done")}
                 </button>
               </div>
             ) : (
@@ -405,7 +405,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
                 </div>
                 <div className="flex gap-3 mt-5">
                   <button onClick={() => setAdoptModalPet(null)} className="flex-1 py-2.5 border-2 border-gray-200 text-[#5a8a87] font-['Poppins',sans-serif] font-medium text-[13px] rounded-[12px] hover:border-gray-300 transition-colors">
-                    Cancel
+                    {t("pet_cancel")}
                   </button>
                   <button disabled={submitting} onClick={submitAdoptionRequest} className="flex-1 py-2.5 bg-[#089D97] text-white font-['Poppins',sans-serif] font-semibold text-[13px] rounded-[12px] hover:bg-[#047975] transition-colors disabled:opacity-60">
                     {submitting ? t("pet_submitting") : t("pet_submit")}
