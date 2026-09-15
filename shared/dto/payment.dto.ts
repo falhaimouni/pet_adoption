@@ -7,7 +7,6 @@ export interface PaymentDto {
   amount: string;
   paymentMethod: PaymentMethodEnum;
   paymentStatus: PaymentStatusEnum;
-  transactionId: string | null;
   paidAt: string | null;
   createdAt: string;
   updatedAt: string;

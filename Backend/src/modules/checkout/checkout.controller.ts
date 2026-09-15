@@ -32,16 +32,21 @@ export class CheckoutController {
     );
   }
 
-  //to cancel the order created in the DB
   @UseGuards(JwtAuthGuard)
   @Post(':orderId/cancel')
-  cancelOrder(
+  cancel(
     @Req() req: RequestWithUser,
     @Param('orderId') orderId: string,
   ) {
-    return this.checkoutService.cancelOrder(
-      req.user.userId,
-      orderId,
-    );
+    return this.checkoutService.cancel(req.user.userId, orderId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':orderId/pay')
+  pay(
+    @Req() req: RequestWithUser,
+    @Param('orderId') orderId: string,
+  ) {
+    return this.checkoutService.pay(req.user.userId, orderId);
   }
 }

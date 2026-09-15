@@ -1,9 +1,10 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from 'typeorm';
 import { Order } from './order.entity';
 import { PaymentMethodEnum } from '@shared/enums/payment-method.enum';
 import { PaymentStatusEnum } from '@shared/enums/payment-status.enum';
 
 @Entity('payments')
+@Unique('UQ_payments_order_id', ['orderId'])
 export class Payment {
   @PrimaryGeneratedColumn('uuid', { name: 'payment_id' })
   paymentId!: string;
@@ -15,14 +16,13 @@ export class Payment {
   @JoinColumn({ name: 'order_id' })
   order!: Order;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
   amount!: string;
 
   @Column({
     name: 'payment_method',
     type: 'enum',
     enum: PaymentMethodEnum,
-    default: PaymentMethodEnum.CARD,
   })
   paymentMethod!: PaymentMethodEnum;
 
@@ -30,12 +30,8 @@ export class Payment {
     name: 'payment_status',
     type: 'enum',
     enum: PaymentStatusEnum,
-    default: PaymentStatusEnum.PENDING,
   })
   paymentStatus!: PaymentStatusEnum;
-
-  @Column({ name: 'transaction_id', type: 'varchar', length: 255, nullable: true })
-  transactionId!: string | null;
 
   @Column({ name: 'paid_at', type: 'timestamp', nullable: true })
   paidAt!: Date | null;

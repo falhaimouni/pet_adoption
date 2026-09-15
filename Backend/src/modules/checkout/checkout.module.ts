@@ -10,8 +10,6 @@ import { Product } from '../../database/entities/product.entity';
 import { User } from '../../database/entities/user.entity';
 import { ActivityLog } from '../../database/entities/activity-log.entity';
 
-import { PaymentModule } from '../payments/payments.module';
-
 import { CheckoutController } from './checkout.controller';
 import { CheckoutService } from './checkout.service';
 
@@ -27,14 +25,10 @@ import { CheckoutService } from './checkout.service';
       User,
       ActivityLog,
     ]),
-
-    PaymentModule,
   ],
-
   controllers: [
     CheckoutController,
   ],
-
   providers: [
     CheckoutService,
   ],
