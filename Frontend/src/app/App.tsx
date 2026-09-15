@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { CartProvider } from "../context/CartContext";
 import { AuthProvider, useAuth, UserRole } from "../context/AuthContext";
 import { ThemeProvider } from "../context/ThemeContext";
-import { LanguageProvider } from "../context/LanguageContext";
+import { LanguageProvider, useLanguage } from "../context/LanguageContext";
 
 import HomePage from "../pages/HomePage";
 import AboutPage from "../pages/AboutPage";
@@ -143,6 +143,7 @@ type Params = Record<string, unknown>;
 
 function AppRouter() {
   const { user, isAuthenticated, loading, logout, setReturnTo } = useAuth();
+  const { t } = useLanguage();
   const initialRoute = readHashRoute();
   const [currentPage, setCurrentPage] = useState<string>(initialRoute.page);
   const [params, setParams] = useState<Params>(initialRoute.params);
@@ -204,7 +205,7 @@ function AppRouter() {
   };
 
   if (loading) {
-    return <div className="min-h-screen bg-[#f0f8f7] flex items-center justify-center font-['Poppins',sans-serif] text-[#089D97]">Loading...</div>;
+    return <div className="min-h-screen bg-[#f0f8f7] flex items-center justify-center font-['Poppins',sans-serif] text-[#089D97]">{t("common_loading")}</div>;
   }
 
   return renderPage(currentPage, navigate, params, user?.role);

@@ -109,7 +109,7 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
   const displayName = `${form.firstName} ${form.lastName}`.trim();
   const displayHandle = form.email ? form.email.split("@")[0] : "";
   const initials = (displayName || "U").split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
-  const locale = lang === "ar" ? "ar-JO" : "en-US";
+  const locale = lang === "ar" ? "ar-JO" : lang === "fr" ? "fr-FR" : "en-US";
   const joinLabel = user?.joinDate
     ? new Date(user.joinDate).toLocaleDateString(locale, { month: "short", year: "numeric" })
     : "—";

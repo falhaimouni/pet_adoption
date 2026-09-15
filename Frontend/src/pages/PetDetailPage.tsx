@@ -157,13 +157,13 @@ export default function PetDetailPage({ onNavigate, petId, embedded = false }: P
 
               {isAuthenticated && user?.role !== "adopter" && (
                 <div className="bg-white rounded-[20px] p-5 shadow-sm">
-                  <h3 className="font-['Poppins',sans-serif] font-semibold text-[14px] text-[#089D97] uppercase tracking-wider mb-2">Internal Health Summary</h3>
+                  <h3 className="font-['Poppins',sans-serif] font-semibold text-[14px] text-[#089D97] uppercase tracking-wider mb-2">{t("pet_internal_health_summary")}</h3>
                   <div className="space-y-2 font-['Poppins',sans-serif] text-[13px] text-[#1a2e2d]/80">
-                    <p>Medical record: <span className="font-semibold text-[#1a2e2d]">{pet.medicalRecord ? "Available" : "Not created"}</span></p>
+                    <p>{t("pet_medical_record_label")} <span className="font-semibold text-[#1a2e2d]">{pet.medicalRecord ? t("common_available") : t("common_not_created")}</span></p>
                     <div>
-                      <p className="font-semibold text-[#1a2e2d] mb-1">Vaccinations</p>
+                      <p className="font-semibold text-[#1a2e2d] mb-1">{t("vet_vaccinations")}</p>
                       {(pet.vaccinations ?? []).length === 0 ? (
-                        <p className="text-[#5a8a87]">No vaccinations recorded.</p>
+                        <p className="text-[#5a8a87]">{t("vet_no_vaccinations")}</p>
                       ) : (
                         <div className="flex flex-col gap-1">
                           {pet.vaccinations?.map((vaccination) => (
@@ -188,7 +188,7 @@ export default function PetDetailPage({ onNavigate, petId, embedded = false }: P
                 </button>
               ) : status === "AVAILABLE" ? (
                 <div className="py-3.5 bg-[#f0f8f7] border-2 border-[#bae0dd] text-[#047975] font-['Poppins',sans-serif] font-semibold text-[15px] rounded-[14px] text-center">
-                  Adoption requests are available to adopter accounts.
+                  {t("pet_adopter_only_requests")}
                 </div>
               ) : (
                 <div className="py-3.5 bg-amber-50 border-2 border-amber-200 text-amber-700 font-['Poppins',sans-serif] font-semibold text-[15px] rounded-[14px] text-center capitalize">

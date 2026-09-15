@@ -5,6 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import DashboardLayout from "../../components/DashboardLayout";
+import { useLanguage } from "../../context/LanguageContext";
 
 const monthlyAdoptions = [
   { month: "Jan", adoptions: 8, requests: 14 },
@@ -37,10 +38,11 @@ const COLORS = ["#089D97", "#47BDB8", "#80CECE", "#047975", "#B2E0DF"];
 interface ManagerAnalyticsPageProps { onNavigate: (page: string) => void; }
 
 export default function ManagerAnalyticsPage({ onNavigate }: ManagerAnalyticsPageProps) {
+  const { t } = useLanguage();
   const [period, setPeriod] = useState("7m");
 
   return (
-    <DashboardLayout role="manager" activePage="manager-analytics" onNavigate={onNavigate} pageTitle="Analytics" breadcrumbs={["Manager", "Analytics"]}>
+    <DashboardLayout role="manager" activePage="manager-analytics" onNavigate={onNavigate} pageTitle={t("manager_analytics")} breadcrumbs={[t("role_manager"), t("manager_analytics")]}>
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="flex gap-2">
@@ -49,13 +51,13 @@ export default function ManagerAnalyticsPage({ onNavigate }: ManagerAnalyticsPag
           ))}
         </div>
         <button className="flex items-center gap-2 px-4 py-2 border border-[#089D97] text-[#089D97] font-['Poppins',sans-serif] text-[13px] rounded-[10px] hover:bg-[rgba(8,157,151,0.1)] transition-colors">
-          <Download size={15} /> Export
+          <Download size={15} /> {t("action_export")}
         </button>
       </div>
 
       {/* Monthly adoption trend */}
       <div className="bg-white rounded-[15px] shadow-md p-5 mb-5">
-        <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-4">Monthly Adoptions vs Requests</h3>
+        <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-4">{t("analytics_monthly_adoptions_requests")}</h3>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={monthlyAdoptions} margin={{ top: 5, right: 20, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -72,7 +74,7 @@ export default function ManagerAnalyticsPage({ onNavigate }: ManagerAnalyticsPag
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         {/* Species distribution */}
         <div className="bg-white rounded-[15px] shadow-md p-5">
-          <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-4">Adoptions by Species</h3>
+          <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-4">{t("analytics_adoptions_by_species")}</h3>
           <div className="flex items-center gap-4">
             <ResponsiveContainer width="60%" height={200}>
               <PieChart>
@@ -86,7 +88,7 @@ export default function ManagerAnalyticsPage({ onNavigate }: ManagerAnalyticsPag
               {speciesData.map((s, i) => (
                 <div key={s.name} className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full shrink-0" style={{ background: COLORS[i] }} />
-                  <span className="font-['Poppins',sans-serif] text-[12px] text-black/70">{s.name}</span>
+                  <span className="font-['Poppins',sans-serif] text-[12px] text-black/70">{t(`species_${s.name.toLowerCase()}`) === `species_${s.name.toLowerCase()}` ? s.name : t(`species_${s.name.toLowerCase()}`)}</span>
                   <span className="font-['Poppins',sans-serif] text-[12px] font-semibold text-black ml-auto">{s.value}%</span>
                 </div>
               ))}
@@ -96,7 +98,7 @@ export default function ManagerAnalyticsPage({ onNavigate }: ManagerAnalyticsPag
 
         {/* Age distribution */}
         <div className="bg-white rounded-[15px] shadow-md p-5">
-          <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-4">Age Distribution of Available Pets</h3>
+          <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-4">{t("analytics_age_distribution")}</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={ageData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -111,14 +113,14 @@ export default function ManagerAnalyticsPage({ onNavigate }: ManagerAnalyticsPag
 
       {/* Success rate */}
       <div className="bg-white rounded-[15px] shadow-md p-5">
-        <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-4">Adoption Success Rate</h3>
+        <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-4">{t("analytics_success_rate")}</h3>
         <div className="flex flex-wrap gap-6">
           {[
-            { label: "Total Requests", value: 138, color: "text-black" },
-            { label: "Approved", value: 102, color: "text-green-600" },
-            { label: "Rejected", value: 23, color: "text-red-500" },
-            { label: "Pending", value: 13, color: "text-yellow-600" },
-            { label: "Success Rate", value: "73.9%", color: "text-[#089D97]" },
+            { label: t("report_total_requests"), value: 138, color: "text-black" },
+            { label: t("status_approved"), value: 102, color: "text-green-600" },
+            { label: t("status_rejected"), value: 23, color: "text-red-500" },
+            { label: t("status_pending"), value: 13, color: "text-yellow-600" },
+            { label: t("analytics_success_rate"), value: "73.9%", color: "text-[#089D97]" },
           ].map((s) => (
             <div key={s.label} className="text-center min-w-[100px]">
               <p className={`font-['Poppins',sans-serif] font-semibold text-[28px] ${s.color}`}>{s.value}</p>

@@ -61,7 +61,7 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
             <div className="h-[260px] rounded-[18px] bg-white animate-pulse" />
           </div>
         ) : cartError && items.length === 0 ? (
-          <EmptyState icon={<ShoppingCart size={36} />} title="Unable to load cart" description={cartError} actionLabel="Try again" onAction={refreshCart} />
+          <EmptyState icon={<ShoppingCart size={36} />} title={t("cart_load_error")} description={cartError} actionLabel={t("common_try_again")} onAction={refreshCart} />
         ) : items.length === 0 ? (
           <EmptyState
             icon={<ShoppingCart size={36} />}
@@ -109,7 +109,7 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
                     <button
                       onClick={() => mutate(String(product.id), () => removeFromCart(product.id))}
                       disabled={savingProductId === String(product.id)}
-                      aria-label="Remove item"
+                      aria-label={t("cart_remove_item")}
                       className="w-9 h-9 rounded-[10px] text-rose-500 hover:bg-rose-50 flex items-center justify-center shrink-0 disabled:opacity-50"
                     >
                       <Trash2 size={16} />
@@ -131,7 +131,7 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
               </div>
 
               <button onClick={clear} disabled={savingProductId === "cart"} className="mt-5 w-full py-3 rounded-[12px] bg-[#089D97] text-white font-['Poppins',sans-serif] font-semibold text-[14px] hover:bg-[#047975] transition-colors disabled:opacity-60">
-                Clear Cart
+                {t("cart_clear")}
               </button>
               <p className="mt-3 text-center font-['Poppins',sans-serif] text-[11px] text-[#5a8a87]">{t("cart_free_msg")}</p>
             </aside>

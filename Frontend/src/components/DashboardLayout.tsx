@@ -23,6 +23,8 @@ export interface NavItem {
 }
 
 type TFn = (key: string) => string;
+const nextLang = { en: "ar", ar: "fr", fr: "en" } as const;
+const langLabel = { en: "ع", ar: "FR", fr: "EN" } as const;
 
 function getNavItems(role: Role, t: TFn): NavItem[] {
   switch (role) {
@@ -77,7 +79,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "admin-adoptions", label: t("nav_adoptions"),     icon: <Heart size={16} /> },
         { id: "admin-chats",     label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
         { id: "admin-users",     label: t("nav_users"),         icon: <Users size={16} /> },
-        { id: "admin-departments", label: "Departments",        icon: <Building2 size={16} /> },
+        { id: "admin-departments", label: t("nav_departments"), icon: <Building2 size={16} /> },
         { id: "admin-inventory", label: t("nav_inventory"),     icon: <Package size={16} /> },
         { id: "admin-suppliers", label: t("nav_suppliers"),     icon: <Tag size={16} /> },
         { id: "admin-reports",   label: t("nav_reports"),       icon: <FileText size={16} /> },
@@ -183,8 +185,8 @@ export default function DashboardLayout({
   ];
 
   const legalLinks = [
-    { id: "privacy", label: "Privacy", page: "privacy" },
-    { id: "terms", label: "Terms", page: "terms" },
+    { id: "privacy", label: t("nav_privacy"), page: "privacy" },
+    { id: "terms", label: t("nav_terms"), page: "terms" },
   ];
 
   return (
@@ -235,12 +237,12 @@ export default function DashboardLayout({
           <div className="flex items-center gap-2">
             {/* Language toggle */}
             <button
-              onClick={() => setLang(lang === "en" ? "ar" : "en")}
+              onClick={() => setLang(nextLang[lang])}
               aria-label={t("common_toggle_language")}
               className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-[10px] text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all font-['Poppins',sans-serif] text-[13px] font-medium"
             >
               <Globe size={15} />
-              <span>{lang === "en" ? "ع" : "EN"}</span>
+              <span>{langLabel[lang]}</span>
             </button>
 
             {/* Dark / Light toggle */}
