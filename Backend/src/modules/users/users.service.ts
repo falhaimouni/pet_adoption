@@ -13,6 +13,7 @@ import { Department } from '../../database/entities/department.entity';
 import { Employee } from '../../database/entities/employee.entity';
 import { Role } from '../../database/entities/role.entity';
 import { User } from '../../database/entities/user.entity';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
 import { UploadsService } from '../uploads/uploads.service';
 import {
   CreateEmployeeUserDto,
@@ -78,6 +79,8 @@ export class UsersService {
 
     private readonly uploadsService: UploadsService,
     private dataSource: DataSource,
+    @InjectRepository(ActivityLog)
+    private activityLogRepo: Repository<ActivityLog>,
   ) {}
 
   async findAll(
@@ -159,7 +162,7 @@ export class UsersService {
     return this.findOne(id);
   }
 
-  async createEmployeeUser(dto: CreateEmployeeUserDto) {
+  async createEmployeeUser(dto: CreateEmployeeUserDto, actorUserId: string) {
     if (dto.status !== undefined) {
       this.ensureValidUserStatus(dto.status);
     }
@@ -227,6 +230,15 @@ export class UsersService {
         });
 
         await manager.save(employee);
+
+        await manager.getRepository(ActivityLog).save(
+          manager.getRepository(ActivityLog).create({
+            userId: actorUserId,
+            action: 'USER_CREATED',
+            entityType: 'USER',
+            entityId: createdUser.userId,
+          }),
+        );
 
         return createdUser;
         },
@@ -431,6 +443,15 @@ export class UsersService {
         await manager.update(User, id, {
           status: USER_STATUS.INACTIVE,
         });
+
+        await manager.getRepository(ActivityLog).save(
+          manager.getRepository(ActivityLog).create({
+            userId: currentUser.userId,
+            action: 'USER_DEACTIVATED',
+            entityType: 'USER',
+            entityId: id,
+          }),
+        );
       }
     });
 

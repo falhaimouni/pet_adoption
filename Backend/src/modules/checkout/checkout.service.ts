@@ -11,6 +11,7 @@ import { Order } from '../../database/entities/order.entity';
 import { OrderItem } from '../../database/entities/order-item.entity';
 import { Payment } from '../../database/entities/payment.entity';
 import { User } from '../../database/entities/user.entity';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
 
 import { CreateOrderDto } from '@shared/dto/order.dto';
 import { PaymentStatusEnum } from '@shared/enums/payment-status.enum';
@@ -131,6 +132,15 @@ export class CheckoutService {
 
       const savedOrder = await orderRepo.save(order);
 
+      await manager.getRepository(ActivityLog).save(
+        manager.getRepository(ActivityLog).create({
+          userId,
+          action: 'ORDER_CREATED',
+          entityType: 'ORDER',
+          entityId: savedOrder.orderId,
+        }),
+      );
+
       // create OrderItems.
       // we take the current Product price and save it as a snapshot in the OrderItem.
 
@@ -234,6 +244,15 @@ export class CheckoutService {
 
       payment.paymentStatus = PaymentStatusEnum.FAILED;
       await manager.getRepository(Payment).save(payment);
+
+      await manager.getRepository(ActivityLog).save(
+        manager.getRepository(ActivityLog).create({
+          userId,
+          action: 'ORDER_CANCELLED',
+          entityType: 'ORDER',
+          entityId: orderId,
+        }),
+      );
     });
 
     return {

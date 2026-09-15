@@ -18,7 +18,7 @@ export class ActivityLog {
   @Column({ name: 'entity_id', type: 'varchar', length: 80, nullable: true })
   entityId?: string | null;
 
-  @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
   @ManyToOne(() => User, (user) => user.activityLogs, { nullable: true, onDelete: 'SET NULL' })

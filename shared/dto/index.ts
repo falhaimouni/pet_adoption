@@ -20,6 +20,7 @@ export * from './supplier.dto';
 export * from './vaccination.dto';
 export * from './department.dto';
 export * from './dashboard.dto';
+export * from './user-activity-analytics.dto';
 export * from './adoption-report.dto';
 export * from './inventory-report.dto';
 export * from './pet-report.dto';

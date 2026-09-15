@@ -10,6 +10,7 @@ import { MedicalEntry } from '../../database/entities/medical-entry.entity';
 import { MedicalRecord } from '../../database/entities/medical-record.entity';
 import { Pet } from '../../database/entities/pet.entity';
 import { User } from '../../database/entities/user.entity';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
 
 interface MedicalVeterinarianResponse {
   userId: string;
@@ -58,6 +59,9 @@ export class MedicalService {
 
     @InjectRepository(Pet)
     private readonly petRepo: Repository<Pet>,
+
+    @InjectRepository(ActivityLog)
+    private readonly activityLogRepo: Repository<ActivityLog>,
   ) {}
 
   async findRecordByPet(petId: string): Promise<MedicalRecordResponse> {
@@ -91,7 +95,7 @@ export class MedicalService {
     veterinarianId: string,
     dto: CreateMedicalEntryDto,
   ): Promise<MedicalEntryResponse> {
-    const record = await this.findOrCreateRecord(petId);
+    const { record, created } = await this.findOrCreateRecord(petId);
 
     const entry = this.medicalEntryRepo.create({
       recordId: record.recordId,
@@ -104,6 +108,18 @@ export class MedicalService {
     });
 
     const savedEntry = await this.medicalEntryRepo.save(entry);
+
+    if (created) {
+      await this.activityLogRepo.save(
+        this.activityLogRepo.create({
+          userId: veterinarianId,
+          action: 'MEDICAL_RECORD_CREATED',
+          entityType: 'MEDICAL_RECORD',
+          entityId: record.recordId,
+        }),
+      );
+    }
+
     return this.findEntry(savedEntry.entryId);
   }
 
@@ -198,13 +214,16 @@ export class MedicalService {
     });
 
     if (existingRecord) {
-      return existingRecord;
+      return { record: existingRecord, created: false };
     }
 
     try {
-      return await this.medicalRecordRepo.save(
-        this.medicalRecordRepo.create({ petId }),
-      );
+      return {
+        record: await this.medicalRecordRepo.save(
+          this.medicalRecordRepo.create({ petId }),
+        ),
+        created: true,
+      };
     } catch (error) {
       if (!(error instanceof QueryFailedError && (error as any).code === '23505')) {
         throw error;
@@ -214,7 +233,7 @@ export class MedicalService {
       if (!record) {
         throw error;
       }
-      return record;
+      return { record, created: false };
     }
   }
 

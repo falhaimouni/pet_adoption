@@ -11,6 +11,7 @@ import { Cart } from '../../database/entities/cart.entity';
 import { CartItem } from '../../database/entities/cart-item.entity';
 import { Order } from '../../database/entities/order.entity';
 import { Payment } from '../../database/entities/payment.entity';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
 
 import { PaymentMethodEnum } from '@shared/enums/payment-method.enum';
 import { PaymentStatusEnum } from '@shared/enums/payment-status.enum';
@@ -255,12 +256,12 @@ export class PaymentService {
           manager.getRepository(CartItem);
 
         const payment =
-          await paymentRepo.findOne({
-            where: {
-              paymentId,
-              orderId,
-            },
-          });
+          await paymentRepo
+            .createQueryBuilder('payment')
+            .setLock('pessimistic_write')
+            .where('payment.paymentId = :paymentId', { paymentId })
+            .andWhere('payment.orderId = :orderId', { orderId })
+            .getOne();
 
         if (!payment) {
           throw new NotFoundException(
@@ -311,6 +312,15 @@ export class PaymentService {
 
         await paymentRepo.save(payment);
 
+        await manager.getRepository(ActivityLog).save(
+          manager.getRepository(ActivityLog).create({
+            userId: order.userId,
+            action: 'PAYMENT_SUCCEEDED',
+            entityType: 'PAYMENT',
+            entityId: payment.paymentId,
+          }),
+        );
+
         // find the user's cart
         const cart =
           await cartRepo.findOne({
@@ -348,12 +358,12 @@ export class PaymentService {
     await this.dataSource.transaction(async (manager) => {
       const paymentRepo = manager.getRepository(Payment);
 
-      const payment = await paymentRepo.findOne({
-        where: {
-          paymentId,
-          orderId,
-        },
-      });
+      const payment = await paymentRepo
+        .createQueryBuilder('payment')
+        .setLock('pessimistic_write')
+        .where('payment.paymentId = :paymentId', { paymentId })
+        .andWhere('payment.orderId = :orderId', { orderId })
+        .getOne();
 
       if (!payment) {
         return;
@@ -364,6 +374,19 @@ export class PaymentService {
         return;
       }
 
+      if (payment.paymentStatus === PaymentStatusEnum.FAILED) {
+        return;
+      }
+
+      const order = await manager.getRepository(Order).findOne({
+        where: { orderId },
+        select: { orderId: true, userId: true },
+      });
+
+      if (!order) {
+        return;
+      }
+
       payment.paymentStatus = PaymentStatusEnum.FAILED;
       await paymentRepo.save(payment);
 
@@ -371,6 +394,15 @@ export class PaymentService {
       await manager.getRepository(Order).update(
         { orderId, orderStatus: OrderStatusEnum.PENDING },
         { orderStatus: OrderStatusEnum.CANCELED },
+      );
+
+      await manager.getRepository(ActivityLog).save(
+        manager.getRepository(ActivityLog).create({
+          userId: order.userId,
+          action: 'PAYMENT_FAILED',
+          entityType: 'PAYMENT',
+          entityId: payment.paymentId,
+        }),
       );
     });
   }

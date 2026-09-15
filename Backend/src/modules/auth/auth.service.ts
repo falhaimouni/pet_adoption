@@ -24,6 +24,7 @@ import { LoginDto, RefreshTokenDto, SignupDto } from '@shared/dto/auth.dto';
 import { PasswordResetToken } from '../../database/entities/password-reset-token.entity';
 import { Role } from '../../database/entities/role.entity';
 import { User } from '../../database/entities/user.entity';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
 import { MailService } from '../mail/mail.service';
 
 type AuthTokenPayload = {
@@ -48,6 +49,9 @@ export class AuthService implements OnModuleInit {
 
     @InjectRepository(PasswordResetToken)
     private readonly passwordResetTokenRepo: Repository<PasswordResetToken>,
+
+    @InjectRepository(ActivityLog)
+    private readonly activityLogRepo: Repository<ActivityLog>,
 
     @InjectDataSource()
     private readonly dataSource: DataSource,
@@ -118,6 +122,15 @@ export class AuthService implements OnModuleInit {
       throw error;
     }
 
+    await this.activityLogRepo.save(
+      this.activityLogRepo.create({
+        userId: user.userId,
+        action: 'USER_CREATED',
+        entityType: 'USER',
+        entityId: user.userId,
+      }),
+    );
+
     return { message: 'User created successfully' };
   }
 
@@ -156,6 +169,15 @@ export class AuthService implements OnModuleInit {
     }
 
     const tokens = this.issueTokens(user);
+
+    await this.activityLogRepo.save(
+      this.activityLogRepo.create({
+        userId: user.userId,
+        action: 'LOGIN',
+        entityType: 'USER',
+        entityId: user.userId,
+      }),
+    );
 
     return {
       ...tokens,
@@ -263,6 +285,15 @@ export class AuthService implements OnModuleInit {
     }
 
     await this.invalidateRefreshTokens(userId);
+
+    await this.activityLogRepo.save(
+      this.activityLogRepo.create({
+        userId,
+        action: 'LOGOUT',
+        entityType: 'USER',
+        entityId: userId,
+      }),
+    );
 
     return { message: 'Logged out successfully' };
   }

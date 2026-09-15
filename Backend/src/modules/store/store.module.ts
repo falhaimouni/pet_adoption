@@ -5,6 +5,7 @@ import {
  Product,
  Supply,
  Supplier,
+ ActivityLog,
 } from '../../database/entities';
 
 import {StoreService} from './store.service'
@@ -14,7 +15,7 @@ import { SupplierService } from '../inventory/services/supplier.service';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Supply, Supplier, Product]), NotificationsModule],
+  imports: [TypeOrmModule.forFeature([Supply, Supplier, Product, ActivityLog]), NotificationsModule],
   controllers: [StoreController],
   providers: [StoreService, SupplyService, SupplierService]
 })

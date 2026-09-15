@@ -83,8 +83,11 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Post('employees')
-  createEmployeeUser(@Body() dto: CreateEmployeeUserDto) {
-    return this.usersService.createEmployeeUser(dto);
+  createEmployeeUser(
+    @Body() dto: CreateEmployeeUserDto,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.usersService.createEmployeeUser(dto, req.user.userId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

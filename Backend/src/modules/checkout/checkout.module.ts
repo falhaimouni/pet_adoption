@@ -8,6 +8,7 @@ import { OrderItem } from '../../database/entities/order-item.entity';
 import { Payment } from '../../database/entities/payment.entity';
 import { Product } from '../../database/entities/product.entity';
 import { User } from '../../database/entities/user.entity';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
 
 import { PaymentModule } from '../payments/payments.module';
 
@@ -24,6 +25,7 @@ import { CheckoutService } from './checkout.service';
       OrderItem,
       Payment,
       User,
+      ActivityLog,
     ]),
 
     PaymentModule,

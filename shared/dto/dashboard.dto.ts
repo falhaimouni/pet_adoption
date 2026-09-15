@@ -25,7 +25,7 @@ export interface DashboardAdoptionStatsDto {
 }
 
 export interface DashboardMedicalStatsDto {
-  totalMedicalRecords?: number;
+  totalMedicalRecords: number;
   totalVaccinations: number;
   petsNeedingMedicalAttention?: number;
 }
