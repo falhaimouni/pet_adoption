@@ -23,8 +23,8 @@ services:
     build:
       context: .
       dockerfile: Backend/Dockerfile
-    ports:
-      - "${PORT:-3000}:3000"
+    # ports:
+      # - "${PORT:-3000}:3000"
     env_file:
       - ${ENV_FILE:-.env.development}
     environment:
@@ -53,11 +53,11 @@ services:
       context: .
       dockerfile: Frontend/Dockerfile
     ports:
-      - "${FRONTEND_PORT:-5173}:80"
+      - "${FRONTEND_HTTPS_PORT:-8443}:443"
     stdin_open: true
     tty: true
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      test: ["CMD-SHELL", "wget --no-check-certificate -q --spider https://127.0.0.1/ || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
