@@ -19,6 +19,10 @@ export async function seedDepartments(
       departmentName: 'Management',
       description: 'Shelter administration and operations',
     },
+    {
+      departmentName: 'Analytics',
+      description: 'Data insights, reporting, and performance analytics',
+    },
   ];
 
   for (const department of departments) {
