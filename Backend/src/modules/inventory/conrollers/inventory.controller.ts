@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards} from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards} from "@nestjs/common";
 // import { TypeOrmModule } from "@nestjs/typeorm";
 import {InventoryQueryDto} from "../../../../../shared/dto/inventory-query.dto";
 import { CreateSupplyDto, UpdateSupplyDto } from "@shared/dto/supply.dto";
@@ -9,6 +9,7 @@ import { RolesGuard } from "../../roles/roles.guard";
 import { JwtAuthGuard } from "../../auth/jwt-auth.guard";
 import { SupplyService } from "../services/supply.service";
 import { SupplierService } from "../services/supplier.service";
+import { RequestWithUser } from '@shared/types/auth.types';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('inventory')
 export class InventoryController{
@@ -40,9 +41,9 @@ export class InventoryController{
 
   @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
   @Post('supplies')
-  createSupply(@Body() createSupplyDto: CreateSupplyDto)
+  createSupply(@Body() createSupplyDto: CreateSupplyDto, @Req() req: RequestWithUser)
   {
-    return this.supplyService.createSupply(createSupplyDto);
+    return this.supplyService.createSupply(createSupplyDto, req.user.userId);
   }
 
   @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
@@ -54,9 +55,9 @@ export class InventoryController{
 
   @Roles('ADMIN', 'MANAGER')
   @Delete('supplies/:id')
-  deleteSupply(@Param('id') id: string)
+  deleteSupply(@Param('id') id: string, @Req() req: RequestWithUser)
   {
-    return this.supplyService.deleteSupply(id);
+    return this.supplyService.deleteSupply(id, req.user.userId);
   }
 
   @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')

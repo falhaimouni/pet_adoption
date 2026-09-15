@@ -7,12 +7,13 @@ import { EmployeeLookupsController } from './employee-lookups.controller';
 import { User } from '../../database/entities/user.entity';
 import { Department } from '../../database/entities/department.entity';
 import { Employee } from '../../database/entities/employee.entity';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
 import { Role } from '../../database/entities/role.entity';
 import { UploadsModule } from '../uploads/uploads.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Role, Department, Employee]),
+    TypeOrmModule.forFeature([User, Role, Department, Employee, ActivityLog]),
     UploadsModule,
   ],
   controllers: [UsersController, EmployeeLookupsController],

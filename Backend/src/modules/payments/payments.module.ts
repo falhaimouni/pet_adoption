@@ -5,6 +5,7 @@ import { Cart } from '../../database/entities/cart.entity';
 import { CartItem } from '../../database/entities/cart-item.entity';
 import { Order } from '../../database/entities/order.entity';
 import { Payment } from '../../database/entities/payment.entity';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
 
 import { PaymentController } from './payments.controller';
 import { PaymentService } from './payments.service';
@@ -16,6 +17,7 @@ import { PaymentService } from './payments.service';
       CartItem,
       Order,
       Payment,
+      ActivityLog,
     ]),
   ],
   controllers: [

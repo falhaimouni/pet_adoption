@@ -7,6 +7,7 @@ import { MedicalEntry } from '../../database/entities/medical-entry.entity';
 import { MedicalRecord } from '../../database/entities/medical-record.entity';
 import { Vaccination } from '../../database/entities/vaccination.entity';
 import { Adoption } from '../../database/entities/adoption.entity';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
 import { UploadsModule } from '../uploads/uploads.module';
 import { PetsController } from './pets.controller';
 import { PetsService } from './pets.service';
@@ -21,6 +22,7 @@ import { PetsService } from './pets.service';
       MedicalEntry,
       Vaccination,
       Adoption,
+      ActivityLog,
     ]),
   ],
   controllers: [PetsController],

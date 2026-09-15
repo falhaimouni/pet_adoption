@@ -13,6 +13,7 @@ import { Adoption } from '../../database/entities/adoption.entity';
 import { FileUpload } from '../../database/entities/file-upload.entity';
 import { FileUploadCategory } from '@shared/enums';
 import { UploadsService } from '../uploads/uploads.service';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
 
 interface PetImageResponse {
   imageId: string;
@@ -74,6 +75,9 @@ export class PetsService {
     private readonly dataSource: DataSource,
 
     private readonly uploadsService: UploadsService,
+
+    @InjectRepository(ActivityLog)
+    private readonly activityLogRepo: Repository<ActivityLog>,
   ) {}
 
   async create(dto: CreatePetDto, createdBy?: string): Promise<PetResponse> {
@@ -90,6 +94,15 @@ export class PetsService {
     });
 
     const savedPet = await this.petRepo.save(pet);
+
+    await this.activityLogRepo.save(
+      this.activityLogRepo.create({
+        userId: createdBy ?? null,
+        action: 'PET_CREATED',
+        entityType: 'PET',
+        entityId: savedPet.petId,
+      }),
+    );
 
     return this.findOne(savedPet.petId);
   }
@@ -238,7 +251,7 @@ export class PetsService {
     }
   }
 
-  async remove(id: string): Promise<{ message: string }> {
+  async remove(id: string, actorUserId: string): Promise<{ message: string }> {
     await this.dataSource.transaction(async (manager) => {
       const petRepo = manager.getRepository(Pet);
       const pet = await petRepo
@@ -278,6 +291,15 @@ export class PetsService {
       await manager.getRepository(Vaccination).softDelete({ petId: id });
       await manager.getRepository(PetImage).delete({ petId: id });
       await petRepo.softDelete(id);
+
+      await manager.getRepository(ActivityLog).save(
+        manager.getRepository(ActivityLog).create({
+          userId: actorUserId,
+          action: 'PET_ARCHIVED',
+          entityType: 'PET',
+          entityId: id,
+        }),
+      );
     });
 
     return {

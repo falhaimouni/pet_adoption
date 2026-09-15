@@ -41,14 +41,17 @@ export class DepartmentsService {
       throw new NotFoundException('Department not found');
     }
 
+    //removes the password field from the user object before returning it
     return this.serialize(department);
   }
 
   async create(dto: CreateDepartmentDto) {
+    //remove leading and trailing whitespace from the department name
     const departmentName = this.normalizeName(dto.departmentName);
     this.ensureNameIsNotBlank(departmentName);
     const existingDepartment = await this.departmentRepo
       .createQueryBuilder('department')
+      //remove leading and trailing whitespace from the department name and convert to lowercase before comparing
       .where('LOWER(BTRIM(department.department_name)) = LOWER(BTRIM(:departmentName))', {
         departmentName,
       })
@@ -84,6 +87,7 @@ export class DepartmentsService {
 
     if (
       departmentName !== undefined &&
+      //remove leading and trailing whitespace from the department name before comparing
       this.normalizeName(departmentName) !==
         this.normalizeName(department.departmentName)
     ) {
@@ -92,6 +96,7 @@ export class DepartmentsService {
         .where('LOWER(BTRIM(department.department_name)) = LOWER(BTRIM(:departmentName))', {
           departmentName,
         })
+        // nor equal <> ignore the current department being updated and check for other departments with the same name
         .andWhere('department.department_id <> :departmentId', {
           departmentId,
         })
@@ -195,6 +200,7 @@ export class DepartmentsService {
     });
   }
 
+  //removes leading and trailing whitespace from the department name
   private normalizeName(name: string) {
     return name.trim();
   }
@@ -216,6 +222,7 @@ export class DepartmentsService {
     }
   }
 
+  //removes the password field from the user object before returning it
   private serialize(department: Department) {
     return {
       ...department,

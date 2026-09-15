@@ -9,6 +9,7 @@ import { randomBytes } from 'crypto';
 import { DataSource, QueryFailedError, Repository } from 'typeorm';
 
 import { User } from '../../database/entities/user.entity';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
 import { OAuthAccount } from '../../database/entities/oauth-account.entity';
 import { Role } from '../../database/entities/role.entity';
 import { AuthService } from '../auth/auth.service';
@@ -49,6 +50,9 @@ export class OAuthService {
 
     @InjectRepository(OAuthAccount)
     private readonly oauthAccountRepo: Repository<OAuthAccount>,
+
+    @InjectRepository(ActivityLog)
+    private readonly activityLogRepo: Repository<ActivityLog>,
 
     @InjectRepository(Role)
     private readonly roleRepo: Repository<Role>,
@@ -172,6 +176,14 @@ export class OAuthService {
             userId: createdUser.userId,
             provider: 'GOOGLE',
             providerUserId,
+          }),
+        );
+        await manager.getRepository(ActivityLog).save(
+          manager.getRepository(ActivityLog).create({
+            userId: null,
+            action: 'USER_CREATED',
+            entityType: 'USER',
+            entityId: createdUser.userId,
           }),
         );
         return createdUser;
