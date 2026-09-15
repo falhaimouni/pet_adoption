@@ -105,8 +105,7 @@ async function parseResponse(res: Response) {
   return contentType.includes("application/json") ? res.json() : res.text();
 }
 
-export async function apiFetch<T>(path: string, init: RequestInit = {}, allowRefresh = true): Promise<T> {
-  if (MOCK_API_ENABLED) return mockApiFetch<T>(path, init);
+async function realApiFetch<T>(path: string, init: RequestInit = {}, allowRefresh = true): Promise<T> {
 
   const headers = new Headers(init.headers);
   const token = getAccessToken();
@@ -143,6 +142,15 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}, allowRef
   }
 
   return data as T;
+}
+
+export async function apiFetch<T>(path: string, init: RequestInit = {}, allowRefresh = true): Promise<T> {
+  if (MOCK_API_ENABLED) return mockApiFetch<T>(path, init);
+  return realApiFetch<T>(path, init, allowRefresh);
+}
+
+export async function apiFetchReal<T>(path: string, init: RequestInit = {}, allowRefresh = true): Promise<T> {
+  return realApiFetch<T>(path, init, allowRefresh);
 }
 
 export async function apiBlobFetch(path: string, init: RequestInit = {}, allowRefresh = true): Promise<Blob> {
