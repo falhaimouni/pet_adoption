@@ -4,9 +4,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 
 import { Cart } from '../../database/entities/cart.entity';
+import { CartItem } from '../../database/entities/cart-item.entity';
 import { Order } from '../../database/entities/order.entity';
 import { OrderItem } from '../../database/entities/order-item.entity';
 import { Payment } from '../../database/entities/payment.entity';
@@ -14,6 +15,7 @@ import { User } from '../../database/entities/user.entity';
 import { ActivityLog } from '../../database/entities/activity-log.entity';
 
 import { CreateOrderDto } from '@shared/dto/order.dto';
+import { PaymentMethodEnum } from '@shared/enums/payment-method.enum';
 import { PaymentStatusEnum } from '@shared/enums/payment-status.enum';
 import { OrderStatusEnum } from '@shared/enums/order-status.enum';
 
@@ -167,24 +169,8 @@ export class CheckoutService {
 
       await orderItemRepo.save(orderItems);
 
-      // create the payment.
-      // The frontend only selected the payment method
-
-      const paymentRepo = manager.getRepository(Payment);
-
-      const payment = paymentRepo.create({
-        orderId: savedOrder.orderId,
-        amount: total.toFixed(2),
-        paymentMethod: dto.paymentMethod,
-        paymentStatus: PaymentStatusEnum.PENDING,
-        transactionId: null,
-        paidAt: null,
-      });
-
-      await paymentRepo.save(payment);
-
-      // return order with payment information
-
+      // Return the pending order for the review page. Payment and cart
+      // changes happen only after the user explicitly pays.
       return manager
         .getRepository(Order)
         .findOne({
@@ -206,9 +192,9 @@ export class CheckoutService {
     return order;
   }
 
-  async cancelOrder(userId: string, orderId: string) {
-    await this.dataSource.transaction(async (manager) => {
-      const order = await manager
+  async cancel(userId: string, orderId: string) {
+    const order = await this.dataSource.transaction(async (manager) => {
+      const lockedOrder = await manager
         .getRepository(Order)
         .createQueryBuilder('order')
         .setLock('pessimistic_write')
@@ -216,50 +202,90 @@ export class CheckoutService {
         .andWhere('order.userId = :userId', { userId })
         .getOne();
 
-      if (!order) {
+      if (!lockedOrder) {
         throw new NotFoundException('Order not found');
       }
 
-      if (order.orderStatus !== OrderStatusEnum.PENDING) {
-        throw new BadRequestException(
-          'Only unpaid pending orders can be canceled',
-        );
+      if (lockedOrder.orderStatus !== OrderStatusEnum.PENDING) {
+        throw new BadRequestException('Only pending orders can be canceled');
       }
 
-      const payment = await manager.getRepository(Payment).findOne({
-        where: {
-          orderId,
-          paymentStatus: PaymentStatusEnum.PENDING,
-        },
-      });
+      lockedOrder.orderStatus = OrderStatusEnum.CANCELED;
+      await manager.getRepository(Order).save(lockedOrder);
 
-      if (!payment) {
-        throw new BadRequestException(
-          'Only orders with a pending payment can be canceled',
-        );
-      }
-
-      order.orderStatus = OrderStatusEnum.CANCELED;
-      await manager.getRepository(Order).save(order);
-
-      payment.paymentStatus = PaymentStatusEnum.FAILED;
-      await manager.getRepository(Payment).save(payment);
-
-      await manager.getRepository(ActivityLog).save(
-        manager.getRepository(ActivityLog).create({
-          userId,
-          action: 'ORDER_CANCELLED',
-          entityType: 'ORDER',
-          entityId: orderId,
-        }),
-      );
+      return this.findOrder(manager, orderId);
     });
 
-    return {
-      orderId,
-      orderStatus: OrderStatusEnum.CANCELED,
-      cartPreserved: true,
-      redirectTo: '/cart',
-    };
+    if (!order) {
+      throw new NotFoundException('Order could not be canceled');
+    }
+
+    return order;
   }
+
+  async pay(userId: string, orderId: string) {
+    const order = await this.dataSource.transaction(async (manager) => {
+      const lockedOrder = await manager
+        .getRepository(Order)
+        .createQueryBuilder('order')
+        .setLock('pessimistic_write')
+        .where('order.orderId = :orderId', { orderId })
+        .andWhere('order.userId = :userId', { userId })
+        .getOne();
+
+      if (!lockedOrder) {
+        throw new NotFoundException('Order not found');
+      }
+
+      if (lockedOrder.orderStatus !== OrderStatusEnum.PENDING) {
+        throw new BadRequestException('Only pending orders can be paid');
+      }
+
+      const existingPayment = await manager.getRepository(Payment).findOne({
+        where: { orderId },
+      });
+
+      if (existingPayment) {
+        throw new BadRequestException('Order already has a payment');
+      }
+
+      await manager.getRepository(Payment).save(
+        manager.getRepository(Payment).create({
+          orderId,
+          amount: lockedOrder.totalPrice,
+          paymentMethod: PaymentMethodEnum.CASH,
+          paymentStatus: PaymentStatusEnum.PAID,
+          paidAt: new Date(),
+        }),
+      );
+
+      lockedOrder.orderStatus = OrderStatusEnum.COMPLETED;
+      await manager.getRepository(Order).save(lockedOrder);
+
+      const cart = await manager.getRepository(Cart).findOne({
+        where: { userId },
+      });
+
+      if (cart) {
+        await manager.getRepository(CartItem).delete({ cartId: cart.cartId });
+        await manager.getRepository(Cart).delete({ cartId: cart.cartId });
+      }
+
+      return this.findOrder(manager, orderId);
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order could not be paid');
+    }
+
+    return order;
+  }
+
+  private findOrder(manager: EntityManager, orderId: string) {
+    return manager.getRepository(Order).findOne({
+      where: { orderId },
+      relations: ['orderItems', 'orderItems.product', 'payments'],
+    });
+  }
+
 }

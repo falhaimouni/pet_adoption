@@ -1,8 +1,7 @@
-import { IsEnum, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { OrderItemDto } from './order-item.dto';
 import type { PaymentDto } from './payment.dto';
 import { OrderStatusEnum } from '../enums/order-status.enum';
-import { PaymentMethodEnum } from '../enums/payment-method.enum';
 
 export interface OrderDto {
   orderId: string;
@@ -51,7 +50,4 @@ export class CreateOrderDto {
   @IsString()
   @MaxLength(500)
   deliveryNotes?: string;
-
-  @IsEnum(PaymentMethodEnum)
-  paymentMethod!: PaymentMethodEnum;
 }
