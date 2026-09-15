@@ -6,12 +6,17 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
       POSTGRES_DB: ${POSTGRES_DB:-pet_adoption}
-    env_file:
-      - ${ENV_FILE:-.env.development}
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - private
+    restart: unless-stopped
 
   backend:
     container_name: pet_adoption_backend
@@ -26,10 +31,22 @@ services:
       - POSTGRES_HOST=postgres
       - NODE_ENV=${NODE_ENV:-development}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", 
+        "fetch('http://127.0.0.1:3000/ready').then(async r => { const j = await r.json(); if (!r.ok || j.status !== 'ready' || !j.db?.ok) process.exit(1); }).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     volumes:
       - backend_uploads:/app/Backend/uploads
-
+    networks:
+      - public
+      - private
+    restart: unless-stopped
+  
   frontend:
     container_name: pet_adoption_frontend
     build:
@@ -37,11 +54,50 @@ services:
       dockerfile: Frontend/Dockerfile
     ports:
       - "${FRONTEND_PORT:-5173}:80"
-    env_file:
-      - ${ENV_FILE:-.env.development}
     stdin_open: true
     tty: true
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - public
+    restart: unless-stopped
 
+  db-backup:
+    build:
+      context: ./backup
+      dockerfile: Dockerfile
+    container_name: pet_adoption_db_backup
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      TZ: Asia/Amman
+      # TEMPORARY TEST:
+      # Run once every minute so we can prove scheduling works.
+      BACKUP_SCHEDULE: "0 2 * * *"
+      RETENTION_DAYS: "7"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -h postgres -p 5432 -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\" && test -s /etc/cron.d/db-backup"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backups:/backups
+    networks:
+      - private
 volumes:
   postgres_data:
   backend_uploads:
+networks:
+  public:
+  private:
+    internal: true

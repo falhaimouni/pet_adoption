@@ -4,6 +4,7 @@ import { AuthProvider, useAuth, UserRole } from "../context/AuthContext";
 import { ThemeProvider } from "../context/ThemeContext";
 import { LanguageProvider } from "../context/LanguageContext";
 
+import SystemStatusPage from "../pages/SystemStatusPage";
 import HomePage from "../pages/HomePage";
 import AboutPage from "../pages/AboutPage";
 import TermsPage from "../pages/TermsPage";
@@ -63,7 +64,7 @@ export type Role = UserRole;
 
 // Pages anyone can view without logging in.
 const PUBLIC_PAGES = new Set<string>([
-  "home", "login", "signup", "about", "terms",
+  "home", "login", "signup", "status", "about", "terms",
   "privacy", "forgot-password", "reset-password", "pets", "pet-detail", "shop",
   "oauth-callback",
 ]);
@@ -259,7 +260,8 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "shop": return userRole === "adopter"
       ? <DashboardLayout role="adopter" activePage="shop" onNavigate={navigate}><ShopPage onNavigate={navigate} embedded /></DashboardLayout>
       : <ShopPage onNavigate={navigate} />;
-
+    case "status":
+      return <SystemStatusPage onNavigate={navigate} />;
     // Shared authenticated
     case "cart": return userRole === "adopter"
       ? <DashboardLayout role="adopter" activePage="shop" onNavigate={navigate}><CartPage onNavigate={navigate} embedded /></DashboardLayout>

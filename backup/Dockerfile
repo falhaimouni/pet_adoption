@@ -1,0 +1,16 @@
+FROM postgres:15
+
+USER root
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends cron tzdata \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY backup-db.sh /usr/local/bin/backup-db.sh
+COPY entrypoint.sh /usr/local/bin/backup-entrypoint.sh
+
+RUN chmod +x \
+    /usr/local/bin/backup-db.sh \
+    /usr/local/bin/backup-entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/backup-entrypoint.sh"]

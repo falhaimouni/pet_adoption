@@ -22,10 +22,11 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
     { label: t("nav_shop"),  page: "shop" },
     { label: t("nav_about"), page: "about" },
   ];
-  const LEGAL_LINKS = [
-    { label: "Privacy", page: "privacy" },
-    { label: "Terms", page: "terms" },
-  ];
+const LEGAL_LINKS = [
+  { label: "Privacy", page: "privacy" },
+  { label: "Terms", page: "terms" },
+  { label: "System Status", page: "status" },
+    ];
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);

@@ -30,3 +30,5 @@ Frontend/src/**/*.jsx
 Frontend/src/**/*.js.map
 Frontend/src/**/*.css.map
 
+backups/*.dump
+backups/*.log
