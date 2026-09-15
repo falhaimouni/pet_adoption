@@ -126,7 +126,53 @@ let supplies = PRODUCTS.map((product) => ({
 }));
 
 let mockCartItems: Array<{ productId: string; quantity: number }> = [];
-let mockOrders: Array<Record<string, unknown>> = [];
+let mockOrders: Array<Record<string, unknown>> = [
+  {
+    orderId: "mock-order-demo",
+    userId: "mock-adopter",
+    totalPrice: "31.48",
+    recipientName: "Adopter Demo",
+    phoneNumber: "+962-6-5001234",
+    addressLine: "Rainbow Street",
+    city: "Amman",
+    postalCode: null,
+    deliveryNotes: "Leave at reception.",
+    orderStatus: "COMPLETED",
+    createdAt: now(),
+    updatedAt: now(),
+    user: { firstName: "Adopter", lastName: "Demo", email: "adopter@petopia.test" },
+    orderItems: [
+      {
+        orderItemId: "mock-order-item-demo-1",
+        orderId: "mock-order-demo",
+        productId: String(PRODUCTS[0].id),
+        quantity: 1,
+        unitPrice: PRODUCTS[0].price.toFixed(2),
+        subtotal: PRODUCTS[0].price.toFixed(2),
+        product: { productName: PRODUCTS[0].name },
+      },
+      {
+        orderItemId: "mock-order-item-demo-2",
+        orderId: "mock-order-demo",
+        productId: String(PRODUCTS[1].id),
+        quantity: 5,
+        unitPrice: PRODUCTS[1].price.toFixed(2),
+        subtotal: (PRODUCTS[1].price * 5).toFixed(2),
+        product: { productName: PRODUCTS[1].name },
+      },
+    ],
+    payments: [{
+      paymentId: "mock-payment-demo",
+      orderId: "mock-order-demo",
+      amount: "31.48",
+      paymentMethod: "CASH",
+      paymentStatus: "PAID",
+      paidAt: now(),
+      createdAt: now(),
+      updatedAt: now(),
+    }],
+  },
+];
 
 let notifications = [
   { id: "notif-1", notificationId: "notif-1", title: "New adoption request", message: "Mochi has a new interested adopter.", type: "ADOPTION", status: "UNREAD", createdAt: now(), isRead: false },
@@ -347,6 +393,7 @@ function mockOrderFromBody(orderId: string, body: Record<string, unknown>, statu
       subtotal: item.subtotal,
       product: item.product,
     })),
+    user: { firstName: currentProfile.firstName, lastName: currentProfile.lastName, email: currentProfile.email },
     payments: status === "COMPLETED" ? [{
       paymentId: `mock-payment-${orderId}`,
       orderId,
@@ -577,6 +624,8 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
     mockCartItems = [];
     return withDelay({ success: true, message: "Cart deleted successfully" } as T);
   }
+
+  if (url.pathname === "/orders" && method === "GET") return withDelay(mockOrders as T);
 
   if (url.pathname === "/checkout" && method === "POST") {
     if (mockCartItems.length === 0) throw new Error("Cannot checkout with an empty cart");
