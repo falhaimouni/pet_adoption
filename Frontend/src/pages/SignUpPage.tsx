@@ -82,65 +82,62 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
   return (
     <div className="min-h-screen bg-[rgba(186,216,211,0.99)] flex flex-col relative overflow-x-hidden">
       <Navbar onNavigate={onNavigate} />
-      <div className="relative flex flex-col lg:flex-row flex-1 lg:min-h-0 overflow-x-hidden pb-[70px] lg:pb-[56px]">
+      <div className="relative flex flex-col md:flex-row flex-1 md:min-h-0 overflow-x-hidden pb-[70px] md:pb-[56px]">
 
       {/* ── Left Panel ── */}
-      <div className="relative flex-1 flex flex-col items-center justify-start pt-6 pb-0 lg:pt-0 lg:pb-0 min-h-[360px] lg:min-h-[620px] overflow-hidden">
+      <div className="relative flex-1 flex flex-col items-center justify-start pt-6 pb-0 md:pt-0 md:pb-0 min-h-[360px] md:min-h-[620px] overflow-hidden">
 
-        {/* Large soft organic blob behind the rabbits (left side) — inspo position */}
+        {/* One illustration group: the rabbits stay attached to their background shape. */}
         <div className="absolute inset-0 flex items-start justify-start pointer-events-none">
-          <div className="w-[min(88vw,480px)] lg:w-[min(40vw,560px)] h-[500px] lg:h-[640px] bg-[#089D97]/25 translate-x-[20px] lg:translate-x-[20px] translate-y-[20px] lg:translate-y-[30px] [border-radius:58%_42%_55%_45%/48%_56%_44%_52%]" />
+          <div className="relative w-[min(88vw,480px)] md:w-[42vw] h-[500px] md:h-[45vw] bg-[#089D97]/25 translate-x-[20px] md:translate-x-[1vw] translate-y-[20px] md:translate-y-[2vw] [border-radius:58%_42%_55%_45%/48%_56%_44%_52%]">
+            <div className="absolute z-10 bottom-0 left-[6%] flex items-end">
+              <img
+                src={tanBunnyImg}
+                alt={t("signup_brown_rabbit_alt")}
+                className="w-[min(50vw,210px)] md:w-[18vw] h-auto object-contain"
+              />
+              <img
+                src={grayBunnyImg}
+                alt={t("signup_gray_rabbit_alt")}
+                className="w-[min(42vw,175px)] md:w-[15vw] h-auto object-contain -ml-12 md:-ml-[6vw] md:translate-y-[0.4vw]"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Paw prints scattered */}
         <PawPrint size={28} className="absolute top-[18%] right-[12%] text-white/70 rotate-12 pointer-events-none" fill="currentColor" />
-        <PawPrint size={36} className="absolute top-[38%] right-[4%] text-white/80 -rotate-12 pointer-events-none hidden lg:block" fill="currentColor" />
+        <PawPrint size={36} className="absolute top-[38%] right-[4%] text-white/80 -rotate-12 pointer-events-none hidden 2xl:block" fill="currentColor" />
         <PawPrint size={22} className="absolute bottom-[16%] left-[46%] text-[#089D97]/60 rotate-12 pointer-events-none" fill="currentColor" />
         <PawPrint size={34} className="absolute bottom-[6%] left-[8%] text-white/80 -rotate-12 pointer-events-none" fill="currentColor" />
-        <PawPrint size={30} className="absolute bottom-[5%] right-[8%] text-white/80 rotate-12 pointer-events-none hidden lg:block" fill="currentColor" />
+        <PawPrint size={30} className="absolute bottom-[5%] right-[8%] text-white/80 rotate-12 pointer-events-none hidden 2xl:block" fill="currentColor" />
 
         {/* Join Petopia section — inspo: left-up (Join at ~57,195 / Petopia at ~188,213) */}
-        <div className="relative z-10 flex flex-col items-start w-full max-w-[490px] px-6 sm:px-8 lg:px-0 lg:ml-[95px] lg:mr-auto mt-16 sm:mt-20 lg:mt-[120px] lg:absolute lg:top-0 lg:left-0">
-          <p className="font-['Poppins',sans-serif] font-semibold text-[32px] sm:text-[38px] lg:text-[60px] text-black rotate-[-0.7deg] leading-none flex items-center gap-3 flex-wrap">
+        <div className="relative z-10 flex flex-col items-start w-full max-w-[490px] md:max-w-[34vw] px-6 sm:px-8 md:px-0 md:ml-[5vw] md:mr-auto mt-16 sm:mt-20 md:mt-0 md:absolute md:top-[8vw] md:left-0">
+          <p className="font-['Poppins',sans-serif] font-semibold text-[32px] sm:text-[38px] md:text-[3.5vw] text-black rotate-[-0.7deg] leading-none flex items-center gap-3 flex-wrap">
             {t("signup_tagline")}{" "}
-            <span className="font-['Prata',serif] font-normal text-[#047975] text-[40px] lg:text-[52px] leading-none">Petopia</span>
+            <span className="font-['Prata',serif] font-normal text-[#047975] text-[40px] md:text-[3vw] leading-none">Petopia</span>
             <PawPrint size={34} className="text-[#089D97]/50 -rotate-12" fill="currentColor" />
           </p>
-          <p className="font-['Poppins',sans-serif] text-[15px] lg:text-[25px] text-black max-w-[340px] leading-snug mt-3 lg:ml-[2px]">
+          <p className="font-['Poppins',sans-serif] text-[15px] md:text-[1.4vw] text-black max-w-[24vw] leading-snug mt-3 md:ml-[0.1vw]">
             {t("signup_subtitle")}
           </p>
-        </div>
-
-        {/* Two rabbits sitting together — inspo: big tan LEFT + small gray RIGHT, feet aligned, side-by-side */}
-        <div className="relative z-10 flex w-full justify-center items-end mt-4 lg:mt-0 lg:translate-x-0 lg:absolute lg:bottom-[20px] lg:left-[38px] lg:w-[600px] lg:justify-start lg:pl-0">
-          {/* Larger brown/orange rabbit on the LEFT (behind) — inspo at [-18,398] */}
-          <img
-            src={tanBunnyImg}
-            alt={t("signup_brown_rabbit_alt")}
-            className="w-[min(50vw,210px)] lg:w-[280px] lg:h-[280px] lg:object-cover h-auto object-contain relative z-0 ml-[10px] lg:ml-[12px]"
-          />
-          {/* Smaller gray rabbit tucked close on the RIGHT, beside the big one, feet aligned — inspo at [183,428] */}
-          <img
-            src={grayBunnyImg}
-            alt={t("signup_gray_rabbit_alt")}
-            className="w-[min(42vw,175px)] lg:w-[245px] lg:h-[245px] lg:object-cover h-auto object-contain relative z-10 lg:-ml-[100px] lg:translate-y-[8px] -ml-12"
-          />
         </div>
 
       </div>
 
       {/* ── Right Panel (white card) ── */}
-      <div className="relative flex-1 lg:min-h-[620px] flex items-center justify-center p-4 lg:p-4">
-        <div className="w-full max-w-[500px] relative mt-6 lg:mt-10">
-          {/* Peeking cat from behind the top-right edge of the card — inspo at [1158,177] rotated 90deg */}
+      <div className="relative flex-1 md:min-h-[620px] flex items-center justify-center p-4 md:p-4">
+        <div className="w-full max-w-[500px] md:w-[31vw] md:max-w-none relative mt-6 md:mt-[2vw]">
+        <div className="relative z-10 bg-white rounded-[24px] sm:rounded-[30px] shadow-xl px-5 sm:px-6 py-5 md:px-[2.1vw] md:py-[1.2vw] origin-top">
+          {/* The cat is part of the card, so it stays aligned with its border at every zoom level. */}
           <img
             src={catPhotoImg}
             alt=""
-            className="absolute top-1/2 -translate-y-1/2 -right-[24px] lg:-right-[120px] xl:-right-[188px] w-[min(30vw,130px)] lg:w-[220px] xl:w-[280px] h-auto object-contain pointer-events-none hidden md:block z-20 rotate-90"
+            className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-[min(30vw,130px)] xl:w-[clamp(180px,10vw,360px)] h-auto object-contain pointer-events-none hidden xl:block z-20 rotate-90"
           />
-        <div className="relative z-10 bg-white rounded-[24px] sm:rounded-[30px] shadow-xl px-5 sm:px-6 py-5 lg:px-10 lg:py-5 origin-top">
-          <h2 className="font-['Inter',sans-serif] font-semibold text-[24px] lg:text-[26px] text-black mb-1 text-center">{t("signup_title")}</h2>
-          <p className="font-['Inter',sans-serif] font-light text-[14px] lg:text-[15px] text-black mb-4 text-center">
+          <h2 className="font-['Inter',sans-serif] font-semibold text-[24px] md:text-[1.7vw] text-black mb-1 text-center">{t("signup_title")}</h2>
+          <p className="font-['Inter',sans-serif] font-light text-[14px] md:text-[0.95vw] text-black mb-4 text-center">
             {t("signup_subtitle2")}
           </p>
 
@@ -152,6 +149,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               icon={<User size={18} />}
               value={fullName}
               onChange={setFullName}
+              responsive
             />
 
             <InputField
@@ -161,6 +159,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               icon={<Mail size={18} />}
               value={email}
               onChange={setEmail}
+              responsive
             />
 
             <InputField
@@ -170,6 +169,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               icon={<Lock size={18} />}
               value={password}
               onChange={setPassword}
+              responsive
             />
 
             <InputField
@@ -179,6 +179,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               icon={<Lock size={18} />}
               value={confirmPassword}
               onChange={setConfirmPassword}
+              responsive
             />
 
             {/* Terms checkbox */}

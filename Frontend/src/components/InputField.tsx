@@ -9,6 +9,7 @@ interface InputFieldProps {
   icon?: React.ReactNode;
   value?: string;
   onChange?: (val: string) => void;
+  responsive?: boolean;
 }
 
 export default function InputField({
@@ -18,11 +19,15 @@ export default function InputField({
   icon,
   value = "",
   onChange,
+  responsive = false,
 }: InputFieldProps) {
   const [showPassword, setShowPassword] = useState(false);
   const { t } = useLanguage();
   const isPassword = type === "password";
   const inputType = isPassword && showPassword ? "text" : type;
+  const responsiveClasses = responsive
+    ? "xl:h-[clamp(48px,3vw,90px)] xl:px-[clamp(12px,1vw,28px)] xl:gap-[clamp(8px,0.7vw,20px)] xl:[&_svg]:size-[clamp(18px,1.1vw,30px)]"
+    : "";
 
   return (
     <div className="relative w-full">
@@ -31,7 +36,7 @@ export default function InputField({
         {label}
       </span>
 
-      <div className="relative flex items-center bg-white rounded-[10px] shadow-[0px_1px_2px_rgba(0,0,0,0.25)] border border-[#6b737a] h-[48px] px-3 gap-2">
+      <div className={`relative flex items-center bg-white rounded-[10px] shadow-[0px_1px_2px_rgba(0,0,0,0.25)] border border-[#6b737a] h-[48px] px-3 gap-2 ${responsiveClasses}`}>
         {/* Left icon */}
         {icon && <span className="shrink-0 text-[#5e6368]">{icon}</span>}
 
@@ -40,7 +45,7 @@ export default function InputField({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
-          className="flex-1 bg-transparent outline-none font-['Inter',sans-serif] text-[16px] text-[#384048] placeholder:text-[#384048]"
+          className={`flex-1 min-w-0 bg-transparent outline-none font-['Inter',sans-serif] text-[16px] text-[#384048] placeholder:text-[#384048] ${responsive ? "xl:text-[clamp(16px,1vw,28px)]" : ""}`}
         />
 
         {/* Password toggle */}

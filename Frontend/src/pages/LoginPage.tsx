@@ -69,68 +69,67 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[rgba(186,216,211,0.99)] flex flex-col">
+    <div className="min-h-screen bg-[rgba(186,216,211,0.99)] flex flex-col overflow-x-hidden">
       <Navbar onNavigate={onNavigate} />
 
-      {/* Two-column layout */}
-      <div className="flex flex-col lg:flex-row flex-1">
+      {/* Match the sign-up page: stack on small screens and use two fluid columns from md up. */}
+      <div className="relative flex flex-col md:flex-row flex-1 md:min-h-0 overflow-x-hidden pb-[70px] md:pb-[56px]">
 
         {/* ── Left Panel ── */}
-        <div className="relative flex-1 flex flex-col items-center justify-center overflow-hidden min-h-[360px] lg:min-h-0 py-10 lg:py-0">
+        <div className="relative flex-1 flex flex-col items-start overflow-hidden px-6 sm:px-8 md:px-0 py-8 sm:py-10 md:py-0 min-h-[360px] md:min-h-[620px]">
 
-          {/* Teal circle blob */}
-          <div className="absolute inset-0 pointer-events-none hidden lg:block">
-            <svg viewBox="0 0 600 600" fill="none" className="absolute w-[600px] h-auto top-1/2 left-0 -translate-y-1/2">
+          {/* One grouped hero: background shape, copy, and dog move together. */}
+          <div className="relative w-full max-w-[620px] md:max-w-[34vw] md:ml-[5vw] md:mr-auto md:mt-[8vw]">
+            <svg viewBox="0 0 600 600" fill="none" className="absolute w-[min(100%,600px)] md:w-[42vw] h-auto top-[70px] md:top-[2vw] left-1/2 -translate-x-1/2 pointer-events-none">
               <circle cx="300" cy="300" r="300" fill="#089D97" fillOpacity="0.15" />
             </svg>
-          </div>
 
           {/* Brand text block — positioned at top-left */}
-          <div className="absolute top-6 left-6 lg:top-12 lg:left-14 z-10 flex flex-col items-start">
-            <h2 className="font-['Prata',serif] text-[34px] sm:text-[40px] lg:text-[52px] text-[#047975] leading-tight mb-0">
+          <div className="relative z-10 flex w-full flex-col items-start">
+            <h2 className="font-['Prata',serif] text-[34px] sm:text-[40px] md:text-[3vw] text-[#047975] leading-tight mb-0">
               Petopia
             </h2>
           </div>
 
           {/* Welcome section — positioned left-center */}
-          <div className="absolute left-0 top-[32%] -translate-y-1/2 z-10 flex flex-col items-start px-6 sm:px-8 lg:px-14 w-full max-w-[420px]">
-            <p className="font-['Poppins',sans-serif] font-semibold text-[28px] sm:text-[32px] lg:text-[42px] text-black rotate-[-0.7deg] mb-2 leading-tight">
+          <div className="relative z-10 flex w-full max-w-[420px] flex-col items-start mt-8 sm:mt-10">
+            <p className="font-['Poppins',sans-serif] font-semibold text-[28px] sm:text-[32px] md:text-[3.5vw] text-black rotate-[-0.7deg] mb-2 leading-tight">
               {t("login_welcome_to")}
             </p>
-            <p className="font-['Poppins',sans-serif] text-[16px] lg:text-[20px] text-black max-w-[300px] leading-snug">
+            <p className="font-['Poppins',sans-serif] text-[16px] md:text-[1.4vw] text-black max-w-[300px] md:max-w-[24vw] leading-snug">
               {t("home_hero_desc1")}
             </p>
           </div>
 
           {/* Dog illustration */}
-          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-10 flex justify-center">
+          <div className="relative z-10 flex w-full justify-center mt-6 sm:mt-8">
             <img
               src={dogImg}
               alt=""
-              className="w-[280px] lg:w-[320px] h-auto object-contain"
+              className="w-[min(78vw,280px)] md:w-[min(36vw,500px)] h-auto object-contain"
             />
           </div>
-
           {/* Tagline card */}
-          <div className="hidden lg:flex absolute z-20 bottom-6 right-30 bg-[rgba(186,216,211,0.96)] border border-white rounded-[30px] shadow-[7px_7px_1px_0px_rgba(0,0,0,0.25)] px-5 py-4 max-w-[260px]">
+          <div className="relative z-20 self-end ml-auto -mt-16 sm:-mt-20 bg-[rgba(186,216,211,0.96)] border border-white rounded-[30px] shadow-[7px_7px_1px_0px_rgba(0,0,0,0.25)] px-5 py-4 max-w-[260px]">
               <p className="font-['Poppins',sans-serif] text-[14px] text-black leading-relaxed">
               {t("login_quote")}
             </p>
+          </div>
           </div>
 
           {/* Paw leaf — bottom-left */}
           <img
             src={pawLeafImg}
             alt=""
-            className="absolute bottom-[5%] left-[5%] w-[140px] h-auto pointer-events-none hidden lg:block"
+            className="absolute bottom-[5%] left-[5%] w-[clamp(70px,10vw,140px)] h-auto pointer-events-none hidden lg:block"
           />
         </div>
 
         {/* ── Right Panel ── */}
-        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-10 py-8 lg:py-10">
-          <div className="w-full max-w-[500px] bg-white rounded-[24px] sm:rounded-[30px] shadow-xl p-5 sm:p-8 lg:p-10 relative">
+        <div className="relative flex-1 md:min-h-[620px] flex items-center justify-center px-4 sm:px-6 md:px-10 py-8 md:py-10">
+          <div className="w-full max-w-[500px] md:w-[31vw] md:max-w-none relative mt-6 md:mt-[2vw] bg-white rounded-[24px] sm:rounded-[30px] shadow-xl px-5 py-5 sm:px-8 sm:py-8 md:px-[2.1vw] md:py-[1.2vw]">
             {/* Cat at the top of the card */}
-            <div className="absolute -top-[55px] left-0 hidden lg:block">
+            <div className="absolute -top-[55px] left-0">
               <img
                 src={catPhotoImg}
                 alt=""
@@ -151,16 +150,18 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
                 placeholder={t("login_enter_email")}
                 type="email"
                 icon={<User size={18} />}
-                value={email}
-                onChange={setEmail}
+              value={email}
+              onChange={setEmail}
+              responsive
               />
               <InputField
                 label={t("login_password")}
                 placeholder={t("login_enter_password")}
                 type="password"
                 icon={<Lock size={18} />}
-                value={password}
-                onChange={setPassword}
+              value={password}
+              onChange={setPassword}
+              responsive
               />
 
               <div className="flex items-center justify-end">
