@@ -24,7 +24,7 @@ const ALL_PERMISSIONS = [
 
 const ROLES: RoleDef[] = [
   { id: 1, name: "adopter", label: "Adopter", userCount: 120, permissions: ["view_pets", "view_requests", "view_adoptions", "view_chats"] },
-  { id: 2, name: "staff", label: "Staff / Employee", userCount: 8, permissions: ["view_pets", "manage_pets", "view_requests", "manage_requests", "view_adoptions", "view_chats", "manage_chats"] },
+  { id: 2, name: "employee", label: "Employee", userCount: 8, permissions: ["view_pets", "manage_pets", "view_requests", "manage_requests", "view_adoptions", "view_chats", "manage_chats"] },
   { id: 3, name: "vet", label: "Veterinarian", userCount: 3, permissions: ["view_pets", "view_medical", "manage_medical", "view_vaccinations", "manage_vaccinations"] },
   { id: 4, name: "manager", label: "Manager", userCount: 2, permissions: ["view_pets", "manage_pets", "view_requests", "manage_requests", "view_adoptions", "manage_adoptions", "view_inventory", "manage_inventory", "view_analytics", "manage_reports"] },
   { id: 5, name: "admin", label: "Administrator", userCount: 1, permissions: ALL_PERMISSIONS },

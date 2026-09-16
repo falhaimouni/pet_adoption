@@ -294,11 +294,26 @@ function listPets(params: URLSearchParams) {
   const status = params.get("status");
   const minAge = params.get("minAge");
   const maxAge = params.get("maxAge");
+  const sortBy = params.get("sortBy") ?? "createdAt";
+  const order = params.get("order") === "ASC" ? "ASC" : "DESC";
   if (species) data = data.filter((pet) => pet.species.toLowerCase() === species.toLowerCase());
   if (status) data = data.filter((pet) => pet.adoptionStatus.toLowerCase() === status.toLowerCase());
   if (minAge) data = data.filter((pet) => Number(pet.age ?? 0) >= Number(minAge));
   if (maxAge) data = data.filter((pet) => Number(pet.age ?? 0) <= Number(maxAge));
-  return data;
+  data.sort((a, b) => {
+    const left = sortBy === "age" ? Number(a.age ?? 0) : String(a[sortBy as keyof typeof a] ?? "");
+    const right = sortBy === "age" ? Number(b.age ?? 0) : String(b[sortBy as keyof typeof b] ?? "");
+    const result = typeof left === "number" && typeof right === "number"
+      ? left - right
+      : String(left).localeCompare(String(right));
+    return order === "ASC" ? result : -result;
+  });
+
+  const page = Math.max(1, Number(params.get("page") ?? 1));
+  const limit = Math.max(1, Number(params.get("limit") ?? 12));
+  const total = data.length;
+  const start = (page - 1) * limit;
+  return { data: data.slice(start, start + limit), total, page, limit };
 }
 
 function listSupplies(params: URLSearchParams) {

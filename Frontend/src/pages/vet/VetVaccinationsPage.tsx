@@ -4,7 +4,7 @@ import DashboardLayout from "../../components/DashboardLayout";
 import Badge, { statusBadge } from "../../components/Badge";
 import Modal from "../../components/Modal";
 import EmptyState from "../../components/EmptyState";
-import { apiFetch, PetResponse } from "../../lib/api";
+import { apiFetch, PaginatedResponse, PetResponse } from "../../lib/api";
 import { useLanguage } from "../../context/LanguageContext";
 
 interface Vaccination {
@@ -54,9 +54,10 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
     let cancelled = false;
     setPetsLoading(true);
     setPetsError("");
-    apiFetch<PetResponse[]>("/pets")
-      .then((data) => {
+    apiFetch<PaginatedResponse<PetResponse>>("/pets?limit=100&sortBy=name&order=ASC")
+      .then((response) => {
         if (!cancelled) {
+          const data = response.data;
           setPets(data);
           if (!routePetId && data[0]) setSelectedPetId((current) => current || data[0].petId);
         }

@@ -19,7 +19,7 @@ interface AdoptionRequest {
 
 interface StaffRequestsPageProps { onNavigate: (page: string) => void; role?: UserRole; activePage?: string; }
 
-export default function StaffRequestsPage({ onNavigate, role = "staff", activePage = "staff-requests" }: StaffRequestsPageProps) {
+export default function StaffRequestsPage({ onNavigate, role = "employee", activePage = "staff-requests" }: StaffRequestsPageProps) {
   const { t } = useLanguage();
   const [requests, setRequests] = useState<AdoptionRequest[]>([]);
   const [search, setSearch] = useState("");

@@ -57,7 +57,7 @@ const blankEmployee = {
 
 const roleLabel = (roleName?: string) => {
   const normalized = (roleName ?? "ADOPTER").toUpperCase();
-  if (normalized === "EMPLOYEE") return "staff";
+  if (normalized === "EMPLOYEE") return "employee";
   return normalized.toLowerCase();
 };
 

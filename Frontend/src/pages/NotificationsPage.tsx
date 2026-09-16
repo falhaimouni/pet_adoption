@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { apiFetch } from "../lib/api";
 
-type Role = "adopter" | "staff" | "vet" | "manager" | "admin";
+type Role = "adopter" | "employee" | "vet" | "manager" | "admin";
 
 interface NotificationItem {
   id: string;

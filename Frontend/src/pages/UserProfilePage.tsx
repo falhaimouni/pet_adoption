@@ -117,14 +117,14 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
   const role = user?.role ?? "adopter";
   const roleHome: Record<string, string> = {
     adopter: "pets",
-    staff: "staff-dashboard",
+    employee: "staff-dashboard",
     vet: "vet-dashboard",
     manager: "manager-dashboard",
     admin: "admin-dashboard",
   };
   const roleWork: Record<string, { label: string; page: string }> = {
     adopter: { label: t("profile_my_applications"), page: "my-requests" },
-    staff: { label: t("nav_adoption_requests"), page: "staff-requests" },
+    employee: { label: t("nav_adoption_requests"), page: "staff-requests" },
     vet: { label: t("nav_medical_records"), page: "vet-medical" },
     manager: { label: t("nav_inventory"), page: "manager-inventory" },
     admin: { label: t("nav_users"), page: "admin-users" },

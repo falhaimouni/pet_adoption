@@ -104,7 +104,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
   const breadcrumbs = [t(`role_${role}`), t("manager_inventory")];
   const totalPages = Math.max(1, Math.ceil(total / 10));
   const canDeleteSupplies = role === "admin" || role === "manager";
-  const canDeactivateStoreListing = role === "staff";
+  const canDeactivateStoreListing = role === "employee";
 
   const alertCount = useMemo(
     () => supplies.filter((item) => item.status === "OUT_OF_STOCK" || (item.status === "AVAILABLE" && item.quantity <= item.lowStockLimit)).length,

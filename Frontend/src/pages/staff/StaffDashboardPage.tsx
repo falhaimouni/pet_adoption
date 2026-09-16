@@ -16,7 +16,7 @@ interface StaffDashboardPageProps { onNavigate: (page: string) => void; }
 export default function StaffDashboardPage({ onNavigate }: StaffDashboardPageProps) {
   const { t } = useLanguage();
   return (
-    <DashboardLayout role="staff" activePage="staff-dashboard" onNavigate={onNavigate} pageTitle={t("staff_dashboard_title")} breadcrumbs={[t("role_staff"), t("nav_dashboard")]}>
+    <DashboardLayout role="employee" activePage="staff-dashboard" onNavigate={onNavigate} pageTitle={t("staff_dashboard_title")} breadcrumbs={[t("role_employee"), t("nav_dashboard")]}>
       {/* KPIs */}
       <div className="flex flex-wrap gap-4 mb-6">
         <KpiCard label={t("kpi_available_pets")} value={42} icon={<Heart size={20} />} trend={5} trendLabel={t("trend_vs_last_month")} />

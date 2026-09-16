@@ -23,7 +23,7 @@ interface StaffChatsListPageProps {
   readOnly?: boolean;
 }
 
-export default function StaffChatsListPage({ onNavigate, role = "staff", activePage = "staff-chats", detailPage = "staff-chat-detail", readOnly = false }: StaffChatsListPageProps) {
+export default function StaffChatsListPage({ onNavigate, role = "employee", activePage = "staff-chats", detailPage = "staff-chat-detail", readOnly = false }: StaffChatsListPageProps) {
   const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const [items, setItems] = useState<Conversation[]>([]);

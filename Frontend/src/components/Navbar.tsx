@@ -108,7 +108,7 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
   const dashboardPage =
     user?.role === "admin" ? "admin-dashboard"
     : user?.role === "manager" ? "manager-dashboard"
-    : user?.role === "staff" ? "staff-dashboard"
+    : user?.role === "employee" ? "staff-dashboard"
     : user?.role === "vet" ? "vet-dashboard"
     : "adopter-dashboard";
 

@@ -36,9 +36,9 @@ export default function Badge({ label, variant = "neutral", size = "sm" }: Badge
 function translateBadgeLabel(label: string, t: (key: string) => string) {
   const normalized = label.trim().toLowerCase().replace(/\s+/g, "_");
   const aliases: Record<string, string> = {
-    staff: "role_staff",
-    employee: "role_staff",
-    employees: "role_staff_plural",
+    staff: "role_employee",
+    employee: "role_employee",
+    employees: "role_employee_plural",
     vet: "role_vet",
     veterinarian: "role_vet",
     manager: "role_manager",

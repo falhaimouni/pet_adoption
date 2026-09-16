@@ -59,7 +59,7 @@ interface AdminOrdersPageProps {
 
 function orderPageForRole(role: UserRole) {
   if (role === "manager") return "manager-orders";
-  if (role === "staff") return "staff-orders";
+  if (role === "employee") return "staff-orders";
   return "admin-orders";
 }
 
