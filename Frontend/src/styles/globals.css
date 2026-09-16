@@ -1,3 +1,31 @@
+html,
+body,
+#root {
+  min-width: 0;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+img,
+svg,
+canvas,
+video {
+  max-width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  min-width: 0;
+}
+
+button {
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 640px) {
   .overflow-x-auto {
     -webkit-overflow-scrolling: touch;

@@ -139,7 +139,7 @@ export default function StaffPetsPage({ onNavigate, role = "staff", activePage =
 
   async function uploadImage(file?: File) {
     if (!imagePet || !file) return;
-    const validation = validateImageFile(file);
+    const validation = validateImageFile(file, t);
     if (validation) {
       setError(validation);
       return;

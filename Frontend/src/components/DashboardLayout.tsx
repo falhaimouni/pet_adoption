@@ -145,7 +145,7 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuth();
-  const { t, lang, setLang } = useLanguage();
+  const { t, lang, setLang, isRtl } = useLanguage();
   const { isDark, toggleTheme } = useTheme();
   const { count } = useCart();
   const displayName = userName ?? user?.name ?? "Guest";
@@ -175,6 +175,12 @@ export default function DashboardLayout({
       window.removeEventListener("petopia:notifications-changed", loadUnread);
     };
   }, []);
+
+  const sidebarTransform = sidebarOpen
+    ? "translate-x-0"
+    : isRtl
+      ? "translate-x-full lg:translate-x-0"
+      : "-translate-x-full lg:translate-x-0";
 
   const topNavItems = [
     { id: "home", label: t("nav_home"), page: homePageForRole(role) },
@@ -302,14 +308,14 @@ export default function DashboardLayout({
         {/* Sidebar */}
         <aside
           className={`
-            fixed lg:relative top-0 lg:top-auto left-0 z-40 lg:z-auto
+            dashboard-sidebar fixed lg:relative top-0 lg:top-auto ${isRtl ? "right-0" : "left-0"} z-40 lg:z-auto
             w-[240px] bg-[#80bdba] rounded-r-[10px] lg:rounded-[10px]
             flex flex-col pt-4 pb-4 mt-0 lg:mt-[16px] lg:ml-[14px] mb-[16px]
             transition-transform duration-300 h-full lg:h-[calc(100vh-112px)] lg:shrink-0
-            ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+            ${sidebarTransform}
           `}
         >
-          <button className="lg:hidden absolute top-3 right-3 text-black" onClick={() => setSidebarOpen(false)}>
+          <button className={`lg:hidden absolute top-3 ${isRtl ? "left-3" : "right-3"} text-black`} onClick={() => setSidebarOpen(false)}>
             <X size={20} />
           </button>
 

@@ -70,7 +70,7 @@ export default function PetDetailPage({ onNavigate, petId, embedded = false }: P
       return;
     }
     if (user?.role !== "adopter") {
-      setSubmitError("Only adopter accounts can submit adoption requests.");
+      setSubmitError(t("pet_adopter_only_requests"));
       return;
     }
 

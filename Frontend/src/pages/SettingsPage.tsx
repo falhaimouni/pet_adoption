@@ -43,11 +43,11 @@ export default function SettingsPage({ onNavigate, embedded = false }: SettingsP
     setPwError("");
     setPwSuccess(false);
     if (!isStrongPassword(pwForm.next)) {
-      setPwError("Password must include uppercase, lowercase, number, and symbol.");
+      setPwError(t("reset_password_rules_error"));
       return;
     }
     if (pwForm.next !== pwForm.confirm) {
-      setPwError("Passwords do not match.");
+      setPwError(t("signup_password_mismatch"));
       return;
     }
     try {
