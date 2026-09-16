@@ -2,6 +2,7 @@
 
 set -euo pipefail
 
+
 : "${POSTGRES_USER:?POSTGRES_USER is required}"
 : "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
 : "${POSTGRES_DB:?POSTGRES_DB is required}"

@@ -29,7 +29,7 @@ services:
       - ${ENV_FILE:-.env.development}
     environment:
       - POSTGRES_HOST=postgres
-      - NODE_ENV=${NODE_ENV:-development}
+      - NODE_ENV=production
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,8 +77,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
       TZ: Asia/Amman
-      # TEMPORARY TEST:
-      # Run once every minute so we can prove scheduling works.
       BACKUP_SCHEDULE: "0 2 * * *"
       RETENTION_DAYS: "7"
     healthcheck:

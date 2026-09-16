@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+umask 077
+
 BACKUP_DIR="/backups"
 
 DB_USER="$(cat /run/backup/db_user)"
@@ -33,6 +35,8 @@ if [ ! -s "$TEMP_FILE" ]; then
 fi
 
 mv "$TEMP_FILE" "$BACKUP_FILE"
+
+chmod 600 "$BACKUP_FILE"
 
 # Make the resulting file use the same ownership as the host backup folder.
 BACKUP_OWNER="$(stat -c '%u:%g' "$BACKUP_DIR")"
