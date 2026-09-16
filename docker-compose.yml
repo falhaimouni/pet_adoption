@@ -92,9 +92,28 @@ services:
       - ./backups:/backups
     networks:
       - private
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: pet_adoption_prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    networks:
+      - private
+      - public
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
 volumes:
   postgres_data:
   backend_uploads:
+  prometheus_data:
 networks:
   public:
   private:
