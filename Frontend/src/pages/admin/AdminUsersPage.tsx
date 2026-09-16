@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import { Search, Edit, Trash2, Eye, RefreshCw, UserPlus } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Search, Edit, Trash2, Eye, RefreshCw, UserPlus, Camera } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import Badge, { statusBadge } from "../../components/Badge";
 import Modal from "../../components/Modal";
 import Pagination from "../../components/Pagination";
 import EmptyState from "../../components/EmptyState";
 import { apiFetch, resolveAssetUrl } from "../../lib/api";
+import { validateImageFile } from "../../lib/validation";
 import type { UserRole } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import profileImg from "../../imports/MyPetopia/0ade9078bed97f834442fbb8c3bc4424aaf43269.png";
@@ -17,6 +18,7 @@ interface UserRecord {
   email: string;
   avatar?: string | null;
   phone?: string | null;
+  address?: string | null;
   status: string;
   createdAt?: string;
   updatedAt?: string;
@@ -51,6 +53,19 @@ const blankEmployee = {
   departmentId: "",
   hireDate: "",
   salary: "",
+  address: "",
+  status: "active",
+};
+
+const blankEditForm = {
+  firstName: "",
+  lastName: "",
+  phone: "",
+  avatar: "",
+  roleId: "",
+  departmentId: "",
+  salary: "",
+  hireDate: "",
   address: "",
   status: "active",
 };
@@ -155,7 +170,9 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
   const [viewUser, setViewUser] = useState<UserRecord | null>(null);
   const [deleteUser, setDeleteUser] = useState<UserRecord | null>(null);
   const [editUser, setEditUser] = useState<UserRecord | null>(null);
-  const [editForm, setEditForm] = useState({ roleId: "", status: "active" });
+  const [editForm, setEditForm] = useState(blankEditForm);
+  const [editAvatarPreview, setEditAvatarPreview] = useState("");
+  const [editAvatarFile, setEditAvatarFile] = useState<File | null>(null);
   const [employeeOpen, setEmployeeOpen] = useState(false);
   const [employeeForm, setEmployeeForm] = useState(blankEmployee);
   const [roles, setRoles] = useState<RoleOption[]>([]);
@@ -166,25 +183,31 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [formError, setFormError] = useState("");
+  const editAvatarRef = useRef<HTMLInputElement>(null);
   const canDelete = role === "admin";
   const canCreateEmployee = role === "admin";
 
+  const visibleUsers = useMemo(
+    () => role === "manager" ? users.filter((user) => canManageUser(role, user.role?.roleName)) : users,
+    [role, users],
+  );
+
   const roleOptions = useMemo(() => {
     const roles = new Map<string, string>();
-    users.forEach((user) => {
+    visibleUsers.forEach((user) => {
       if (user.role?.roleId && user.role?.roleName) roles.set(user.role.roleId, roleLabel(user.role.roleName));
     });
     return Array.from(roles, ([roleId, label]) => ({ roleId, label })).filter((role) => role.label !== "admin");
-  }, [users]);
+  }, [visibleUsers]);
 
-  const filterRoles = ["all", ...Array.from(new Set(users.map((u) => roleLabel(u.role?.roleName))))];
+  const filterRoles = ["all", ...Array.from(new Set(visibleUsers.map((u) => roleLabel(u.role?.roleName))))];
   const selectedEmployeeRole = roles.find((item) => item.roleId === employeeForm.roleId);
   const selectedEmployeeRoleName = selectedEmployeeRole?.roleName?.toUpperCase() ?? "";
   const expectedDepartmentName = ROLE_DEPARTMENT_NAMES[selectedEmployeeRoleName];
   const departmentOptions = expectedDepartmentName
     ? departments.filter((item) => item.departmentName.trim().toLowerCase() === expectedDepartmentName.toLowerCase())
     : [];
-  const filtered = users.filter((u) => {
+  const filtered = visibleUsers.filter((u) => {
     const name = `${u.firstName} ${u.lastName}`.toLowerCase();
     const ms = name.includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
     const mr = roleFilter === "all" || roleLabel(u.role?.roleName) === roleFilter;
@@ -269,9 +292,42 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
       setFormError(t("error_lower_role_only"));
       return;
     }
+    if (role === "admin") {
+      void loadEmployeeLookups();
+    } else {
+      setDepartments(departmentFallbackFromUsers(visibleUsers));
+    }
     setEditUser(user);
-    setEditForm({ roleId: user.role.roleId, status: user.status });
+    setEditForm({
+      firstName: user.firstName ?? "",
+      lastName: user.lastName ?? "",
+      phone: user.phone ?? "",
+      avatar: user.avatar ?? "",
+      roleId: user.role.roleId,
+      departmentId: user.employeeProfile?.departmentId ?? "",
+      salary: user.employeeProfile?.salary == null ? "" : String(user.employeeProfile.salary),
+      hireDate: user.employeeProfile?.hireDate?.slice(0, 10) ?? "",
+      address: user.employeeProfile?.address ?? user.address ?? "",
+      status: user.status,
+    });
+    setEditAvatarPreview(user.avatar ? resolveAssetUrl(user.avatar) : "");
+    setEditAvatarFile(null);
     setFormError("");
+  }
+
+  function handleEditAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const validation = validateImageFile(file, t);
+    if (validation) {
+      setFormError(validation);
+      e.target.value = "";
+      return;
+    }
+    setEditAvatarFile(file);
+    const reader = new FileReader();
+    reader.onload = (event) => setEditAvatarPreview(event.target?.result as string);
+    reader.readAsDataURL(file);
   }
 
   async function saveUser() {
@@ -280,16 +336,56 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
       setFormError(t("error_lower_role_only"));
       return;
     }
+    if (editForm.salary && Number(editForm.salary) < 0) {
+      setFormError(t("error_salary_nonnegative"));
+      return;
+    }
+    if (editForm.salary && !Number.isFinite(Number(editForm.salary))) {
+      setFormError(t("error_salary_nonnegative"));
+      return;
+    }
     setSaving(true);
     setFormError("");
-    const body: { status?: string; roleId?: string } = { status: editForm.status };
+    const hasEmployeeProfile = Boolean(editUser.employeeProfile);
+    const body: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      status?: string;
+      roleId?: string;
+      departmentId?: string;
+      salary?: number;
+      hireDate?: string;
+      address?: string;
+    } = {
+      firstName: editForm.firstName.trim(),
+      lastName: editForm.lastName.trim(),
+      phone: editForm.phone.trim(),
+      status: editForm.status,
+    };
     if (role === "admin" && editForm.roleId && editForm.roleId !== editUser.role.roleId) body.roleId = editForm.roleId;
+    if (hasEmployeeProfile) {
+      if (editForm.departmentId) body.departmentId = editForm.departmentId;
+      if (editForm.salary !== "") body.salary = Number(editForm.salary);
+      if (editForm.hireDate) body.hireDate = editForm.hireDate;
+      body.address = editForm.address.trim();
+    }
     try {
       await apiFetch(`/users/${editUser.userId}`, {
         method: "PATCH",
         body: JSON.stringify(body),
       });
+      if (editAvatarFile) {
+        const avatarBody = new FormData();
+        avatarBody.append("file", editAvatarFile);
+        await apiFetch(`/users/${editUser.userId}/avatar`, {
+          method: "POST",
+          body: avatarBody,
+        });
+      }
       setEditUser(null);
+      setEditAvatarPreview("");
+      setEditAvatarFile(null);
       loadUsers();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : t("error_update_user"));
@@ -466,10 +562,29 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
         )}
       </Modal>
 
-      <Modal title={t("edit_user")} open={!!editUser} onClose={() => setEditUser(null)} onConfirm={saveUser} confirmLabel={saving ? t("common_saving") : t("action_save_changes")} size="sm">
+      <Modal title={t("edit_user")} open={!!editUser} onClose={() => { setEditUser(null); setEditAvatarPreview(""); setEditAvatarFile(null); }} onConfirm={saveUser} confirmLabel={saving ? t("common_saving") : t("action_save_changes")} size="md">
         {editUser && (
-          <div className="space-y-4">
-            {formError && <p className="text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {formError && <p className="sm:col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
+            <div className="sm:col-span-2 flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-[rgba(8,157,151,0.15)] overflow-hidden shrink-0 flex items-center justify-center">
+                <img src={editAvatarPreview || profileImg} alt={t("profile_avatar_alt")} className="w-full h-full object-cover" />
+              </div>
+              <div>
+                <button type="button" onClick={() => editAvatarRef.current?.click()} className="inline-flex items-center gap-2 px-3 py-2 bg-[#089D97] text-white rounded-[10px] font-['Poppins',sans-serif] text-[12px] font-medium hover:bg-[#047975] transition-colors">
+                  <Camera size={14} /> {t("field_avatar")}
+                </button>
+                <input ref={editAvatarRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleEditAvatarChange} />
+                {editAvatarFile && <p className="mt-1 font-['Poppins',sans-serif] text-[11px] text-black/50">{editAvatarFile.name}</p>}
+              </div>
+            </div>
+            <Field label={t("field_first_name")} value={editForm.firstName} onChange={(value) => setEditForm((form) => ({ ...form, firstName: value }))} />
+            <Field label={t("field_last_name")} value={editForm.lastName} onChange={(value) => setEditForm((form) => ({ ...form, lastName: value }))} />
+            <div>
+              <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("field_email")}</label>
+              <p className="w-full rounded-[10px] bg-gray-50 px-3 py-2 font-['Poppins',sans-serif] text-[13px] text-black/60 min-h-[38px]">{editUser.email}</p>
+            </div>
+            <Field label={t("field_phone")} value={editForm.phone} onChange={(value) => setEditForm((form) => ({ ...form, phone: value }))} />
             {role === "admin" ? (
               <div>
                 <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("field_role")}</label>
@@ -490,6 +605,25 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
                 <option value="inactive">{t("status_inactive")}</option>
               </select>
             </div>
+            {editUser.employeeProfile && (
+              <>
+                <div>
+                  <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("field_department")}</label>
+                  <select value={editForm.departmentId} onChange={(e) => setEditForm((form) => ({ ...form, departmentId: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97] transition-colors">
+                    {editForm.departmentId && !departments.some((d) => d.departmentId === editForm.departmentId) && (
+                      <option value={editForm.departmentId}>{editUser.employeeProfile.department?.departmentName ?? t("field_department")}</option>
+                    )}
+                    {departments.map((d) => <option key={d.departmentId} value={d.departmentId}>{d.departmentName}</option>)}
+                  </select>
+                </div>
+                <Field label={t("field_hire_date")} type="date" value={editForm.hireDate} onChange={(value) => setEditForm((form) => ({ ...form, hireDate: value }))} />
+                <Field label={t("field_salary")} type="number" value={editForm.salary} onChange={(value) => setEditForm((form) => ({ ...form, salary: value }))} />
+                <div className="sm:col-span-2">
+                  <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("field_address")}</label>
+                  <textarea value={editForm.address} onChange={(e) => setEditForm((form) => ({ ...form, address: e.target.value }))} rows={2} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />
+                </div>
+              </>
+            )}
           </div>
         )}
       </Modal>

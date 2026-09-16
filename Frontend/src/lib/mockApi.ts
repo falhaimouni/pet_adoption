@@ -483,6 +483,13 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
   }
   const userMatch = url.pathname.match(/^\/users\/([^/]+)$/);
   if (userMatch && method === "GET") return withDelay(users.find((user) => user.userId === userMatch[1]) as T);
+  const userAvatarMatch = url.pathname.match(/^\/users\/([^/]+)\/avatar$/);
+  if (userAvatarMatch && method === "POST") {
+    const avatarFile = init.body instanceof FormData ? init.body.get("file") : null;
+    const avatar = avatarFile instanceof File ? URL.createObjectURL(avatarFile) : null;
+    users = users.map((user) => user.userId === userAvatarMatch[1] ? { ...user, avatar, updatedAt: now() } : user);
+    return withDelay(users.find((user) => user.userId === userAvatarMatch[1]) as T);
+  }
   if (userMatch && method === "PATCH") {
     users = users.map((user) => {
       if (user.userId !== userMatch[1]) return user;
