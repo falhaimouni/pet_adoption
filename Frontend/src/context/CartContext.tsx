@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
-import { Product, productImage } from "../data/products";
+import { Product, defaultSupplyImage } from "../data/products";
 import { apiFetch, resolveAssetUrl } from "../lib/api";
 import { useAuth } from "./AuthContext";
 
@@ -49,7 +49,7 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-function mapCartItem(item: BackendCartItem, index: number): CartItem {
+function mapCartItem(item: BackendCartItem): CartItem {
   const name = item.product?.productName ?? "Store item";
   const price = Number(item.unitPrice ?? item.product?.unitPrice ?? 0);
   return {
@@ -65,7 +65,7 @@ function mapCartItem(item: BackendCartItem, index: number): CartItem {
       category: "Store",
       subCategory: "Supply",
       price,
-      image: resolveAssetUrl(item.imageUrl) || productImage(index),
+      image: resolveAssetUrl(item.imageUrl) || defaultSupplyImage,
       rating: 0,
       reviewCount: 0,
       inStock: item.product?.isActive ?? true,

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { ShoppingCart, Star, ImageOff } from "lucide-react";
-import { Product } from "../data/products";
+import { ShoppingCart, Star } from "lucide-react";
+import { Product, defaultSupplyImage } from "../data/products";
 import { useCart } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
@@ -60,19 +60,13 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
         {!imgLoaded && !imgError && (
           <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 bg-[length:200%_100%]" />
         )}
-        {imgError ? (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-300">
-            <ImageOff size={36} />
-          </div>
-        ) : (
-          <img
-            src={product.image}
-            alt={product.name}
-            onLoad={() => setImgLoaded(true)}
-            onError={() => { setImgLoaded(true); setImgError(true); }}
-            className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
-          />
-        )}
+        <img
+          src={imgError ? defaultSupplyImage : product.image}
+          alt={product.name}
+          onLoad={() => setImgLoaded(true)}
+          onError={() => { setImgLoaded(true); setImgError(true); }}
+          className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+        />
 
         {/* Badge */}
         {product.badge && (
