@@ -4,7 +4,7 @@ import DashboardLayout from "../../components/DashboardLayout";
 import Badge, { statusBadge } from "../../components/Badge";
 import EmptyState from "../../components/EmptyState";
 import Pagination from "../../components/Pagination";
-import { apiFetch, PetResponse } from "../../lib/api";
+import { apiFetch, PaginatedResponse, PetResponse } from "../../lib/api";
 import { useLanguage } from "../../context/LanguageContext";
 
 interface VetPetsPageProps { onNavigate: (page: string, params?: Record<string, any>) => void; }
@@ -20,8 +20,8 @@ export default function VetPetsPage({ onNavigate }: VetPetsPageProps) {
   useEffect(() => {
     setLoading(true);
     setError("");
-    apiFetch<PetResponse[]>("/pets")
-      .then(setPets)
+    apiFetch<PaginatedResponse<PetResponse>>("/pets?limit=100&sortBy=name&order=ASC")
+      .then((response) => setPets(response.data))
       .catch((err) => setError(err instanceof Error ? err.message : t("pets_load_error")))
       .finally(() => setLoading(false));
   }, []);

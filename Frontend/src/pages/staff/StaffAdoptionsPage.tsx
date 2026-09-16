@@ -17,7 +17,7 @@ interface Adoption {
 
 interface StaffAdoptionsPageProps { onNavigate: (page: string) => void; role?: UserRole; activePage?: string; }
 
-export default function StaffAdoptionsPage({ onNavigate, role = "staff", activePage = "staff-adoptions" }: StaffAdoptionsPageProps) {
+export default function StaffAdoptionsPage({ onNavigate, role = "employee", activePage = "staff-adoptions" }: StaffAdoptionsPageProps) {
   const { t } = useLanguage();
   const [items, setItems] = useState<Adoption[]>([]);
   const [search, setSearch] = useState("");

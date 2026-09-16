@@ -71,6 +71,13 @@ export interface PetResponse {
   images: PetImageResponse[];
 }
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 let refreshPromise: Promise<string | null> | null = null;
 
 async function refreshAccessToken() {

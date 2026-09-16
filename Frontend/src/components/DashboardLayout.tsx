@@ -13,7 +13,7 @@ import { useTheme } from "../context/ThemeContext";
 import { apiFetch } from "../lib/api";
 import { useCart } from "../context/CartContext";
 
-export type Role = "adopter" | "staff" | "vet" | "manager" | "admin";
+export type Role = "adopter" | "employee" | "vet" | "manager" | "admin";
 
 export interface NavItem {
   id: string;
@@ -36,7 +36,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "chats",          label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
         { id: "notifications",  label: t("nav_notifications"), icon: <Bell size={16} /> },
       ];
-    case "staff":
+    case "employee":
       return [
         { id: "staff-dashboard",  label: t("nav_dashboard"),         icon: <Home size={16} /> },
         { id: "staff-pets",       label: t("dash_pets"),             icon: <Heart size={16} /> },
@@ -94,7 +94,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
 function petsPageForRole(role: Role) {
   const map: Record<Role, string> = {
     adopter: "pets",
-    staff: "staff-pets",
+    employee: "staff-pets",
     vet: "vet-pets",
     manager: "manager-pets",
     admin: "admin-pets",
@@ -105,7 +105,7 @@ function petsPageForRole(role: Role) {
 function homePageForRole(role: Role) {
   const map: Record<Role, string> = {
     adopter: "adopter-dashboard",
-    staff: "staff-dashboard",
+    employee: "staff-dashboard",
     vet: "vet-dashboard",
     manager: "manager-dashboard",
     admin: "admin-dashboard",
@@ -116,7 +116,7 @@ function homePageForRole(role: Role) {
 function getRoleLabel(role: Role, t: TFn) {
   const map: Record<Role, string> = {
     adopter: t("role_adopter"),
-    staff:   t("role_staff"),
+    employee: t("role_employee"),
     vet:     t("role_vet"),
     manager: t("role_manager"),
     admin:   t("role_admin"),

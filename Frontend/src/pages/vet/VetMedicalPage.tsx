@@ -4,7 +4,7 @@ import DashboardLayout from "../../components/DashboardLayout";
 import Modal from "../../components/Modal";
 import Badge from "../../components/Badge";
 import EmptyState from "../../components/EmptyState";
-import { apiFetch, PetResponse } from "../../lib/api";
+import { apiFetch, PaginatedResponse, PetResponse } from "../../lib/api";
 import { useLanguage } from "../../context/LanguageContext";
 
 interface MedicalEntry {
@@ -51,9 +51,10 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
     let cancelled = false;
     setPetsLoading(true);
     setPetsError("");
-    apiFetch<PetResponse[]>("/pets")
-      .then((data) => {
+    apiFetch<PaginatedResponse<PetResponse>>("/pets?limit=100&sortBy=name&order=ASC")
+      .then((response) => {
         if (!cancelled) {
+          const data = response.data;
           setPets(data);
           if (!routePetId && data[0]) setSelectedPetId((current) => current || data[0].petId);
         }

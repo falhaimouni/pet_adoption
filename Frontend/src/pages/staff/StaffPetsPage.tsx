@@ -4,7 +4,7 @@ import DashboardLayout, { Role } from "../../components/DashboardLayout";
 import Badge, { statusBadge } from "../../components/Badge";
 import EmptyState from "../../components/EmptyState";
 import Modal from "../../components/Modal";
-import { apiFetch, PetResponse } from "../../lib/api";
+import { apiFetch, PaginatedResponse, PetResponse } from "../../lib/api";
 import { validateImageFile } from "../../lib/validation";
 import {
   COMMON_BREED_OPTIONS,
@@ -24,7 +24,7 @@ interface StaffPetsPageProps {
 
 const blank = { name: "", species: PET_SPECIES_OPTIONS[0], breed: "", age: "", gender: "", color: "", weight: "", description: "", adoptionStatus: PET_STATUS_OPTIONS[0], healthStatus: "" };
 
-export default function StaffPetsPage({ onNavigate, role = "staff", activePage = "staff-pets" }: StaffPetsPageProps) {
+export default function StaffPetsPage({ onNavigate, role = "employee", activePage = "staff-pets" }: StaffPetsPageProps) {
   const { t } = useLanguage();
   const [pets, setPets] = useState<PetResponse[]>([]);
   const [search, setSearch] = useState("");
@@ -39,13 +39,13 @@ export default function StaffPetsPage({ onNavigate, role = "staff", activePage =
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const canArchivePets = role === "admin" || role === "manager";
-  const canUploadPetImages = role === "admin" || role === "manager" || role === "staff";
+  const canUploadPetImages = role === "admin" || role === "manager" || role === "employee";
 
   function loadPets() {
     setLoading(true);
     setError("");
-    apiFetch<PetResponse[]>("/pets")
-      .then(setPets)
+    apiFetch<PaginatedResponse<PetResponse>>("/pets?limit=100&sortBy=name&order=ASC")
+      .then((response) => setPets(response.data))
       .catch((err) => setError(err instanceof Error ? err.message : t("pets_load_error")))
       .finally(() => setLoading(false));
   }

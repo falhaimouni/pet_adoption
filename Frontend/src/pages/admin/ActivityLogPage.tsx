@@ -12,10 +12,10 @@ interface LogEntry {
 const LOGS: LogEntry[] = [
   { id: 1, user: "Admin", role: "admin", action: "DELETE_USER", resource: "User", resourceId: "USR-088", ip: "192.168.1.1", timestamp: "2026-07-15 09:14:22", details: "Deleted user account for omar_test@example.com. Reason: Duplicate account.", severity: "critical" },
   { id: 2, user: "Lina Mansour", role: "manager", action: "EXPORT_REPORT", resource: "Report", resourceId: "RPT-012", ip: "192.168.1.15", timestamp: "2026-07-15 08:55:10", details: "Exported Adoption Summary PDF for date range 2026-01-01 to 2026-07-14.", severity: "info" },
-  { id: 3, user: "Sara Khalil", role: "staff", action: "APPROVE_REQUEST", resource: "AdoptionRequest", resourceId: "REQ-204", ip: "192.168.1.22", timestamp: "2026-07-14 16:40:05", details: "Approved adoption request by Roaa Abushreeha for pet Mochi (DOG-011).", severity: "info" },
+  { id: 3, user: "Sara Khalil", role: "employee", action: "APPROVE_REQUEST", resource: "AdoptionRequest", resourceId: "REQ-204", ip: "192.168.1.22", timestamp: "2026-07-14 16:40:05", details: "Approved adoption request by Roaa Abushreeha for pet Mochi (DOG-011).", severity: "info" },
   { id: 4, user: "Admin", role: "admin", action: "EDIT_ROLE", resource: "Role", resourceId: "ROLE-3", ip: "192.168.1.1", timestamp: "2026-07-14 13:20:00", details: "Modified permissions for Vet role. Added: manage_vaccinations. Removed: manage_inventory.", severity: "warning" },
-  { id: 5, user: "Nadia Farhat", role: "staff", action: "DELETE_PET", resource: "Pet", resourceId: "PET-072", ip: "192.168.1.30", timestamp: "2026-07-14 10:05:33", details: "Removed pet listing for Whiskers (CAT-072). Reason: Deceased.", severity: "warning" },
-  { id: 6, user: "Admin", role: "admin", action: "CREATE_USER", resource: "User", resourceId: "USR-137", ip: "192.168.1.1", timestamp: "2026-07-13 14:00:11", details: "Created new staff account for nadia.farhat@petopia.com.", severity: "info" },
+  { id: 5, user: "Nadia Farhat", role: "employee", action: "DELETE_PET", resource: "Pet", resourceId: "PET-072", ip: "192.168.1.30", timestamp: "2026-07-14 10:05:33", details: "Removed pet listing for Whiskers (CAT-072). Reason: Deceased.", severity: "warning" },
+  { id: 6, user: "Admin", role: "admin", action: "CREATE_USER", resource: "User", resourceId: "USR-137", ip: "192.168.1.1", timestamp: "2026-07-13 14:00:11", details: "Created new employee account for nadia.farhat@petopia.com.", severity: "info" },
   { id: 7, user: "Dr. Ahmad Nasser", role: "vet", action: "ADD_MEDICAL_RECORD", resource: "MedicalRecord", resourceId: "MED-099", ip: "192.168.1.18", timestamp: "2026-07-12 11:30:00", details: "Added checkup record for pet Buddy (DOG-005). Diagnosis: Healthy.", severity: "info" },
   { id: 8, user: "Admin", role: "admin", action: "UPLOAD_FILE", resource: "File", resourceId: "FILE-041", ip: "192.168.1.1", timestamp: "2026-07-11 09:00:00", details: "Uploaded supplier_contract.pdf to Files (Contracts category).", severity: "info" },
 ];
@@ -62,7 +62,7 @@ export default function ActivityLogPage({ onNavigate }: ActivityLogPageProps) {
               </div>
               <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[12px] bg-white outline-none focus:border-[#089D97]">
                 <option value="all">{t("roles_all")}</option>
-                {["admin", "manager", "staff", "vet", "adopter"].map((r) => <option key={r} value={r}>{t(`role_${r}`)}</option>)}
+                {["admin", "manager", "employee", "vet", "adopter"].map((r) => <option key={r} value={r}>{t(`role_${r}`)}</option>)}
               </select>
             </div>
 
@@ -81,7 +81,7 @@ export default function ActivityLogPage({ onNavigate }: ActivityLogPageProps) {
                       <td className="py-3 px-3 font-['Poppins',sans-serif] text-[11px] text-black/50 whitespace-nowrap font-mono">{log.timestamp}</td>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] font-medium text-[13px] text-black whitespace-nowrap">{log.user}</td>
                       <td className="py-3 px-3">
-                        <Badge label={log.role} variant={log.role === "admin" ? "rejected" : log.role === "manager" ? "warning" : log.role === "vet" ? "teal" : log.role === "staff" ? "info" : "success"} />
+                        <Badge label={log.role} variant={log.role === "admin" ? "rejected" : log.role === "manager" ? "warning" : log.role === "vet" ? "teal" : log.role === "employee" ? "info" : "success"} />
                       </td>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black font-mono">{log.action}</td>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60 whitespace-nowrap">{log.resource} <span className="text-black/30">#{log.resourceId}</span></td>

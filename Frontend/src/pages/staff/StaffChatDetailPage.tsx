@@ -29,7 +29,7 @@ interface StaffChatDetailPageProps {
   readOnly?: boolean;
 }
 
-export default function StaffChatDetailPage({ onNavigate, conversationId, role = "staff", activePage = "staff-chats", listPage = "staff-chats", readOnly = false }: StaffChatDetailPageProps) {
+export default function StaffChatDetailPage({ onNavigate, conversationId, role = "employee", activePage = "staff-chats", listPage = "staff-chats", readOnly = false }: StaffChatDetailPageProps) {
   const { user } = useAuth();
   const { t } = useLanguage();
   const [conversation, setConversation] = useState<ConversationDetail | null>(null);

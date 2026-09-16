@@ -28,7 +28,7 @@ import ChatsListPage from "../pages/adopter/ChatsListPage";
 import ChatDetailPage from "../pages/adopter/ChatDetailPage";
 import AdopterDashboardPage from "../pages/adopter/AdopterDashboardPage";
 
-// Staff pages
+// Employee pages
 import StaffDashboardPage from "../pages/staff/StaffDashboardPage";
 import StaffPetsPage from "../pages/staff/StaffPetsPage";
 import StaffRequestsPage from "../pages/staff/StaffRequestsPage";
@@ -74,7 +74,7 @@ const PUBLIC_PAGES = new Set<string>([
 const ROLE_PAGES: Record<string, UserRole[]> = {
   about: ["adopter"],
   pets: ["adopter"],
-  "pet-detail": ["adopter", "staff", "vet", "manager", "admin"],
+  "pet-detail": ["adopter", "employee", "vet", "manager", "admin"],
   shop: ["adopter"],
   cart: ["adopter"],
   orders: ["adopter"],
@@ -84,19 +84,19 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   "my-adoptions": ["adopter"],
   chats: ["adopter"],
   "chat-detail": ["adopter"],
-  "user-profile": ["adopter", "staff", "vet", "manager", "admin"],
-  settings: ["adopter", "staff", "vet", "manager", "admin"],
-  notifications: ["adopter", "staff", "vet", "manager", "admin"],
-  "staff-dashboard": ["staff"],
-  "staff-pets": ["staff"],
-  "staff-requests": ["staff"],
-  "staff-adoptions": ["staff"],
-  "staff-chats": ["staff"],
-  "staff-chat-detail": ["staff"],
-  "staff-orders": ["staff"],
-  "staff-inventory": ["staff"],
-  "staff-suppliers": ["staff"],
-  "staff-reports": ["staff"],
+  "user-profile": ["adopter", "employee", "vet", "manager", "admin"],
+  settings: ["adopter", "employee", "vet", "manager", "admin"],
+  notifications: ["adopter", "employee", "vet", "manager", "admin"],
+  "staff-dashboard": ["employee"],
+  "staff-pets": ["employee"],
+  "staff-requests": ["employee"],
+  "staff-adoptions": ["employee"],
+  "staff-chats": ["employee"],
+  "staff-chat-detail": ["employee"],
+  "staff-orders": ["employee"],
+  "staff-inventory": ["employee"],
+  "staff-suppliers": ["employee"],
+  "staff-reports": ["employee"],
   "vet-dashboard": ["vet"],
   "vet-pets": ["vet"],
   "vet-medical": ["vet"],
@@ -137,7 +137,7 @@ function homePageForRole(role: UserRole): string {
   switch (role) {
     case "admin": return "admin-dashboard";
     case "manager": return "manager-dashboard";
-    case "staff": return "staff-dashboard";
+    case "employee": return "staff-dashboard";
     case "vet": return "vet-dashboard";
     default: return "adopter-dashboard";
   }
@@ -289,17 +289,17 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "chats": return <ChatsListPage onNavigate={navigate} />;
     case "chat-detail": return <ChatDetailPage onNavigate={navigate} conversationId={params.conversationId as string} />;
 
-    // Staff
+    // Employee
     case "staff-dashboard": return <StaffDashboardPage onNavigate={navigate} />;
     case "staff-pets": return <StaffPetsPage onNavigate={navigate} />;
     case "staff-requests": return <StaffRequestsPage onNavigate={navigate} />;
     case "staff-adoptions": return <StaffAdoptionsPage onNavigate={navigate} />;
     case "staff-chats": return <StaffChatsListPage onNavigate={navigate} />;
     case "staff-chat-detail": return <StaffChatDetailPage onNavigate={navigate} conversationId={params.conversationId as string} />;
-    case "staff-orders": return <AdminOrdersPage onNavigate={navigate} role="staff" activePage="staff-orders" />;
-    case "staff-inventory": return <AdminInventoryPage onNavigate={navigate} role="staff" activePage="staff-inventory" />;
-    case "staff-suppliers": return <AdminSuppliersPage onNavigate={navigate} role="staff" activePage="staff-suppliers" />;
-    case "staff-reports": return <AdminReportsPage onNavigate={navigate} role="staff" activePage="staff-reports" />;
+    case "staff-orders": return <AdminOrdersPage onNavigate={navigate} role="employee" activePage="staff-orders" />;
+    case "staff-inventory": return <AdminInventoryPage onNavigate={navigate} role="employee" activePage="staff-inventory" />;
+    case "staff-suppliers": return <AdminSuppliersPage onNavigate={navigate} role="employee" activePage="staff-suppliers" />;
+    case "staff-reports": return <AdminReportsPage onNavigate={navigate} role="employee" activePage="staff-reports" />;
 
     // Vet
     case "vet-dashboard": return <VetDashboardPage onNavigate={navigate} />;

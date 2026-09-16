@@ -371,7 +371,7 @@ function MetricRow({ label, value }: { label: string; value: string }) {
 function roleDistribution(data: DashboardData | null, t: (key: string) => string) {
   return [
     { name: t("role_adopters"), value: data?.users.adopter ?? 0 },
-    { name: t("role_staff_plural"), value: data?.users.employee ?? 0 },
+    { name: t("role_employee_plural"), value: data?.users.employee ?? 0 },
     { name: t("role_vets"), value: data?.users.vet ?? 0 },
     { name: t("role_managers"), value: data?.users.manager ?? 0 },
     { name: t("role_admins"), value: data?.users.admin ?? 0 },
