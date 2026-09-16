@@ -8,7 +8,7 @@ import { Product, productImage } from "../data/products";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
-import { apiFetch } from "../lib/api";
+import { apiFetch, resolveAssetUrl } from "../lib/api";
 
 interface ShopPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
@@ -23,6 +23,7 @@ interface StoreSupply {
   sellingPrice: string;
   quantity?: number;
   inStock?: boolean;
+  imageUrl?: string | null;
   status?: string;
 }
 
@@ -47,7 +48,7 @@ function mapSupplyToProduct(supply: StoreSupply, index: number): Product {
     category: supply.category,
     subCategory: supply.category,
     price: Number(supply.sellingPrice),
-    image: productImage(index),
+    image: resolveAssetUrl(supply.imageUrl) || productImage(index),
     rating: 0,
     reviewCount: 0,
     inStock,

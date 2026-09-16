@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import { Product, productImage } from "../data/products";
-import { apiFetch } from "../lib/api";
+import { apiFetch, resolveAssetUrl } from "../lib/api";
 import { useAuth } from "./AuthContext";
 
 export interface CartItem {
@@ -9,6 +9,7 @@ export interface CartItem {
   cartItemId?: string;
   unitPrice: string;
   subtotal: string;
+  imageUrl?: string | null;
 }
 
 interface BackendCartItem {
@@ -17,6 +18,7 @@ interface BackendCartItem {
   quantity: number;
   unitPrice: string;
   subtotal: string;
+  imageUrl?: string | null;
   product?: {
     productId: string;
     productName: string;
@@ -63,7 +65,7 @@ function mapCartItem(item: BackendCartItem, index: number): CartItem {
       category: "Store",
       subCategory: "Supply",
       price,
-      image: productImage(index),
+      image: resolveAssetUrl(item.imageUrl) || productImage(index),
       rating: 0,
       reviewCount: 0,
       inStock: item.product?.isActive ?? true,

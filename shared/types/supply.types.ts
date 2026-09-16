@@ -12,4 +12,5 @@ export interface Supply {
   isActive: boolean;
   storeListed: boolean;
   status: SupplyStatusEnum;
+  imageUrl?: string | null;
 }

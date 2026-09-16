@@ -5,4 +5,5 @@ export interface OrderItemDto {
   quantity: number;
   unitPrice: string;
   subtotal: string;
+  imageUrl?: string | null;
 }

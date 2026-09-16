@@ -13,5 +13,7 @@ export class StoreSupplyDto{
   inStock!: boolean;
 
   storeListed!: boolean;
+
+  imageUrl?: string | null;
 }
 // this dto for one item in the product list
