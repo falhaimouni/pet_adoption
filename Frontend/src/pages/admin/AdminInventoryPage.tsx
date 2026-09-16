@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Edit, EyeOff, Package, Plus, Search, Settings, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, Edit, EyeOff, ImagePlus, Package, Plus, Search, Settings, Trash2 } from "lucide-react";
 import Badge, { statusBadge } from "../../components/Badge";
 import DashboardLayout, { Role } from "../../components/DashboardLayout";
 import EmptyState from "../../components/EmptyState";
 import Modal from "../../components/Modal";
 import Pagination from "../../components/Pagination";
 import { apiFetch } from "../../lib/api";
+import { validateImageFile } from "../../lib/validation";
 import { useLanguage } from "../../context/LanguageContext";
 
 type SupplyStatus = "AVAILABLE" | "OUT_OF_STOCK" | "EXPIRED" | "DAMAGED" | "DISCONTINUED";
@@ -98,13 +99,16 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<Supply | null>(null);
   const [deleteItem, setDeleteItem] = useState<Supply | null>(null);
+  const [imageSupply, setImageSupply] = useState<Supply | null>(null);
   const [form, setForm] = useState(blankForm);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const title = role === "admin" ? t("admin_inventory_mgmt") : t("manager_inventory");
   const breadcrumbs = [t(`role_${role}`), t("manager_inventory")];
   const totalPages = Math.max(1, Math.ceil(total / 10));
   const canDeleteSupplies = role === "admin" || role === "manager";
   const canDeactivateStoreListing = role === "employee";
+  const canUploadSupplyImages = role === "admin" || role === "manager" || role === "employee";
 
   const alertCount = useMemo(
     () => supplies.filter((item) => item.status === "OUT_OF_STOCK" || (item.status === "AVAILABLE" && item.quantity <= item.lowStockLimit)).length,
@@ -252,6 +256,47 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
     }
   }
 
+  function openImageUpload(item: Supply) {
+    setImageSupply(item);
+    setError("");
+    setSuccess("");
+    if (imageInputRef.current) imageInputRef.current.value = "";
+  }
+
+  async function uploadSupplyImage(file?: File) {
+    if (!imageSupply) return;
+    if (!file) {
+      setError("Please choose an image file first.");
+      return;
+    }
+    const validation = validateImageFile(file, t);
+    if (validation) {
+      setError(validation);
+      return;
+    }
+
+    const body = new FormData();
+    body.append("file", file);
+
+    setSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      await apiFetch<{ imageUrl: string }>(`/inventory/supplies/${imageSupply.supplyId}/image`, {
+        method: "POST",
+        body,
+      });
+      setSuccess(`Image updated for ${imageSupply.supplyName}.`);
+      setImageSupply(null);
+      if (imageInputRef.current) imageInputRef.current.value = "";
+      await loadSupplies();
+    } catch (err) {
+      setError(readError(err, "Unable to upload supply image."));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <DashboardLayout role={role} activePage={activePage} onNavigate={onNavigate} pageTitle={title} breadcrumbs={breadcrumbs}>
       {alertCount > 0 && (
@@ -340,6 +385,9 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
                       <td className="py-3 px-3">
                         <div className="flex gap-2 items-center">
                           <button onClick={() => openEdit(item)} className="text-blue-500 hover:text-blue-700 transition-colors" aria-label={`Edit ${item.supplyName}`}><Edit size={14} /></button>
+                          {canUploadSupplyImages && (
+                            <button onClick={() => openImageUpload(item)} className="text-amber-500 hover:text-amber-700 transition-colors" aria-label={`Upload image for ${item.supplyName}`}><ImagePlus size={14} /></button>
+                          )}
                           {canDeleteSupplies && (
                             <button onClick={() => setDeleteItem(item)} className="text-red-400 hover:text-red-600 transition-colors" aria-label={`Delete ${item.supplyName}`}><Trash2 size={14} /></button>
                           )}
@@ -425,6 +473,11 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
         <p className="font-['Poppins',sans-serif] text-[14px] text-black">
           {(canDeleteSupplies ? t("inventory_delete_confirm") : t("inventory_deactivate_confirm")).replace("{name}", deleteItem?.supplyName ?? "")}
         </p>
+      </Modal>
+
+      <Modal title="Upload Supply Image" open={!!imageSupply} onClose={() => setImageSupply(null)} onConfirm={() => uploadSupplyImage(imageInputRef.current?.files?.[0])} confirmLabel={saving ? t("pet_uploading") : t("action_upload")} size="sm">
+        <input ref={imageInputRef} type="file" accept="image/*,.jpg,.jpeg,.png,.webp" className="w-full text-[13px] font-['Poppins',sans-serif]" />
+        <p className="mt-2 font-['Poppins',sans-serif] text-[12px] text-black/50">{t("pet_upload_hint")}</p>
       </Modal>
     </DashboardLayout>
   );

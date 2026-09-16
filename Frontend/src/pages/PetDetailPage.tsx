@@ -5,7 +5,7 @@ import EmptyState from "../components/EmptyState";
 import { apiFetch, PetResponse } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
-import { getPetImageUrl, defaultPetImage } from "../lib/petImages";
+import { defaultPetImage, getPrimaryPetImageUrl } from "../lib/petImages";
 
 interface PetDetailPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
@@ -61,7 +61,7 @@ export default function PetDetailPage({ onNavigate, petId, embedded = false }: P
 
   useEffect(() => {
     setImageError(false);
-  }, [pet?.petId, pet?.images?.[0]?.imageUrl]);
+  }, [pet?.petId, pet?.images?.length]);
 
   async function submitAdoptionRequest() {
     if (!pet) return;
@@ -91,7 +91,7 @@ export default function PetDetailPage({ onNavigate, petId, embedded = false }: P
   }
 
   const status = pet?.adoptionStatus.toUpperCase() ?? "";
-  const imageUrl = getPetImageUrl(pet?.images?.[0]?.imageUrl);
+  const imageUrl = getPrimaryPetImageUrl(pet?.images);
 
   return (
     <div className={embedded ? "" : "min-h-screen bg-[#f0f8f7]"}>

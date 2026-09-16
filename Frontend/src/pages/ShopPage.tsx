@@ -4,7 +4,7 @@ import Navbar from "../components/Navbar";
 import ProductCard from "../components/ProductCard";
 import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
-import { Product, productImage } from "../data/products";
+import { Product, defaultSupplyImage } from "../data/products";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -34,7 +34,7 @@ interface StoreResponse {
   limit: number;
 }
 
-function mapSupplyToProduct(supply: StoreSupply, index: number): Product {
+function mapSupplyToProduct(supply: StoreSupply): Product {
   const inStock =
     supply.inStock ??
     ((supply.quantity ?? 0) > 0 && (supply.status == null || supply.status === "AVAILABLE"));
@@ -48,7 +48,7 @@ function mapSupplyToProduct(supply: StoreSupply, index: number): Product {
     category: supply.category,
     subCategory: supply.category,
     price: Number(supply.sellingPrice),
-    image: resolveAssetUrl(supply.imageUrl) || productImage(index),
+    image: resolveAssetUrl(supply.imageUrl) || defaultSupplyImage,
     rating: 0,
     reviewCount: 0,
     inStock,
@@ -193,7 +193,15 @@ export default function ShopPage({ onNavigate, embedded = false }: ShopPageProps
       <Modal title={quickView?.name ?? ""} open={!!quickView} onClose={() => setQuickView(null)} size="md">
         {quickView && (
           <div className="grid sm:grid-cols-[160px_1fr] gap-4">
-            <img src={quickView.image} alt={quickView.name} className="w-full aspect-square rounded-[14px] object-cover bg-[#f0f8f7]" />
+            <img
+              src={quickView.image}
+              alt={quickView.name}
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = defaultSupplyImage;
+              }}
+              className="w-full aspect-square rounded-[14px] object-cover bg-[#f0f8f7]"
+            />
             <div>
               <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87] mb-1">{quickView.category}</p>
               <p className="font-['Poppins',sans-serif] text-[14px] text-[#1a2e2d] leading-relaxed">{quickView.description}</p>
