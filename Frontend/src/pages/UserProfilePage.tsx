@@ -43,7 +43,7 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const validation = validateImageFile(file);
+    const validation = validateImageFile(file, t);
     if (validation) {
       setError(validation);
       e.target.value = "";
@@ -58,7 +58,7 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
   async function handleSave() {
     setError("");
     if (!form.firstName.trim() || !form.lastName.trim()) {
-      setError("First and last name are required.");
+      setError(t("profile_first_last_required"));
       return;
     }
     setSaving(true);
@@ -197,7 +197,7 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
             {isEditing ? (
               <>
                 <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-5 py-2.5 rounded-[12px] bg-[#089D97] text-white font-['Poppins',sans-serif] text-[13px] font-semibold hover:bg-[#047975] transition-colors shadow-sm disabled:opacity-60">
-                  <Save size={15} /> {saving ? "Saving..." : t("profile_save")}
+                  <Save size={15} /> {saving ? t("profile_saving") : t("profile_save")}
                 </button>
                 <button onClick={handleCancel} className="flex items-center gap-2 px-5 py-2.5 rounded-[12px] bg-[#f0f8f7] text-[#5a8a87] font-['Poppins',sans-serif] text-[13px] font-semibold hover:bg-[#e0f2f0] transition-colors">
                   <X size={15} /> {t("profile_cancel")}
@@ -242,7 +242,7 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
               <Field label={t("profile_phone")} icon={Phone}>
                 {isEditing ? <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={fieldClass} /> : <p className={readClass}>{form.phone || "—"}</p>}
               </Field>
-              <Field label="Address" icon={MapPin}>
+              <Field label={t("profile_address")} icon={MapPin}>
                 {isEditing ? <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} rows={3} maxLength={1000} className={`${fieldClass} resize-none sm:col-span-2`} /> : <p className={readClass}>{form.address || "—"}</p>}
               </Field>
             </div>

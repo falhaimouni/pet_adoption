@@ -208,7 +208,7 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
               </button>
 
               {notificationsOpen && (
-                <div className="absolute right-0 top-full mt-3 w-[340px] max-w-[calc(100vw-2rem)] bg-white rounded-[18px] shadow-2xl border border-[rgba(8,157,151,0.12)] overflow-hidden z-50">
+                <div className="petopia-popover absolute right-0 top-full mt-3 w-[340px] max-w-[calc(100vw-2rem)] bg-white rounded-[18px] shadow-2xl border border-[rgba(8,157,151,0.12)] overflow-hidden z-50">
                   <div className="px-4 py-3 border-b border-[#f0f8f7] flex items-center justify-between gap-3">
                     <div>
                       <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-[#1a2e2d]">{t("notif_title")}</p>
@@ -280,7 +280,7 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
               </button>
 
               {dropdownOpen && (
-                <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-[16px] shadow-xl border border-[rgba(8,157,151,0.1)] py-2 z-50">
+                <div className="petopia-popover absolute right-0 top-full mt-2 w-52 bg-white rounded-[16px] shadow-xl border border-[rgba(8,157,151,0.1)] py-2 z-50">
                   <div className="px-4 py-3 border-b border-[#f0f8f7]">
                     <p className="font-['Poppins',sans-serif] font-semibold text-[13px] text-[#1a2e2d] truncate">{user.name}</p>
                     <p className="font-['Poppins',sans-serif] text-[11px] text-[#5a8a87] truncate capitalize">{user.role} · @{user.username}</p>

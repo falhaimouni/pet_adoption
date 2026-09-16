@@ -97,7 +97,7 @@ export default function StaffChatDetailPage({ onNavigate, conversationId, role =
 
   return (
     <DashboardLayout role={role} activePage={activePage} onNavigate={onNavigate}>
-      <div className="max-w-3xl flex flex-col bg-white rounded-[15px] shadow-md overflow-hidden" style={{ height: "calc(100vh - 160px)" }}>
+      <div className="w-full max-w-3xl flex flex-col bg-white rounded-[15px] shadow-md overflow-hidden h-[min(720px,calc(100dvh-128px))] min-h-[420px]">
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
           <button onClick={() => onNavigate(listPage)} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label={t("chat_back_inbox")}><ArrowLeft size={20} /></button>
           <MessageCircle size={20} className="text-[#089D97]" />
@@ -123,7 +123,7 @@ export default function StaffChatDetailPage({ onNavigate, conversationId, role =
                 const fromMe = m.senderId === user?.id;
                 return (
                   <div key={m.messageId} className={`flex ${fromMe ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[75%] rounded-[16px] px-4 py-2.5 ${fromMe ? "bg-[#089D97] text-white rounded-tr-[4px]" : "bg-white text-black shadow-sm rounded-tl-[4px]"}`}>
+                    <div className={`max-w-[88%] sm:max-w-[75%] rounded-[16px] px-4 py-2.5 ${fromMe ? "bg-[#089D97] text-white rounded-tr-[4px]" : "bg-white text-black shadow-sm rounded-tl-[4px]"}`}>
                       <p className="font-['Poppins',sans-serif] text-[13px] leading-relaxed whitespace-pre-wrap break-words">{m.message}</p>
                       <span className={`block text-right font-['Poppins',sans-serif] text-[10px] mt-1 ${fromMe ? "text-white/70" : "text-black/40"}`}>{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                     </div>

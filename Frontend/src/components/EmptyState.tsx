@@ -13,7 +13,7 @@ export default function EmptyState({ icon, title, description, action, actionLab
   const btnClick = onAction ?? action?.onClick;
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
+    <div className="flex flex-col items-center justify-center py-10 sm:py-16 px-3 text-center min-w-0">
       {icon && (
         <div className="w-[64px] h-[64px] bg-[rgba(8,157,151,0.12)] rounded-full flex items-center justify-center text-[#089D97] mb-4">
           {icon}
@@ -21,7 +21,7 @@ export default function EmptyState({ icon, title, description, action, actionLab
       )}
       <p className="font-['Poppins',sans-serif] font-semibold text-[18px] text-black mb-2">{title}</p>
       {description && (
-        <p className="font-['Poppins',sans-serif] text-[14px] text-black/60 max-w-[300px]">{description}</p>
+        <p className="font-['Poppins',sans-serif] text-[14px] text-black/60 max-w-[min(100%,320px)] break-words">{description}</p>
       )}
       {btnLabel && btnClick && (
         <button

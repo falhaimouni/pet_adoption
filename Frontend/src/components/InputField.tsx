@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 interface InputFieldProps {
   label: string;
@@ -19,6 +20,7 @@ export default function InputField({
   onChange,
 }: InputFieldProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const { t } = useLanguage();
   const isPassword = type === "password";
   const inputType = isPassword && showPassword ? "text" : type;
 
@@ -46,6 +48,7 @@ export default function InputField({
           <button
             type="button"
             onClick={() => setShowPassword((p) => !p)}
+            aria-label={showPassword ? t("password_hide") : t("password_show")}
             className="shrink-0 text-[#5e6368] hover:text-[#384048] transition-colors"
           >
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}

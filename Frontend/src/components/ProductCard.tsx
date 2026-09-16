@@ -116,7 +116,7 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
               try {
                 await addToCart(product);
               } catch (err) {
-                setError(err instanceof Error ? err.message : "Unable to add item.");
+                setError(err instanceof Error ? err.message : t("product_add_error"));
               } finally {
                 setAdding(false);
               }
@@ -125,7 +125,7 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
             className={`w-full flex items-center justify-center gap-2 py-2.5 font-['Poppins',sans-serif] font-medium text-[13px] rounded-[11px] transition-all duration-200 ${inCart ? "bg-[#e0f2f0] text-[#089D97] border-2 border-[#089D97]" : "bg-[#089D97] text-white hover:bg-[#047975]"} disabled:opacity-40 disabled:cursor-not-allowed`}
           >
             <ShoppingCart size={14} />
-            {adding ? "Adding..." : inCart ? t("product_in_cart") : t("product_add_to_cart")}
+            {adding ? t("product_adding") : inCart ? t("product_in_cart") : t("product_add_to_cart")}
           </button>
         )}
         {error && <p className="font-['Poppins',sans-serif] text-[11px] text-red-600">{error}</p>}

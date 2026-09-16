@@ -125,6 +125,55 @@ let supplies = PRODUCTS.map((product) => ({
   lastUpdated: now(),
 }));
 
+let mockCartItems: Array<{ productId: string; quantity: number }> = [];
+let mockOrders: Array<Record<string, unknown>> = [
+  {
+    orderId: "mock-order-demo",
+    userId: "mock-adopter",
+    totalPrice: "31.48",
+    recipientName: "Adopter Demo",
+    phoneNumber: "+962-6-5001234",
+    addressLine: "Rainbow Street",
+    city: "Amman",
+    postalCode: null,
+    deliveryNotes: "Leave at reception.",
+    orderStatus: "COMPLETED",
+    createdAt: now(),
+    updatedAt: now(),
+    user: { firstName: "Adopter", lastName: "Demo", email: "adopter@petopia.test" },
+    orderItems: [
+      {
+        orderItemId: "mock-order-item-demo-1",
+        orderId: "mock-order-demo",
+        productId: String(PRODUCTS[0].id),
+        quantity: 1,
+        unitPrice: PRODUCTS[0].price.toFixed(2),
+        subtotal: PRODUCTS[0].price.toFixed(2),
+        product: { productName: PRODUCTS[0].name },
+      },
+      {
+        orderItemId: "mock-order-item-demo-2",
+        orderId: "mock-order-demo",
+        productId: String(PRODUCTS[1].id),
+        quantity: 5,
+        unitPrice: PRODUCTS[1].price.toFixed(2),
+        subtotal: (PRODUCTS[1].price * 5).toFixed(2),
+        product: { productName: PRODUCTS[1].name },
+      },
+    ],
+    payments: [{
+      paymentId: "mock-payment-demo",
+      orderId: "mock-order-demo",
+      amount: "31.48",
+      paymentMethod: "CASH",
+      paymentStatus: "PAID",
+      paidAt: now(),
+      createdAt: now(),
+      updatedAt: now(),
+    }],
+  },
+];
+
 let notifications = [
   { id: "notif-1", notificationId: "notif-1", title: "New adoption request", message: "Mochi has a new interested adopter.", type: "ADOPTION", status: "UNREAD", createdAt: now(), isRead: false },
   { id: "notif-2", notificationId: "notif-2", title: "Low stock", message: "Some store supplies are near the low stock limit.", type: "INVENTORY", status: "READ", createdAt: now(), isRead: true },
@@ -281,6 +330,81 @@ function listStoreSupplies(params: URLSearchParams) {
   const total = data.length;
   const start = (page - 1) * limit;
   return { data: data.slice(start, start + limit), total, page, limit };
+}
+
+function supplyForProduct(productId: string) {
+  return supplies.find(
+    (item) =>
+      String(item.productId) === productId &&
+      item.isActive !== false &&
+      item.storeListed !== false &&
+      item.status === "AVAILABLE" &&
+      Number(item.quantity ?? 0) > 0,
+  );
+}
+
+function mockCartResponse() {
+  return {
+    cartId: `mock-cart-${currentProfile.userId}`,
+    userId: currentProfile.userId,
+    cartItems: mockCartItems.map((item) => {
+      const supply = supplies.find((row) => String(row.productId) === item.productId);
+      const unitPrice = Number(supply?.sellingPrice ?? 0);
+      const productName = String(supply?.supplyName ?? "Store item");
+      return {
+        cartItemId: `mock-cart-item-${item.productId}`,
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: unitPrice.toFixed(2),
+        subtotal: (unitPrice * item.quantity).toFixed(2),
+        product: {
+          productId: item.productId,
+          productName,
+          unitPrice: unitPrice.toFixed(2),
+          isActive: supply?.isActive !== false,
+        },
+      };
+    }),
+  };
+}
+
+function mockOrderFromBody(orderId: string, body: Record<string, unknown>, status = "PENDING") {
+  const cart = mockCartResponse();
+  const total = cart.cartItems.reduce((sum, item) => sum + Number(item.subtotal), 0);
+  return {
+    orderId,
+    userId: currentProfile.userId,
+    totalPrice: total.toFixed(2),
+    recipientName: String(body.recipientName ?? ""),
+    phoneNumber: String(body.phoneNumber ?? ""),
+    addressLine: String(body.addressLine ?? ""),
+    city: String(body.city ?? ""),
+    postalCode: body.postalCode ? String(body.postalCode) : null,
+    deliveryNotes: body.deliveryNotes ? String(body.deliveryNotes) : null,
+    orderStatus: status,
+    createdAt: now(),
+    updatedAt: now(),
+    orderItems: cart.cartItems.map((item) => ({
+      orderItemId: `mock-order-item-${item.productId}`,
+      orderId,
+      productId: item.productId,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      subtotal: item.subtotal,
+      product: item.product,
+    })),
+    user: { firstName: currentProfile.firstName, lastName: currentProfile.lastName, email: currentProfile.email },
+    payments: status === "COMPLETED" ? [{
+      paymentId: `mock-payment-${orderId}`,
+      orderId,
+      amount: total.toFixed(2),
+      paymentMethod: "CASH",
+      paymentStatus: "PAID",
+      paidAt: now(),
+      createdAt: now(),
+      updatedAt: now(),
+    }] : [],
+  };
 }
 
 function reportFor(type: string) {
@@ -473,6 +597,56 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
     return withDelay({ success: true, message: "Deactivated from store in mock mode" } as T);
   }
   if (url.pathname === "/inventory/suppliers" && method === "GET") return withDelay(suppliers as T);
+
+  if (url.pathname === "/cart/me" && method === "GET") return withDelay(mockCartResponse() as T);
+  if (url.pathname === "/cart/items" && method === "POST") {
+    const productId = String(body.productId ?? "");
+    const quantity = Number(body.quantity ?? 1);
+    const supply = supplyForProduct(productId);
+    if (!supply) throw new Error("Product is out of stock.");
+    const existing = mockCartItems.find((item) => item.productId === productId);
+    if (existing) existing.quantity += quantity;
+    else mockCartItems = [...mockCartItems, { productId, quantity }];
+    return withDelay(mockCartResponse() as T);
+  }
+  const cartItemMatch = url.pathname.match(/^\/cart\/items\/([^/]+)$/);
+  if (cartItemMatch && method === "PATCH") {
+    const productId = cartItemMatch[1];
+    const quantity = Number(body.quantity ?? 1);
+    mockCartItems = mockCartItems.map((item) => item.productId === productId ? { ...item, quantity } : item);
+    return withDelay(mockCartResponse() as T);
+  }
+  if (cartItemMatch && method === "DELETE") {
+    mockCartItems = mockCartItems.filter((item) => item.productId !== cartItemMatch[1]);
+    return withDelay(mockCartResponse() as T);
+  }
+  if (url.pathname === "/cart/me" && method === "DELETE") {
+    mockCartItems = [];
+    return withDelay({ success: true, message: "Cart deleted successfully" } as T);
+  }
+
+  if (url.pathname === "/orders" && method === "GET") return withDelay(mockOrders as T);
+
+  if (url.pathname === "/checkout" && method === "POST") {
+    if (mockCartItems.length === 0) throw new Error("Cannot checkout with an empty cart");
+    const orderId = `mock-order-${Date.now()}`;
+    const order = mockOrderFromBody(orderId, body);
+    mockOrders = [order, ...mockOrders];
+    return withDelay(order as T);
+  }
+  const checkoutPayMatch = url.pathname.match(/^\/checkout\/([^/]+)\/pay$/);
+  if (checkoutPayMatch && method === "POST") {
+    const existing = mockOrders.find((order) => order.orderId === checkoutPayMatch[1]);
+    const paidOrder = {
+      ...(existing ?? mockOrderFromBody(checkoutPayMatch[1], {})),
+      orderStatus: "COMPLETED",
+      payments: mockOrderFromBody(checkoutPayMatch[1], existing ?? {}, "COMPLETED").payments,
+      updatedAt: now(),
+    };
+    mockOrders = mockOrders.map((order) => order.orderId === checkoutPayMatch[1] ? paidOrder : order);
+    mockCartItems = [];
+    return withDelay(paidOrder as T);
+  }
   if (url.pathname === "/inventory/suppliers" && method === "POST") {
     const next = { ...body, supplierId: `mock-supplier-${Date.now()}`, isActive: true, supplies: [] };
     suppliers.unshift(next as typeof suppliers[number]);

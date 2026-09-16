@@ -43,6 +43,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "staff-requests",   label: t("nav_adoption_requests"), icon: <ClipboardList size={16} /> },
         { id: "staff-adoptions",  label: t("nav_adoptions"),         icon: <Heart size={16} /> },
         { id: "staff-chats",      label: t("nav_chats"),             icon: <MessageCircle size={16} /> },
+        { id: "staff-orders",     label: t("nav_orders"),            icon: <ShoppingCart size={16} /> },
         { id: "staff-inventory",  label: t("nav_inventory"),         icon: <Package size={16} /> },
         { id: "staff-suppliers",  label: t("nav_suppliers"),         icon: <Tag size={16} /> },
         { id: "staff-reports",    label: t("nav_reports"),           icon: <FileText size={16} /> },
@@ -66,6 +67,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "manager-adoptions", label: t("nav_adoptions"),     icon: <Heart size={16} /> },
         { id: "manager-chats",     label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
         { id: "manager-users",     label: t("nav_users"),         icon: <Users size={16} /> },
+        { id: "manager-orders",    label: t("nav_orders"),        icon: <ShoppingCart size={16} /> },
         { id: "manager-inventory", label: t("nav_inventory"),     icon: <Package size={16} /> },
         { id: "manager-suppliers", label: t("nav_suppliers"),     icon: <Tag size={16} /> },
         { id: "manager-reports",   label: t("nav_reports"),       icon: <FileText size={16} /> },
@@ -80,6 +82,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "admin-chats",     label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
         { id: "admin-users",     label: t("nav_users"),         icon: <Users size={16} /> },
         { id: "admin-departments", label: t("nav_departments"), icon: <Building2 size={16} /> },
+        { id: "admin-orders",    label: t("nav_orders"),        icon: <ShoppingCart size={16} /> },
         { id: "admin-inventory", label: t("nav_inventory"),     icon: <Package size={16} /> },
         { id: "admin-suppliers", label: t("nav_suppliers"),     icon: <Tag size={16} /> },
         { id: "admin-reports",   label: t("nav_reports"),       icon: <FileText size={16} /> },
@@ -142,7 +145,7 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuth();
-  const { t, lang, setLang } = useLanguage();
+  const { t, lang, setLang, isRtl } = useLanguage();
   const { isDark, toggleTheme } = useTheme();
   const { count } = useCart();
   const displayName = userName ?? user?.name ?? "Guest";
@@ -172,6 +175,12 @@ export default function DashboardLayout({
       window.removeEventListener("petopia:notifications-changed", loadUnread);
     };
   }, []);
+
+  const sidebarTransform = sidebarOpen
+    ? "translate-x-0"
+    : isRtl
+      ? "translate-x-full lg:translate-x-0"
+      : "-translate-x-full lg:translate-x-0";
 
   const topNavItems = [
     { id: "home", label: t("nav_home"), page: homePageForRole(role) },
@@ -299,14 +308,14 @@ export default function DashboardLayout({
         {/* Sidebar */}
         <aside
           className={`
-            fixed lg:relative top-0 lg:top-auto left-0 z-40 lg:z-auto
+            dashboard-sidebar fixed lg:relative top-0 lg:top-auto ${isRtl ? "right-0" : "left-0"} z-40 lg:z-auto
             w-[240px] bg-[#80bdba] rounded-r-[10px] lg:rounded-[10px]
             flex flex-col pt-4 pb-4 mt-0 lg:mt-[16px] lg:ml-[14px] mb-[16px]
             transition-transform duration-300 h-full lg:h-[calc(100vh-112px)] lg:shrink-0
-            ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+            ${sidebarTransform}
           `}
         >
-          <button className="lg:hidden absolute top-3 right-3 text-black" onClick={() => setSidebarOpen(false)}>
+          <button className={`lg:hidden absolute top-3 ${isRtl ? "left-3" : "right-3"} text-black`} onClick={() => setSidebarOpen(false)}>
             <X size={20} />
           </button>
 

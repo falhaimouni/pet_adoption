@@ -357,7 +357,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
-          <div className="relative ml-auto w-[280px] h-full bg-white shadow-2xl overflow-y-auto p-5">
+          <div className="relative ml-auto w-[min(88vw,320px)] h-full bg-white shadow-2xl overflow-y-auto p-5">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-[#1a2e2d]">{t("pets_filters")}</h2>
               <button onClick={() => setSidebarOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
