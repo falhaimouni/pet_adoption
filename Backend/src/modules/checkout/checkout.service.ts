@@ -21,6 +21,14 @@ import { OrderStatusEnum } from '@shared/enums/order-status.enum';
 
 @Injectable()
 export class CheckoutService {
+  private readonly orderRelations = [
+    'orderItems',
+    'orderItems.product',
+    'orderItems.product.supplies',
+    'orderItems.product.supplies.imageFile',
+    'payments',
+  ];
+
   constructor(
     private readonly dataSource: DataSource,
   ) {}
@@ -171,18 +179,7 @@ export class CheckoutService {
 
       // Return the pending order for the review page. Payment and cart
       // changes happen only after the user explicitly pays.
-      return manager
-        .getRepository(Order)
-        .findOne({
-          where: {
-            orderId: savedOrder.orderId,
-          },
-          relations: [
-            'orderItems',
-            'orderItems.product',
-            'payments',
-          ],
-        });
+      return this.findOrder(manager, savedOrder.orderId);
     });
 
     if (!order) {
@@ -281,11 +278,19 @@ export class CheckoutService {
     return order;
   }
 
-  private findOrder(manager: EntityManager, orderId: string) {
-    return manager.getRepository(Order).findOne({
+  private async findOrder(manager: EntityManager, orderId: string) {
+    const order = await manager.getRepository(Order).findOne({
       where: { orderId },
-      relations: ['orderItems', 'orderItems.product', 'payments'],
+      relations: this.orderRelations,
     });
+
+    if (order) {
+      for (const item of order.orderItems ?? []) {
+        item.imageUrl = item.product?.supplies?.[0]?.imageFile?.fileUrl ?? null;
+      }
+    }
+
+    return order;
   }
 
 }

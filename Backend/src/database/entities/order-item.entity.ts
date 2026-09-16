@@ -25,6 +25,8 @@ export class OrderItem {
   @Column({ type: 'integer', default: 1 })
   quantity!: number;
 
+  imageUrl?: string | null;
+
   @Column({ name: 'unit_price', type: 'decimal', precision: 10, scale: 2, default: 0 })
   unitPrice!: string;
 
