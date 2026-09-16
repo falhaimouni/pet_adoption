@@ -38,6 +38,13 @@ interface PetResponse {
   images: PetImageResponse[];
 }
 
+interface PaginatedPetsResponse {
+  data: PetResponse[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 interface PetFullResponse extends PetResponse {
   medicalRecord?: {
     recordId: string;
@@ -107,12 +114,24 @@ export class PetsService {
     return this.findOne(savedPet.petId);
   }
 
-  async findAll(query: FindPetsQueryDto): Promise<PetResponse[]> {
+  async findAll(query: FindPetsQueryDto): Promise<PaginatedPetsResponse> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 12;
+    const sortBy = query.sortBy ?? 'createdAt';
+    const order = query.order ?? 'DESC';
+    const sortableColumns: Record<NonNullable<FindPetsQueryDto['sortBy']>, string> = {
+      createdAt: 'pet.createdAt',
+      name: 'pet.petName',
+      species: 'pet.species',
+      breed: 'pet.breed',
+      age: 'pet.age',
+      status: 'pet.adoptionStatus',
+    };
+
     const qb = this.petRepo
       .createQueryBuilder('pet')
       .leftJoinAndSelect('pet.images', 'images')
-      .leftJoinAndSelect('images.file', 'imageFile')
-      .orderBy('pet.createdAt', 'DESC');
+      .leftJoinAndSelect('images.file', 'imageFile');
 
     if (query.search) {
       qb.andWhere(
@@ -147,8 +166,19 @@ export class PetsService {
       qb.andWhere('pet.age <= :maxAge', { maxAge: query.maxAge });
     }
 
-    const pets = await qb.getMany();
-    return pets.map((pet) => this.mapPetResponse(pet));
+    qb
+      .orderBy(sortableColumns[sortBy], order)
+      .addOrderBy('pet.petId', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [pets, total] = await qb.getManyAndCount();
+    return {
+      data: pets.map((pet) => this.mapPetResponse(pet)),
+      total,
+      page,
+      limit,
+    };
   }
 
   async findOne(id: string): Promise<PetResponse> {

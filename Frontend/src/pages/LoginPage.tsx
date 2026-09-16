@@ -19,7 +19,7 @@ function pageForRole(role: UserRole): string {
   switch (role) {
     case "admin":   return "admin-dashboard";
     case "manager": return "manager-dashboard";
-    case "staff":   return "staff-dashboard";
+    case "employee": return "staff-dashboard";
     case "vet":     return "vet-dashboard";
     default:        return "pets";
   }
@@ -76,7 +76,7 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
       <div className="flex flex-col lg:flex-row flex-1">
 
         {/* ── Left Panel ── */}
-        <div className="relative flex-1 flex flex-col items-center justify-center overflow-hidden min-h-[320px] lg:min-h-0 py-10 lg:py-0">
+        <div className="relative flex-1 flex flex-col items-center justify-center overflow-hidden min-h-[360px] lg:min-h-0 py-10 lg:py-0">
 
           {/* Teal circle blob */}
           <div className="absolute inset-0 pointer-events-none hidden lg:block">
@@ -86,15 +86,15 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
           </div>
 
           {/* Brand text block — positioned at top-left */}
-          <div className="absolute top-8 left-8 lg:top-12 lg:left-14 z-10 flex flex-col items-start">
-            <h2 className="font-['Prata',serif] text-[40px] lg:text-[52px] text-[#047975] leading-tight mb-0">
+          <div className="absolute top-6 left-6 lg:top-12 lg:left-14 z-10 flex flex-col items-start">
+            <h2 className="font-['Prata',serif] text-[34px] sm:text-[40px] lg:text-[52px] text-[#047975] leading-tight mb-0">
               Petopia
             </h2>
           </div>
 
           {/* Welcome section — positioned left-center */}
-          <div className="absolute left-0 top-[32%] -translate-y-1/2 z-10 flex flex-col items-start px-8 lg:px-14 w-full max-w-[420px]">
-            <p className="font-['Poppins',sans-serif] font-semibold text-[32px] lg:text-[42px] text-black rotate-[-0.7deg] mb-2 leading-tight">
+          <div className="absolute left-0 top-[32%] -translate-y-1/2 z-10 flex flex-col items-start px-6 sm:px-8 lg:px-14 w-full max-w-[420px]">
+            <p className="font-['Poppins',sans-serif] font-semibold text-[28px] sm:text-[32px] lg:text-[42px] text-black rotate-[-0.7deg] mb-2 leading-tight">
               {t("login_welcome_to")}
             </p>
             <p className="font-['Poppins',sans-serif] text-[16px] lg:text-[20px] text-black max-w-[300px] leading-snug">
@@ -127,8 +127,8 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
         </div>
 
         {/* ── Right Panel ── */}
-        <div className="flex-1 flex items-center justify-center px-10 py-10">
-          <div className="w-full max-w-[500px] bg-white rounded-[30px] shadow-xl p-10 relative">
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-10 py-8 lg:py-10">
+          <div className="w-full max-w-[500px] bg-white rounded-[24px] sm:rounded-[30px] shadow-xl p-5 sm:p-8 lg:p-10 relative">
             {/* Cat at the top of the card */}
             <div className="absolute -top-[55px] left-0 hidden lg:block">
               <img
@@ -138,7 +138,7 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
               />
             </div>
             
-            <h2 className="font-['Inter',sans-serif] font-semibold text-[32px] text-black mb-1">
+            <h2 className="font-['Inter',sans-serif] font-semibold text-[26px] sm:text-[32px] text-black mb-1">
               {t("login_welcome_back")}
             </h2>
             <p className="font-['Inter',sans-serif] font-light text-[18px] text-black mb-8">
@@ -200,7 +200,7 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
               disabled={loading}
               className="w-full border border-gray-200 bg-white text-black font-['Inter',sans-serif] font-semibold text-[15px] py-3 rounded-[16px] hover:bg-gray-50 transition-colors disabled:opacity-60"
             >
-              Continue with Google
+              {t("auth_continue_google")}
             </button>
 
             <p className="text-center mt-6 font-['Inter',sans-serif] text-[15px] text-black">

@@ -1,3 +1,5 @@
+import { useLanguage } from "../context/LanguageContext";
+
 type BadgeVariant = "success" | "pending" | "rejected" | "info" | "warning" | "neutral" | "teal";
 
 interface BadgeProps {
@@ -17,15 +19,64 @@ const variants: Record<BadgeVariant, string> = {
 };
 
 export default function Badge({ label, variant = "neutral", size = "sm" }: BadgeProps) {
+  const { t } = useLanguage();
+  const translatedLabel = translateBadgeLabel(label, t);
+
   return (
     <span
       className={`inline-flex items-center rounded-full font-['Poppins',sans-serif] font-medium whitespace-nowrap ${
         size === "sm" ? "text-[11px] px-2.5 py-0.5" : "text-[13px] px-3 py-1"
       } ${variants[variant]}`}
     >
-      {label}
+      {translatedLabel}
     </span>
   );
+}
+
+function translateBadgeLabel(label: string, t: (key: string) => string) {
+  const normalized = label.trim().toLowerCase().replace(/\s+/g, "_");
+  const aliases: Record<string, string> = {
+    staff: "role_employee",
+    employee: "role_employee",
+    employees: "role_employee_plural",
+    vet: "role_vet",
+    veterinarian: "role_vet",
+    manager: "role_manager",
+    admin: "role_admin",
+    adopter: "role_adopter",
+    available: "status_available",
+    pending: "status_pending",
+    approved: "status_approved",
+    rejected: "status_rejected",
+    cancelled: "req_cancelled",
+    canceled: "req_cancelled",
+    adopted: "status_adopted",
+    active: "status_active",
+    inactive: "status_inactive",
+    low_stock: "status_low_stock",
+    out_of_stock: "status_out_of_stock",
+    in_stock: "status_in_stock",
+    open: "status_open",
+    closed: "status_closed",
+    waiting: "status_waiting",
+    archived: "status_archived",
+    completed: "status_completed",
+    given: "status_given",
+    due: "status_due",
+    overdue: "status_overdue",
+    critical: "status_critical",
+    high: "status_high",
+    vaccinated: "vet_vaccinated",
+    listed: "status_listed",
+    hidden: "status_hidden",
+    expired: "status_expired",
+    damaged: "status_damaged",
+    discontinued: "status_discontinued",
+    medical_hold: "pet_status_medical_hold",
+  };
+  const key = aliases[normalized] ?? `status_${normalized}`;
+  const translated = t(key);
+  return translated === key ? label : translated;
 }
 
 export function statusBadge(status: string): BadgeVariant {

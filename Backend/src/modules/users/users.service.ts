@@ -265,6 +265,32 @@ export class UsersService {
     });
   }
 
+  async uploadManagedUserAvatar(
+    id: string,
+    currentUser: RequestWithUser['user'],
+    file: Express.Multer.File,
+  ) {
+    const targetUser = await this.getUserForAuthorization(id);
+    await this.authorizeUpdate(
+      this.toRoleName(currentUser.role),
+      this.toRoleName(targetUser.role.roleName),
+      currentUser.userId === id,
+      { avatar: '' },
+    );
+
+    const uploadedFile = await this.uploadsService.createFileRecord(
+      file,
+      FileUploadCategory.AVATAR,
+      currentUser.userId,
+    );
+
+    return this.updateUser(
+      id,
+      { avatar: uploadedFile.fileUrl },
+      currentUser,
+    );
+  }
+
   async updateProfile(id: string, data: UpdateProfileDto) {
     if ('email' in data) {
       throw new ForbiddenException('Email cannot be changed');

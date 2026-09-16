@@ -33,15 +33,15 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
       return;
     }
     if (parts[0].length > 80 || lastNamePartsTooLong(parts)) {
-      setError("First and last name must be 80 characters or less.");
+      setError(t("signup_name_length_error"));
       return;
     }
     if (!isEmail(email.trim())) {
-      setError("Enter a valid email address.");
+      setError(t("signup_invalid_email"));
       return;
     }
     if (!isStrongPassword(password)) {
-      setError("Password must include uppercase, lowercase, number, and symbol.");
+      setError(t("reset_password_rules_error"));
       return;
     }
     if (!agreedToTerms) {
@@ -80,12 +80,12 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
   };
 
   return (
-    <div className="min-h-screen lg:h-screen bg-[rgba(186,216,211,0.99)] flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-[rgba(186,216,211,0.99)] flex flex-col relative overflow-x-hidden">
       <Navbar onNavigate={onNavigate} />
-      <div className="relative flex flex-col lg:flex-row flex-1 lg:min-h-0 overflow-hidden pb-[70px] lg:pb-[56px]">
+      <div className="relative flex flex-col lg:flex-row flex-1 lg:min-h-0 overflow-x-hidden pb-[70px] lg:pb-[56px]">
 
       {/* ── Left Panel ── */}
-      <div className="relative flex-1 flex flex-col items-center justify-start pt-6 pb-0 lg:pt-0 lg:pb-0 min-h-[400px] lg:min-h-0 overflow-hidden">
+      <div className="relative flex-1 flex flex-col items-center justify-start pt-6 pb-0 lg:pt-0 lg:pb-0 min-h-[360px] lg:min-h-[620px] overflow-hidden">
 
         {/* Large soft organic blob behind the rabbits (left side) — inspo position */}
         <div className="absolute inset-0 flex items-start justify-start pointer-events-none">
@@ -100,8 +100,8 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
         <PawPrint size={30} className="absolute bottom-[5%] right-[8%] text-white/80 rotate-12 pointer-events-none hidden lg:block" fill="currentColor" />
 
         {/* Join Petopia section — inspo: left-up (Join at ~57,195 / Petopia at ~188,213) */}
-        <div className="relative z-10 flex flex-col items-start w-full max-w-[490px] px-8 lg:px-0 ml-[40px] lg:ml-[95px] lg:mr-auto mt-20 lg:mt-[120px] lg:absolute lg:top-0 lg:left-0">
-          <p className="font-['Poppins',sans-serif] font-semibold text-[38px] lg:text-[60px] text-black rotate-[-0.7deg] leading-none flex items-center gap-3">
+        <div className="relative z-10 flex flex-col items-start w-full max-w-[490px] px-6 sm:px-8 lg:px-0 lg:ml-[95px] lg:mr-auto mt-16 sm:mt-20 lg:mt-[120px] lg:absolute lg:top-0 lg:left-0">
+          <p className="font-['Poppins',sans-serif] font-semibold text-[32px] sm:text-[38px] lg:text-[60px] text-black rotate-[-0.7deg] leading-none flex items-center gap-3 flex-wrap">
             {t("signup_tagline")}{" "}
             <span className="font-['Prata',serif] font-normal text-[#047975] text-[40px] lg:text-[52px] leading-none">Petopia</span>
             <PawPrint size={34} className="text-[#089D97]/50 -rotate-12" fill="currentColor" />
@@ -112,17 +112,17 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
         </div>
 
         {/* Two rabbits sitting together — inspo: big tan LEFT + small gray RIGHT, feet aligned, side-by-side */}
-        <div className="relative z-10 flex w-full justify-center items-end mt-4 lg:mt-0 translate-x-[16px] lg:translate-x-0 lg:absolute lg:bottom-[20px] lg:left-[38px] lg:w-[600px] lg:justify-start lg:pl-0">
+        <div className="relative z-10 flex w-full justify-center items-end mt-4 lg:mt-0 lg:translate-x-0 lg:absolute lg:bottom-[20px] lg:left-[38px] lg:w-[600px] lg:justify-start lg:pl-0">
           {/* Larger brown/orange rabbit on the LEFT (behind) — inspo at [-18,398] */}
           <img
             src={tanBunnyImg}
-            alt="Brown rabbit"
+            alt={t("signup_brown_rabbit_alt")}
             className="w-[min(50vw,210px)] lg:w-[280px] lg:h-[280px] lg:object-cover h-auto object-contain relative z-0 ml-[10px] lg:ml-[12px]"
           />
           {/* Smaller gray rabbit tucked close on the RIGHT, beside the big one, feet aligned — inspo at [183,428] */}
           <img
             src={grayBunnyImg}
-            alt="Gray rabbit"
+            alt={t("signup_gray_rabbit_alt")}
             className="w-[min(42vw,175px)] lg:w-[245px] lg:h-[245px] lg:object-cover h-auto object-contain relative z-10 lg:-ml-[100px] lg:translate-y-[8px] -ml-12"
           />
         </div>
@@ -130,15 +130,15 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
       </div>
 
       {/* ── Right Panel (white card) ── */}
-      <div className="relative flex-1 lg:min-h-0 flex items-center justify-center p-4 lg:p-4">
+      <div className="relative flex-1 lg:min-h-[620px] flex items-center justify-center p-4 lg:p-4">
         <div className="w-full max-w-[500px] relative mt-6 lg:mt-10">
           {/* Peeking cat from behind the top-right edge of the card — inspo at [1158,177] rotated 90deg */}
           <img
             src={catPhotoImg}
             alt=""
-            className="absolute top-1/2 -translate-y-1/2 -right-[36px] lg:-right-[188px] w-[min(36vw,160px)] lg:w-[280px] h-auto object-contain pointer-events-none hidden sm:block z-20 rotate-90"
+            className="absolute top-1/2 -translate-y-1/2 -right-[24px] lg:-right-[120px] xl:-right-[188px] w-[min(30vw,130px)] lg:w-[220px] xl:w-[280px] h-auto object-contain pointer-events-none hidden md:block z-20 rotate-90"
           />
-        <div className="relative z-10 bg-white rounded-[30px] shadow-xl px-6 py-5 lg:px-10 lg:py-5 origin-top scale-[1.05] lg:scale-[1.08]">
+        <div className="relative z-10 bg-white rounded-[24px] sm:rounded-[30px] shadow-xl px-5 sm:px-6 py-5 lg:px-10 lg:py-5 origin-top">
           <h2 className="font-['Inter',sans-serif] font-semibold text-[24px] lg:text-[26px] text-black mb-1 text-center">{t("signup_title")}</h2>
           <p className="font-['Inter',sans-serif] font-light text-[14px] lg:text-[15px] text-black mb-4 text-center">
             {t("signup_subtitle2")}
@@ -237,7 +237,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.84z" />
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
             </svg>
-            Sign In with Google
+            {t("auth_sign_in_google")}
           </button>
 
           {/* Login link */}

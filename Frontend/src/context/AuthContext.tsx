@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { ApiError, apiFetch, clearAuthTokens, resolveAssetUrl, setAuthTokens } from "../lib/api";
 
-export type UserRole = "adopter" | "staff" | "vet" | "manager" | "admin";
+export type UserRole = "adopter" | "employee" | "vet" | "manager" | "admin";
 
 export interface AuthUser {
   id: string;
@@ -54,7 +54,7 @@ function mapRole(roleName: string): UserRole {
   switch (roleName.toUpperCase()) {
     case "ADMIN": return "admin";
     case "MANAGER": return "manager";
-    case "EMPLOYEE": return "staff";
+    case "EMPLOYEE": return "employee";
     case "VET": return "vet";
     default: return "adopter";
   }
@@ -111,7 +111,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? (JSON.parse(stored) as AuthUser) : null;
+      if (!stored) return null;
+      const parsed = JSON.parse(stored) as AuthUser;
+      return parsed.role === "staff" ? { ...parsed, role: "employee" } : parsed;
     } catch {
       return null;
     }

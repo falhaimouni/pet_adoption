@@ -22,7 +22,7 @@ export default function ForgotPasswordPage({ onNavigate }: ForgotPasswordPagePro
     setMessage("");
     setError("");
     if (!isEmail(email.trim())) {
-      setError("Enter a valid email address.");
+      setError(t("error_valid_email"));
       return;
     }
     setLoading(true);
@@ -31,7 +31,7 @@ export default function ForgotPasswordPage({ onNavigate }: ForgotPasswordPagePro
         method: "POST",
         body: JSON.stringify({ email: email.trim() }),
       });
-      setMessage("If an account exists for this email address, we have sent instructions to reset your password.");
+      setMessage(t("forgot_success_message"));
     } catch (err) {
       setError(err instanceof Error ? err.message : t("forgot_error"));
     } finally {
@@ -49,7 +49,7 @@ export default function ForgotPasswordPage({ onNavigate }: ForgotPasswordPagePro
           {message ? (
             <div className="flex flex-col gap-4">
               <p className="font-['Poppins',sans-serif] text-[13px] text-emerald-700 bg-emerald-50 rounded-[12px] px-4 py-3">{message}</p>
-              <p className="font-['Poppins',sans-serif] text-[13px] text-[#5a8a87]">Check your email for the reset link.</p>
+              <p className="font-['Poppins',sans-serif] text-[13px] text-[#5a8a87]">{t("forgot_check_email")}</p>
               <button type="button" onClick={() => onNavigate("login")} className="w-full bg-[#089D97] text-white font-['Poppins',sans-serif] font-semibold text-[15px] py-3 rounded-[14px] hover:bg-[#047975] transition-colors">
                 {t("forgot_back")}
               </button>

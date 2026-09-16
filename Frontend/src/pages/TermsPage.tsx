@@ -46,7 +46,7 @@ export default function TermsPage({ onNavigate }: TermsPageProps) {
         {/* ── Right: Terms card ── */}
         <div className="flex-1 min-w-0">
           <div className="bg-white rounded-[20px] shadow-xl p-5 sm:p-8 lg:p-10 max-w-full overflow-hidden">
-            <p className="font-['Poppins',sans-serif] text-[12px] text-black/50 mb-2">Last updated: August 24, 2026</p>
+            <p className="font-['Poppins',sans-serif] text-[12px] text-black/50 mb-2">{t("terms_last_updated")}</p>
             {/* Title */}
             <h1 className="font-['Poppins',sans-serif] font-bold text-[30px] sm:text-[36px] lg:text-[48px] leading-tight mb-2 break-words">
               <span className="text-[#089D97]">{t("terms_title_1")}</span>
@@ -106,13 +106,13 @@ export default function TermsPage({ onNavigate }: TermsPageProps) {
               </section>
 
               <section>
-                <h3 className="font-semibold text-[#089D97] text-[15px] mb-1">Account and System Use</h3>
-                <p>Users must provide accurate account and adoption information, keep credentials secure, and use only functionality allowed by their role. Staff, managers, administrators, veterinarians, and adopters have different permissions enforced by the backend.</p>
+                <h3 className="font-semibold text-[#089D97] text-[15px] mb-1">{t("terms_account_system_title")}</h3>
+                <p>{t("terms_account_system_body")}</p>
               </section>
 
               <section>
-                <h3 className="font-semibold text-[#089D97] text-[15px] mb-1">Store and Inventory</h3>
-                <p>Store and inventory availability, quantities, and pricing are based on backend records and may change. Final totals and availability are determined by backend responses.</p>
+                <h3 className="font-semibold text-[#089D97] text-[15px] mb-1">{t("terms_store_inventory_title")}</h3>
+                <p>{t("terms_store_inventory_body")}</p>
               </section>
             </div>
 
@@ -147,7 +147,7 @@ export default function TermsPage({ onNavigate }: TermsPageProps) {
                 onClick={() => onNavigate("privacy")}
                 className="w-full sm:w-auto border border-[#089D97] text-[#089D97] font-['Poppins',sans-serif] font-semibold text-[15px] sm:text-[16px] px-6 sm:px-8 py-3 rounded-[20px] hover:bg-[rgba(8,157,151,0.1)] transition-colors"
               >
-                Privacy Policy
+                {t("privacy_title")}
               </button>
               <button
                 onClick={() => onNavigate("home")}

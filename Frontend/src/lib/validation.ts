@@ -16,9 +16,10 @@ export function isStrongPassword(value: string) {
   );
 }
 
-export function validateImageFile(file: File) {
-  if (file.size <= 0) return "Please choose a non-empty image file.";
-  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) return "Only JPG, JPEG, PNG and WEBP images are allowed.";
-  if (file.size > MAX_IMAGE_SIZE_BYTES) return "Image size must be 5 MB or less.";
+export function validateImageFile(file: File, t?: (key: string) => string) {
+  const translate = t ?? ((key: string) => key);
+  if (file.size <= 0) return translate("upload_error_empty_image");
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) return translate("upload_error_image_type");
+  if (file.size > MAX_IMAGE_SIZE_BYTES) return translate("upload_error_image_size");
   return "";
 }

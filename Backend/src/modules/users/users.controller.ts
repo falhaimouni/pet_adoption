@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseFilePipe,
   Patch,
   Post,
   Delete,
@@ -65,6 +66,28 @@ export class UsersController {
   ) {
     return this.usersService.uploadAvatar(
       req.user.userId,
+      file,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'MANAGER')
+  @Post(':id/avatar')
+  @UseInterceptors(
+    FileInterceptor(
+      'file',
+      createMulterOptions(FileUploadCategory.AVATAR),
+    ),
+  )
+  uploadManagedUserAvatar(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+    @UploadedFile(new ParseFilePipe({ fileIsRequired: true }))
+    file: Express.Multer.File,
+  ) {
+    return this.usersService.uploadManagedUserAvatar(
+      id,
+      req.user,
       file,
     );
   }

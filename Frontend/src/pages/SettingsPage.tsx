@@ -23,7 +23,7 @@ export default function SettingsPage({ onNavigate, embedded = false }: SettingsP
   const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const { lang, setLang, t } = useLanguage();
-  const locale = lang === "ar" ? "ar-JO" : "en-US";
+  const locale = lang === "ar" ? "ar-JO" : lang === "fr" ? "fr-FR" : "en-US";
 
   const TABS: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
     { id: "account",       label: t("settings_account"),       icon: User },
@@ -43,11 +43,11 @@ export default function SettingsPage({ onNavigate, embedded = false }: SettingsP
     setPwError("");
     setPwSuccess(false);
     if (!isStrongPassword(pwForm.next)) {
-      setPwError("Password must include uppercase, lowercase, number, and symbol.");
+      setPwError(t("reset_password_rules_error"));
       return;
     }
     if (pwForm.next !== pwForm.confirm) {
-      setPwError("Passwords do not match.");
+      setPwError(t("signup_password_mismatch"));
       return;
     }
     try {
@@ -135,12 +135,13 @@ export default function SettingsPage({ onNavigate, embedded = false }: SettingsP
             {activeTab === "language" && (
               <Section title={t("settings_language")}>
                 <p className="font-['Poppins',sans-serif] text-[13px] text-[#5a8a87] mb-4">{t("language_desc")}</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
                     { code: "en", label: t("lang_english"), native: "English", flag: "🇺🇸" },
                     { code: "ar", label: t("lang_arabic"), native: "العربية", flag: "🇸🇦" },
+                    { code: "fr", label: t("lang_french"), native: "Français", flag: "🇫🇷" },
                   ].map(({ code, label, native, flag }) => (
-                    <button key={code} onClick={() => setLang(code as "en" | "ar")} className={`flex items-center gap-4 p-4 rounded-[14px] border-2 transition-all ${lang === code ? "border-[#089D97] bg-[#e0f2f0]" : "border-gray-200 bg-[#f9fffe] hover:border-[#bae0dd]"}`}>
+                    <button key={code} onClick={() => setLang(code as typeof lang)} className={`flex items-center gap-4 p-4 rounded-[14px] border-2 transition-all ${lang === code ? "border-[#089D97] bg-[#e0f2f0]" : "border-gray-200 bg-[#f9fffe] hover:border-[#bae0dd]"}`}>
                       <span className="text-3xl">{flag}</span>
                       <div className="text-start">
                         <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-[#1a2e2d]">{label}</p>
@@ -157,7 +158,7 @@ export default function SettingsPage({ onNavigate, embedded = false }: SettingsP
               <Section title={t("settings_security")}>
                 {user?.provider === "GOOGLE" ? (
                   <div className="p-4 bg-[#f0f8f7] rounded-[14px]">
-                    <p className="font-['Poppins',sans-serif] text-[14px] text-[#1a2e2d]">This account signs in with Google, so local password changes are not available.</p>
+                    <p className="font-['Poppins',sans-serif] text-[14px] text-[#1a2e2d]">{t("security_google_password_unavailable")}</p>
                   </div>
                 ) : (
                 <div className="mb-6">
