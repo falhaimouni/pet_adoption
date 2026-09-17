@@ -286,7 +286,12 @@ export class CheckoutService {
 
     if (order) {
       for (const item of order.orderItems ?? []) {
-        item.imageUrl = item.product?.supplies?.[0]?.imageFile?.fileUrl ?? null;
+        const imageFile = item.product?.supplies?.[0]?.imageFile;
+        item.imageUrl = imageFile
+          ? /^https?:\/\//i.test(imageFile.fileUrl)
+            ? imageFile.fileUrl
+            : `/files/${imageFile.fileId}`
+          : null;
       }
     }
 

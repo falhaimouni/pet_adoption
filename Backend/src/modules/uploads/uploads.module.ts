@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { UploadsService } from './uploads.service';
+import { UploadsController } from './uploads.controller';
 
 import { FileUpload } from '../../database/entities/file-upload.entity';
 
@@ -17,6 +18,10 @@ import { FileUpload } from '../../database/entities/file-upload.entity';
 
   providers: [
     UploadsService,
+  ],
+
+  controllers: [
+    UploadsController,
   ],
 
 

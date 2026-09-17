@@ -1,4 +1,5 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { FileUpload } from './file-upload.entity';
 import { Pet } from './pet.entity';
 import { MedicalEntry } from './medical-entry.entity';
 
@@ -19,4 +20,7 @@ export class MedicalRecord {
 
   @OneToMany(() => MedicalEntry, (entry) => entry.medicalRecord)
   entries!: MedicalEntry[];
+
+  @OneToMany(() => FileUpload, (file) => file.medicalRecord)
+  documents!: FileUpload[];
 }

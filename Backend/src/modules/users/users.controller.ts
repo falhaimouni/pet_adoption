@@ -62,7 +62,8 @@ export class UsersController {
   )
   async uploadAvatar(
     @Req() req: RequestWithUser,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile(new ParseFilePipe({ fileIsRequired: true }))
+    file: Express.Multer.File,
   ) {
     return this.usersService.uploadAvatar(
       req.user.userId,

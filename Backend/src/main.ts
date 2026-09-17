@@ -5,10 +5,6 @@ import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
-import { resolveUploadRoot } from './modules/uploads/upload-path.util';
-//check if file or folder exists
-// import { existsSync } from 'fs';
-// import { join } from 'path';
 
 
 async function bootstrap() {
@@ -21,7 +17,8 @@ async function bootstrap() {
   app.use(helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
   }));
-  //serve uploaded files from the uploads folder
+
+  // Serve uploaded files from the uploads folder
   app.useStaticAssets(resolveUploadRoot(), {
     prefix: '/uploads/',
   });
