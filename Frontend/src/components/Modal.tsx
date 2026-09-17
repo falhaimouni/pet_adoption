@@ -8,6 +8,7 @@ interface ModalProps {
   onConfirm?: () => void;
   confirmLabel?: string;
   confirmDestructive?: boolean;
+  confirmDisabled?: boolean;
   children: React.ReactNode;
   size?: "sm" | "md" | "lg";
 }
@@ -19,6 +20,7 @@ export default function Modal({
   onConfirm,
   confirmLabel,
   confirmDestructive = false,
+  confirmDisabled = false,
   children,
   size = "md",
 }: ModalProps) {
@@ -53,8 +55,11 @@ export default function Modal({
             </button>
             <button
               onClick={onConfirm}
+              disabled={confirmDisabled}
               className={`px-5 py-2 rounded-[12px] font-['Poppins',sans-serif] font-medium text-[14px] text-white transition-colors ${
-                confirmDestructive
+                confirmDisabled
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : confirmDestructive
                   ? "bg-red-500 hover:bg-red-600"
                   : "bg-[#089D97] hover:bg-[#047975]"
               }`}
