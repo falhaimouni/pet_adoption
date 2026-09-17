@@ -12,7 +12,7 @@ import { Vaccination } from '../../database/entities/vaccination.entity';
 import { Adoption } from '../../database/entities/adoption.entity';
 import { FileUpload } from '../../database/entities/file-upload.entity';
 import { FileUploadCategory } from '@shared/enums';
-import { UploadsService } from '../uploads/uploads.service';
+import { StoredFileBackup, UploadsService } from '../uploads/uploads.service';
 import { ActivityLog } from '../../database/entities/activity-log.entity';
 
 interface PetImageResponse {
@@ -282,7 +282,10 @@ export class PetsService {
   }
 
   async remove(id: string, actorUserId: string): Promise<{ message: string }> {
-    await this.dataSource.transaction(async (manager) => {
+    const removedImageFiles: StoredFileBackup[] = [];
+
+    try {
+      await this.dataSource.transaction(async (manager) => {
       const petRepo = manager.getRepository(Pet);
       const pet = await petRepo
         .createQueryBuilder('pet')
@@ -319,7 +322,26 @@ export class PetsService {
       }
 
       await manager.getRepository(Vaccination).softDelete({ petId: id });
+
+      const petImages = await manager.getRepository(PetImage).find({
+        where: { petId: id },
+        relations: ['file'],
+      });
+
+      for (const image of petImages) {
+        if (!image.file) {
+          throw new NotFoundException('Pet image file not found');
+        }
+        removedImageFiles.push(
+          await this.uploadsService.removePhysicalFile(image.file),
+        );
+      }
+
       await manager.getRepository(PetImage).delete({ petId: id });
+      for (const image of petImages) {
+        await manager.getRepository(FileUpload).delete(image.fileId);
+      }
+
       await petRepo.softDelete(id);
 
       await manager.getRepository(ActivityLog).save(
@@ -330,7 +352,13 @@ export class PetsService {
           entityId: id,
         }),
       );
-    });
+      });
+    } catch (error) {
+      for (const backup of removedImageFiles.reverse()) {
+        await this.uploadsService.restorePhysicalFile(backup);
+      }
+      throw error;
+    }
 
     return {
       message: 'Pet archived successfully',
@@ -389,7 +417,7 @@ export class PetsService {
     return {
       imageId: image.imageId,
       fileId: image.fileId,
-      imageUrl: image.file.fileUrl,
+      imageUrl: this.uploadsService.getFileReference(image.file),
       uploadedAt: image.uploadedAt,
     };
   }

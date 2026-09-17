@@ -5,10 +5,6 @@ import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
-import { resolveUploadRoot } from './modules/uploads/upload-path.util';
-//check if file or folder exists
-// import { existsSync } from 'fs';
-// import { join } from 'path';
 
 
 async function bootstrap() {
@@ -19,10 +15,6 @@ async function bootstrap() {
   app.enableShutdownHooks();
   //middleware that adds security headers to each response
   app.use(helmet());
-  //serve uploaded files from the uploads folder
-  app.useStaticAssets(resolveUploadRoot(), {
-    prefix: '/uploads/',
-  });
 
   // Crucial: This enables the @IsEmail, @MinLength, etc. validations in your DTOs
   app.useGlobalPipes(new ValidationPipe({

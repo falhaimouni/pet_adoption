@@ -11,6 +11,9 @@ import { MedicalRecord } from '../../database/entities/medical-record.entity';
 import { Pet } from '../../database/entities/pet.entity';
 import { User } from '../../database/entities/user.entity';
 import { ActivityLog } from '../../database/entities/activity-log.entity';
+import { FileUpload } from '../../database/entities/file-upload.entity';
+import { FileUploadCategory } from '@shared/enums';
+import { UploadsService } from '../uploads/uploads.service';
 
 interface MedicalVeterinarianResponse {
   userId: string;
@@ -62,7 +65,31 @@ export class MedicalService {
 
     @InjectRepository(ActivityLog)
     private readonly activityLogRepo: Repository<ActivityLog>,
+
+    private readonly uploadsService: UploadsService,
   ) {}
+
+  async uploadMedicalDocument(
+    petId: string,
+    veterinarianId: string,
+    file: Express.Multer.File,
+  ): Promise<FileUpload> {
+    let record: MedicalRecord;
+
+    try {
+      record = await this.getExistingRecordForPet(petId);
+    } catch (error) {
+      await this.uploadsService.rollbackFileUpload(file.path);
+      throw error;
+    }
+
+    return this.uploadsService.createFileRecord(
+      file,
+      FileUploadCategory.DOCUMENT,
+      veterinarianId,
+      record.recordId,
+    );
+  }
 
   async findRecordByPet(petId: string): Promise<MedicalRecordResponse> {
     await this.ensurePetExists(petId);
@@ -160,6 +187,18 @@ export class MedicalService {
     }
 
     return entry;
+  }
+
+  private async getExistingRecordForPet(petId: string): Promise<MedicalRecord> {
+    await this.ensurePetExists(petId);
+
+    const record = await this.medicalRecordRepo.findOne({ where: { petId } });
+
+    if (!record) {
+      throw new NotFoundException('Medical record not found');
+    }
+
+    return record;
   }
 
   private mapRecordResponse(record: MedicalRecord): MedicalRecordResponse {
