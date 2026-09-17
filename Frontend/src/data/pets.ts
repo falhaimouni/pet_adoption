@@ -1,9 +1,4 @@
-import rabbitImg from "../imports/MyPetopia/2a3e7edc9e48a9b54587cf4d62ebd398042902a1.png";
-import goldenRetrieverImg from "../imports/MyPetopia/310c78da6978bd1c1f0658d7202cac1ad8141aca.png";
-import persianCatImg from "../imports/MyPetopia/d297332b2c72bbab968e9869ca23efc085706d7b.png";
-import poodleImg from "../imports/MyPetopia/24e2536ae8951f7e58a6a251b78040d254e6a249.png";
-import chartrexImg from "../imports/MyPetopia/782532b753cb22c0157d258183952675ee18e9ae.png";
-import goldenDogImg from "../imports/MyPetopia/6873b1dc8519e91f8d65e08b4fbf144707066349.png";
+import defaultPetImage from "../assets/default-pet.jpeg";
 
 export type PetStatus = "available" | "pending" | "adopted";
 export type PetSize = "Small" | "Medium" | "Large";
@@ -51,7 +46,7 @@ export const PETS: Pet[] = [
     location: "Amman, Jordan",
     city: "Amman",
     status: "available",
-    image: goldenRetrieverImg,
+    image: defaultPetImage,
     description:
       "Mochi is a cheerful, gentle Golden Retriever who brings sunshine everywhere he goes. He loves long walks, playing fetch, and snuggling on the couch. Extremely loyal and eager to please, he has completed basic obedience training and responds well to commands.",
     personality: ["Playful", "Loyal", "Gentle", "Energetic"],
@@ -81,7 +76,7 @@ export const PETS: Pet[] = [
     location: "Amman, Jordan",
     city: "Amman",
     status: "available",
-    image: persianCatImg,
+    image: defaultPetImage,
     description:
       "Luna is a serene Persian with silky white fur and dreamy eyes. She enjoys quiet afternoons by the window, gentle brushing sessions, and the occasional chin scratch. Perfect for apartment life — calm, clean, and completely adorable.",
     personality: ["Calm", "Affectionate", "Independent", "Quiet"],
@@ -111,7 +106,7 @@ export const PETS: Pet[] = [
     location: "Zarqa, Jordan",
     city: "Zarqa",
     status: "available",
-    image: poodleImg,
+    image: defaultPetImage,
     description:
       "Coco is one of the smartest dogs you will ever meet. This Toy Poodle has mastered over 15 tricks and loves the challenge of learning new ones. She bonds quickly with her family and thrives in an active, loving home.",
     personality: ["Intelligent", "Energetic", "Friendly", "Curious"],
@@ -141,7 +136,7 @@ export const PETS: Pet[] = [
     location: "Irbid, Jordan",
     city: "Irbid",
     status: "available",
-    image: chartrexImg,
+    image: defaultPetImage,
     description:
       "Oliver is a devoted, observant Chartreux with a plush blue-grey coat and amber eyes. He is thoughtful and gentle — the kind of cat who will follow you from room to room and settle quietly beside you. Ideal for anyone wanting a loyal, low-fuss companion.",
     personality: ["Devoted", "Quiet", "Observant", "Gentle"],
@@ -171,7 +166,7 @@ export const PETS: Pet[] = [
     location: "Amman, Jordan",
     city: "Amman",
     status: "available",
-    image: rabbitImg,
+    image: defaultPetImage,
     description:
       "Daisy is a curious, sprightly Dutch rabbit with a striking black-and-white coat. She loves foraging for fresh greens, exploring her space, and binkying when she is happy. A wonderful first pet — she is gentle, easy to care for, and full of personality.",
     personality: ["Curious", "Gentle", "Playful", "Social"],
@@ -201,7 +196,7 @@ export const PETS: Pet[] = [
     location: "Aqaba, Jordan",
     city: "Aqaba",
     status: "pending",
-    image: goldenDogImg,
+    image: defaultPetImage,
     description:
       "Buddy has been patiently waiting for his forever home. A calm and affectionate mixed-breed, he is as loyal as they come. He has lived with children before and was the gentlest, most protective presence in the home. He deserves a second chapter.",
     personality: ["Loyal", "Calm", "Protective", "Affectionate"],
