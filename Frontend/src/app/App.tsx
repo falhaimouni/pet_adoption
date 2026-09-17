@@ -66,7 +66,7 @@ export type Role = UserRole;
 // Pages anyone can view without logging in.
 const PUBLIC_PAGES = new Set<string>([
   "home", "login", "signup", "about", "terms",
-  "privacy", "forgot-password", "reset-password", "pets", "pet-detail", "shop",
+  "privacy", "forgot-password", "reset-password", "pets", "pet-detail",
   "oauth-callback",
 ]);
 
