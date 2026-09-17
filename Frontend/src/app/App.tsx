@@ -66,7 +66,7 @@ export type Role = UserRole;
 // Pages anyone can view without logging in.
 const PUBLIC_PAGES = new Set<string>([
   "home", "login", "signup", "about", "terms",
-  "privacy", "forgot-password", "reset-password", "pets", "pet-detail", "shop",
+  "privacy", "forgot-password", "reset-password", "pets", "pet-detail",
   "oauth-callback",
 ]);
 
@@ -347,14 +347,14 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <AuthProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <LanguageProvider>
           <CartProvider>
             <AppRouter />
           </CartProvider>
-        </AuthProvider>
-      </LanguageProvider>
-    </ThemeProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }

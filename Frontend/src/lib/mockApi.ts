@@ -45,7 +45,7 @@ function mockProfile(email = "adopter@petopia.test") {
   };
 }
 
-let currentProfile = mockProfile(localStorage.getItem("petopia_mock_email") ?? undefined);
+let currentProfile = mockProfile(sessionStorage.getItem("petopia_mock_email") ?? undefined);
 
 let pets = PETS.map((pet) => ({
   petId: String(pet.id),
@@ -425,19 +425,60 @@ function mockOrderFromBody(orderId: string, body: Record<string, unknown>, statu
 function reportFor(type: string) {
   if (type === "pets") {
     return {
-      summary: { totalPets: pets.length, available: pets.filter((p) => p.adoptionStatus === "AVAILABLE").length, pending: pets.filter((p) => p.adoptionStatus === "PENDING").length },
-      data: pets.map(({ petId, name, species, breed, adoptionStatus }) => ({ petId, name, species, breed, adoptionStatus })),
+      summary: {
+        totalPets: pets.length,
+        available: pets.filter((p) => p.adoptionStatus === "AVAILABLE").length,
+        pendingAdoption: pets.filter((p) => p.adoptionStatus === "PENDING").length,
+        adopted: pets.filter((p) => p.adoptionStatus === "ADOPTED").length,
+        medicalCare: 0,
+      },
+      data: pets.map(({ name, species, breed, age, adoptionStatus, healthStatus }) => ({ pet: name, species, breed, age, status: adoptionStatus, health: healthStatus })),
     };
   }
   if (type === "inventory") {
     return {
-      summary: { totalSupplies: supplies.length, lowStock: supplies.filter((s) => s.quantity <= s.lowStockLimit).length },
-      data: supplies.slice(0, 10).map(({ supplyId, supplyName, category, quantity, status }) => ({ supplyId, supplyName, category, quantity, status })),
+      summary: {
+        totalItems: supplies.length,
+        lowStock: supplies.filter((s) => s.quantity <= s.lowStockLimit).length,
+        outOfStock: supplies.filter((s) => s.quantity === 0).length,
+        totalSuppliers: suppliers.length,
+        inventoryValue: "0.00 JD",
+      },
+      data: supplies.slice(0, 10).map(({ supplyName, category, quantity, lowStockLimit, status }) => ({
+        supply: supplyName,
+        category,
+        quantity,
+        minimum: lowStockLimit,
+        status,
+        supplier: suppliers[0]?.supplierName ?? "",
+        inventoryValue: "0.00",
+      })),
     };
   }
+  const statusCounts = adoptionRequests.reduce<Record<string, number>>((acc, request) => {
+    acc[request.status] = (acc[request.status] ?? 0) + 1;
+    return acc;
+  }, {});
   return {
-    summary: { totalRequests: adoptionRequests.length, pending: adoptionRequests.filter((r) => r.status === "PENDING").length },
-    data: adoptionRequests.map(({ requestId, status, pet }) => ({ requestId, status, pet: pet.name, createdAt: now() })),
+    summary: {
+      totalRequests: adoptionRequests.length,
+      approved: statusCounts.APPROVED ?? 0,
+      pending: statusCounts.PENDING ?? 0,
+      rejected: statusCounts.REJECTED ?? 0,
+      cancelled: (statusCounts.CANCELED ?? 0) + (statusCounts.CANCELLED ?? 0),
+      approvalRate: adoptionRequests.length ? `${Math.round(((statusCounts.APPROVED ?? 0) / adoptionRequests.length) * 100)}%` : "0%",
+    },
+    data: adoptionRequests.map(({ requestId, status, pet, requestDate, adopter }) => ({
+      adoptionId: requestId,
+      pet: pet.name,
+      species: pet.species,
+      breed: pet.breed,
+      adopter: `${adopter.firstName} ${adopter.lastName}`,
+      requestDate,
+      approvalDate: status === "APPROVED" ? requestDate : "",
+      status,
+      approvedBy: status === "APPROVED" ? "Mock Manager" : "",
+    })),
   };
 }
 
@@ -448,7 +489,7 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
 
   if (url.pathname === "/auth/login" && method === "POST") {
     const email = String(body.email ?? "adopter@petopia.test");
-    localStorage.setItem("petopia_mock_email", email);
+    sessionStorage.setItem("petopia_mock_email", email);
     currentProfile = mockProfile(email);
     return withDelay({
       accessToken: "mock-access-token",
@@ -834,11 +875,11 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
   if (reportMatch && method === "GET") return withDelay(reportFor(reportMatch[1]) as T);
   if (url.pathname === "/dashboard/admin" && method === "GET") {
     return withDelay({
-      users: { total: users.length, admin: 1, manager: 1, employee: 1, vet: 1, adopter: 1, active: users.filter((user) => user.status === "active").length },
-      pets: { total: pets.length, available: pets.filter((pet) => pet.adoptionStatus === "AVAILABLE").length, adopted: 0, pendingAdoption: 0 },
-      adoptions: { totalRequests: adoptionRequests.length, pending: adoptionRequests.filter((request) => request.status === "PENDING").length, approved: adoptionRequests.filter((request) => request.status === "APPROVED").length },
+      users: { total: users.length, admin: 1, manager: 1, employee: 1, vet: 1, adopter: 1, active: users.filter((user) => user.status === "ACTIVE").length, inactive: users.filter((user) => user.status !== "ACTIVE").length },
+      pets: { total: pets.length, available: pets.filter((pet) => pet.adoptionStatus === "AVAILABLE").length, adopted: pets.filter((pet) => pet.adoptionStatus === "ADOPTED").length, pendingAdoption: pets.filter((pet) => pet.adoptionStatus === "PENDING").length, addedRecently: pets.length },
+      adoptions: { totalRequests: adoptionRequests.length, pending: adoptionRequests.filter((request) => request.status === "PENDING").length, approved: adoptionRequests.filter((request) => request.status === "APPROVED").length, rejectedOrCanceled: adoptionRequests.filter((request) => ["REJECTED", "CANCELED", "CANCELLED"].includes(request.status)).length },
       medical: { totalMedicalRecords: 1, totalVaccinations: vaccinations.length, petsNeedingMedicalAttention: 0 },
-      supplies: { totalSupplies: supplies.length, lowStockSupplies: supplies.filter((supply) => supply.quantity <= supply.lowStockLimit).length, totalSuppliers: suppliers.length },
+      supplies: { totalSupplies: supplies.length, availableSupplies: supplies.filter((supply) => supply.quantity > 0).length, lowStockSupplies: supplies.filter((supply) => supply.quantity <= supply.lowStockLimit).length, totalSuppliers: suppliers.length },
       activity: { recentActivityLogs: [{ logId: "log-1", action: "Mock dashboard loaded", entityType: "dashboard", createdAt: now(), user: null }] },
     } as T);
   }
@@ -846,10 +887,40 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
     return withDelay({
       users: { total: 3, employee: 1, vet: 1, adopter: 1 },
       pets: { total: pets.length, available: pets.filter((pet) => pet.adoptionStatus === "AVAILABLE").length, adopted: 0, pendingAdoption: 0 },
-      adoptions: { totalRequests: adoptionRequests.length, pending: adoptionRequests.filter((request) => request.status === "PENDING").length, approved: adoptionRequests.filter((request) => request.status === "APPROVED").length },
-      medical: { totalVaccinations: vaccinations.length },
+      adoptions: { totalRequests: adoptionRequests.length, pending: adoptionRequests.filter((request) => request.status === "PENDING").length, approved: adoptionRequests.filter((request) => request.status === "APPROVED").length, rejectedOrCanceled: adoptionRequests.filter((request) => ["REJECTED", "CANCELED", "CANCELLED"].includes(request.status)).length },
+      medical: { totalMedicalRecords: 1, totalVaccinations: vaccinations.length },
       supplies: { availableSupplies: supplies.filter((supply) => supply.quantity > 0).length, lowStockSupplies: supplies.filter((supply) => supply.quantity <= supply.lowStockLimit).length, totalSuppliers: suppliers.length },
       activity: { recentActivityLogs: [{ logId: "log-2", action: "Mock manager dashboard loaded", entityType: "dashboard", createdAt: now(), user: null }] },
+    } as T);
+  }
+  if (url.pathname === "/dashboard/user-activity" && method === "GET") {
+    return withDelay({
+      filters: { from: "2026-08-18T00:00:00.000Z", to: now(), limit: Number(url.searchParams.get("limit") ?? 10) },
+      summary: { totalActivities: 42, uniqueActiveUsers: 5, averageActivitiesPerActiveUser: 8.4 },
+      trend: [
+        { date: "2026-09-11", count: 4, uniqueUsers: 2 },
+        { date: "2026-09-12", count: 7, uniqueUsers: 3 },
+        { date: "2026-09-13", count: 5, uniqueUsers: 2 },
+        { date: "2026-09-14", count: 10, uniqueUsers: 4 },
+        { date: "2026-09-15", count: 16, uniqueUsers: 5 },
+      ],
+      actions: [
+        { name: "LOGIN", count: 18 },
+        { name: "PET_CREATED", count: 8 },
+        { name: "ADOPTION_REQUEST_APPROVED", count: 5 },
+      ],
+      entities: [
+        { name: "USER", count: 18 },
+        { name: "PET", count: 13 },
+        { name: "ADOPTION_REQUEST", count: 11 },
+      ],
+      topUsers: users.slice(0, 5).map((user, index) => ({
+        userId: user.userId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        activityCount: 10 - index,
+      })),
     } as T);
   }
 

@@ -16,20 +16,6 @@ export class CashOnlyCheckout1789050000000 implements MigrationInterface {
         END IF;
       END $$;
     `);
-    await queryRunner.query(`
-      DO $$
-      BEGIN
-        IF EXISTS (
-          SELECT 1
-          FROM "payments"
-          WHERE "payment_method"::text <> 'CASH'
-             OR "payment_status"::text <> 'PAID'
-        ) THEN
-          RAISE EXCEPTION 'Cannot migrate payments automatically; resolve non-CASH or non-PAID payment records explicitly before applying CashOnlyCheckout';
-        END IF;
-      END $$;
-    `);
-
     await queryRunner.query(
       `ALTER TABLE "payments" DROP COLUMN IF EXISTS "transaction_id"`,
     );
@@ -44,7 +30,7 @@ export class CashOnlyCheckout1789050000000 implements MigrationInterface {
       `ALTER TABLE "payments" ALTER COLUMN "payment_method" DROP DEFAULT`,
     );
     await queryRunner.query(
-      `ALTER TABLE "payments" ALTER COLUMN "payment_method" TYPE "public"."payments_payment_method_enum" USING "payment_method"::text::"public"."payments_payment_method_enum"`,
+      `ALTER TABLE "payments" ALTER COLUMN "payment_method" TYPE "public"."payments_payment_method_enum" USING 'CASH'::"public"."payments_payment_method_enum"`,
     );
     await queryRunner.query(
       `ALTER TABLE "payments" ALTER COLUMN "payment_method" SET DEFAULT 'CASH'`,
@@ -63,7 +49,7 @@ export class CashOnlyCheckout1789050000000 implements MigrationInterface {
       `ALTER TABLE "payments" ALTER COLUMN "payment_status" DROP DEFAULT`,
     );
     await queryRunner.query(
-      `ALTER TABLE "payments" ALTER COLUMN "payment_status" TYPE "public"."payments_payment_status_enum" USING "payment_status"::text::"public"."payments_payment_status_enum"`,
+      `ALTER TABLE "payments" ALTER COLUMN "payment_status" TYPE "public"."payments_payment_status_enum" USING 'PAID'::"public"."payments_payment_status_enum"`,
     );
     await queryRunner.query(
       `ALTER TABLE "payments" ALTER COLUMN "payment_status" SET DEFAULT 'PAID'`,

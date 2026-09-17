@@ -89,7 +89,7 @@ export default function AdminReportsPage({ onNavigate, role = "admin", activePag
                 <FilterInput label={t("report_max_age")} type="number" value={petsF.maxAge} onChange={v=>setPetsF(p=>({...p,maxAge:v}))} placeholder="20"/>
               </>}
               {reportType==="inventory"&&<>
-                <FilterSelect label={t("th_status")} value={inventoryF.status} onChange={v=>setInventoryF(p=>({...p,status:v}))} options={[{value:"",label:t("report_all_statuses")},{value:"in_stock",label:t("status_in_stock")},{value:"low_stock",label:t("status_low_stock")},{value:"out_of_stock",label:t("status_out_of_stock")}]}/>
+                <FilterSelect label={t("th_status")} value={inventoryF.status} onChange={v=>setInventoryF(p=>({...p,status:v}))} options={[{value:"",label:t("report_all_statuses")},{value:"OK",label:t("status_in_stock")},{value:"LOW_STOCK",label:t("status_low_stock")},{value:"OUT_OF_STOCK",label:t("status_out_of_stock")}]}/>
                 <FilterInput label={t("th_category")} value={inventoryF.category} onChange={v=>setInventoryF(p=>({...p,category:v}))} placeholder={t("report_all_categories")}/>
                 <FilterInput label={t("th_supplier")} value={inventoryF.supplier} onChange={v=>setInventoryF(p=>({...p,supplier:v}))} placeholder={t("report_all_suppliers")}/>
               </>}

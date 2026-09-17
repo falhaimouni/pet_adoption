@@ -35,6 +35,7 @@ import productImg5 from "../imports/MyPetopia/782532b753cb22c0157d258183952675ee
 import productImg6 from "../imports/MyPetopia/d297332b2c72bbab968e9869ca23efc085706d7b.png";
 import productImg7 from "../imports/Home/6873b1dc8519e91f8d65e08b4fbf144707066349.png";
 import productImg8 from "../imports/Login/9bd62fd6b651515e439f303dbe7dcc8978ef5b6a.png";
+import defaultSupplyImage from "../assets/default-supply.jpeg";
 
 const productImages = [
   productImg1,
@@ -48,6 +49,8 @@ const productImages = [
 ];
 
 export const productImage = (index: number) => productImages[index % productImages.length];
+
+export { defaultSupplyImage };
 
 export const PRODUCTS: Product[] = [
   // Food

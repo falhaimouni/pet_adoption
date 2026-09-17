@@ -4,6 +4,7 @@ import type { OrderDto } from "@shared/dto/order.dto";
 import Navbar from "../components/Navbar";
 import EmptyState from "../components/EmptyState";
 import { useCart } from "../context/CartContext";
+import { defaultSupplyImage } from "../data/products";
 import { useLanguage } from "../context/LanguageContext";
 import { apiFetch } from "../lib/api";
 
@@ -161,7 +162,15 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
               <div className="divide-y divide-[#f0f8f7]">
                 {items.map(({ product, quantity }) => (
                   <article key={product.id} className="py-4 flex gap-4">
-                    <img src={product.image} alt={product.name} className="w-20 h-20 rounded-[14px] object-cover bg-[#f0f8f7] shrink-0" />
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      onError={(event) => {
+                        event.currentTarget.onerror = null;
+                        event.currentTarget.src = defaultSupplyImage;
+                      }}
+                      className="w-20 h-20 rounded-[14px] object-cover bg-[#f0f8f7] shrink-0"
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="font-['Poppins',sans-serif] text-[11px] text-[#5a8a87]">{product.brand}</p>
                       <h2 className="font-['Poppins',sans-serif] font-semibold text-[15px] text-[#1a2e2d] truncate">{product.name}</h2>

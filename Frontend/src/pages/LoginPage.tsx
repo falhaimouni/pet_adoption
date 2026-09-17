@@ -69,98 +69,97 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[rgba(186,216,211,0.99)] flex flex-col">
+    <div className="min-h-screen bg-[rgba(186,216,211,0.99)] flex flex-col overflow-x-hidden">
       <Navbar onNavigate={onNavigate} />
 
-      {/* Two-column layout */}
-      <div className="flex flex-col lg:flex-row flex-1">
+      {/* Fluid px layout: stacks on mobile/tablet, 2 cols on desktop. No vw so zoom stays stable. */}
+      <div className="w-full max-w-[1280px] mx-auto grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-8 lg:gap-6 items-center lg:items-center flex-1 px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
 
         {/* ── Left Panel ── */}
-        <div className="relative flex-1 flex flex-col items-center justify-center overflow-hidden min-h-[360px] lg:min-h-0 py-10 lg:py-0">
+        <div className="relative flex justify-center lg:justify-start">
 
-          {/* Teal circle blob */}
-          <div className="absolute inset-0 pointer-events-none hidden lg:block">
-            <svg viewBox="0 0 600 600" fill="none" className="absolute w-[600px] h-auto top-1/2 left-0 -translate-y-1/2">
+          {/* One grouped hero: background shape, copy, and dog move together. */}
+          <div className="relative w-full max-w-[340px] sm:max-w-[440px] lg:max-w-[540px] mx-auto lg:mx-0">
+            <svg viewBox="0 0 600 600" fill="none" className="absolute w-full max-w-[560px] h-auto top-[30px] sm:top-[40px] left-1/2 -translate-x-1/2 pointer-events-none" aria-hidden="true">
               <circle cx="300" cy="300" r="300" fill="#089D97" fillOpacity="0.15" />
             </svg>
-          </div>
 
           {/* Brand text block — positioned at top-left */}
-          <div className="absolute top-6 left-6 lg:top-12 lg:left-14 z-10 flex flex-col items-start">
-            <h2 className="font-['Prata',serif] text-[34px] sm:text-[40px] lg:text-[52px] text-[#047975] leading-tight mb-0">
+          <div className="relative z-10 w-full">
+            <h2 className="font-['Prata',serif] text-[32px] sm:text-[36px] lg:text-[40px] text-[#047975] leading-tight">
               Petopia
             </h2>
           </div>
 
           {/* Welcome section — positioned left-center */}
-          <div className="absolute left-0 top-[32%] -translate-y-1/2 z-10 flex flex-col items-start px-6 sm:px-8 lg:px-14 w-full max-w-[420px]">
-            <p className="font-['Poppins',sans-serif] font-semibold text-[28px] sm:text-[32px] lg:text-[42px] text-black rotate-[-0.7deg] mb-2 leading-tight">
+          <div className="relative z-10 w-full max-w-[420px] mt-5 sm:mt-8">
+            <p className="font-['Poppins',sans-serif] font-semibold text-[32px] sm:text-[40px] lg:text-[44px] text-black leading-[1.1] text-balance break-words">
               {t("login_welcome_to")}
             </p>
-            <p className="font-['Poppins',sans-serif] text-[16px] lg:text-[20px] text-black max-w-[300px] leading-snug">
+            <p className="font-['Poppins',sans-serif] text-[15px] sm:text-base lg:text-[17px] text-black max-w-[400px] leading-[1.6] mt-3 text-balance break-words">
               {t("home_hero_desc1")}
             </p>
           </div>
 
-          {/* Dog illustration */}
-          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-10 flex justify-center">
+          {/* Dog + tagline move as one unit, dog stays anchored under the copy */}
+          <div className="relative z-10 w-full mt-4">
             <img
               src={dogImg}
               alt=""
-              className="w-[280px] lg:w-[320px] h-auto object-contain"
+              className="w-[240px] sm:w-[300px] lg:w-[340px] h-auto object-contain mx-auto lg:mx-0"
             />
+            {/* Tagline card: stacked under dog on phones, overlapping on sm+ */}
+            <div className="relative mt-3 mx-auto sm:mx-0 sm:absolute sm:mt-0 sm:bottom-[20px] lg:bottom-[28px] sm:left-[190px] lg:left-[240px] bg-[rgba(186,216,211,0.96)] border border-white rounded-[20px] lg:rounded-[24px] shadow-[7px_7px_1px_0px_rgba(0,0,0,0.25)] px-4 sm:px-5 py-3 sm:py-3.5 w-full max-w-[230px] sm:w-[250px] sm:max-w-none">
+              <p className="font-['Poppins',sans-serif] text-[13px] sm:text-[14px] text-black leading-relaxed text-center sm:text-left">
+                {t("login_quote")}
+              </p>
+            </div>
           </div>
-
-          {/* Tagline card */}
-          <div className="hidden lg:flex absolute z-20 bottom-6 right-30 bg-[rgba(186,216,211,0.96)] border border-white rounded-[30px] shadow-[7px_7px_1px_0px_rgba(0,0,0,0.25)] px-5 py-4 max-w-[260px]">
-              <p className="font-['Poppins',sans-serif] text-[14px] text-black leading-relaxed">
-              {t("login_quote")}
-            </p>
           </div>
 
           {/* Paw leaf — bottom-left */}
           <img
             src={pawLeafImg}
             alt=""
-            className="absolute bottom-[5%] left-[5%] w-[140px] h-auto pointer-events-none hidden lg:block"
+            className="absolute bottom-[2%] left-[2%] w-[90px] lg:w-[120px] h-auto pointer-events-none hidden md:block"
           />
         </div>
 
         {/* ── Right Panel ── */}
-        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-10 py-8 lg:py-10">
-          <div className="w-full max-w-[500px] bg-white rounded-[24px] sm:rounded-[30px] shadow-xl p-5 sm:p-8 lg:p-10 relative">
-            {/* Cat at the top of the card */}
-            <div className="absolute -top-[55px] left-0 hidden lg:block">
+        <div className="relative flex justify-center lg:justify-end items-start py-4 sm:py-6">
+          <div className="w-full max-w-[440px] sm:max-w-[500px] lg:max-w-[520px] relative mt-12 sm:mt-[56px] bg-white rounded-[20px] sm:rounded-[30px] shadow-xl px-5 sm:px-8 py-6 sm:py-8">
+            {/* Cat at the top of the card — fixed size, fixed offset so it never drifts */}
+            <div className="absolute -top-[36px] sm:-top-[52px] left-[8px] pointer-events-none">
               <img
                 src={catPhotoImg}
                 alt=""
-                className="w-[180px] h-auto object-contain"
+                className="w-[120px] sm:w-[150px] lg:w-[170px] h-auto object-contain"
               />
             </div>
             
-            <h2 className="font-['Inter',sans-serif] font-semibold text-[26px] sm:text-[32px] text-black mb-1">
+            <h2 className="font-['Inter',sans-serif] font-semibold text-[22px] sm:text-[26px] lg:text-[32px] text-black mb-1 text-balance">
               {t("login_welcome_back")}
             </h2>
-            <p className="font-['Inter',sans-serif] font-light text-[18px] text-black mb-8">
+            <p className="font-['Inter',sans-serif] font-light text-[16px] sm:text-[18px] text-black mb-6 sm:mb-8 text-balance">
               {t("login_subtitle")}
             </p>
 
-            <form onSubmit={handleLogin} className="flex flex-col gap-5">
+            <form onSubmit={handleLogin} className="flex flex-col gap-4 sm:gap-5">
               <InputField
                 label={t("login_email")}
                 placeholder={t("login_enter_email")}
                 type="email"
                 icon={<User size={18} />}
-                value={email}
-                onChange={setEmail}
+              value={email}
+              onChange={setEmail}
               />
               <InputField
                 label={t("login_password")}
                 placeholder={t("login_enter_password")}
                 type="password"
                 icon={<Lock size={18} />}
-                value={password}
-                onChange={setPassword}
+              value={password}
+              onChange={setPassword}
               />
 
               <div className="flex items-center justify-end">
@@ -182,7 +181,7 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#089D97] text-white font-['Inter',sans-serif] font-bold text-[22px] py-4 rounded-[20px] hover:bg-[#047975] transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full bg-[#089D97] text-white font-['Inter',sans-serif] font-bold text-[18px] sm:text-[20px] lg:text-[22px] py-3 sm:py-4 rounded-[16px] sm:rounded-[20px] hover:bg-[#047975] transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {loading ? t("login_signing_in") : t("login_btn")}
               </button>

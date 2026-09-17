@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertCircle,
@@ -27,25 +27,15 @@ import {
 } from "recharts";
 import DashboardLayout from "../../components/DashboardLayout";
 import KpiCard from "../../components/KpiCard";
+import { apiFetch } from "../../lib/api";
 import { useLanguage } from "../../context/LanguageContext";
-import type { AdminDashboardDto } from "@shared/dto";
+import type { AdminDashboardDto, UserActivityAnalyticsDto } from "@shared/dto";
 
 interface AdminDashboardPageProps {
   onNavigate: (page: string) => void;
 }
 
 type DashboardData = AdminDashboardDto;
-
-interface UserActivityAnalytics {
-  summary: {
-    totalActivities: number;
-    uniqueActiveUsers: number;
-    averageActivitiesPerActiveUser: number;
-  };
-  trend: Array<{ date: string; count: number; uniqueUsers: number }>;
-  actions: Array<{ name: string; count: number }>;
-  entities: Array<{ name: string; count: number }>;
-}
 
 const COLORS = ["#089D97", "#2563eb", "#f59e0b", "#ef4444", "#7c3aed"];
 
@@ -58,53 +48,46 @@ const features = [
 
 export default function AdminDashboardPage({ onNavigate }: AdminDashboardPageProps) {
   const { t, isRtl, lang } = useLanguage();
-  const data: DashboardData = {
-    users: { total: 500, admin: 1, manager: 4, employee: 32, vet: 7, adopter: 456, active: 474, inactive: 26 },
-    pets: { total: 320, available: 184, adopted: 96, pendingAdoption: 40, addedRecently: 18 },
-    adoptions: { totalRequests: 150, pending: 20, approved: 100, rejectedOrCanceled: 30 },
-    medical: { totalMedicalRecords: 280, totalVaccinations: 640, petsNeedingMedicalAttention: 12 },
-    supplies: { totalSupplies: 84, availableSupplies: 61, lowStockSupplies: 9, totalSuppliers: 14 },
-    activity: {
-      recentActivityLogs: [
-        { logId: "log-1", action: "LOGIN", entityType: "USER", entityId: null, createdAt: new Date("2026-09-15T08:15:00.000Z"), user: { userId: "user-1", firstName: "Sara", lastName: "Khan", email: "sara.khan@example.com" } },
-        { logId: "log-2", action: "PET_CREATED", entityType: "PET", entityId: null, createdAt: new Date("2026-09-14T17:20:00.000Z"), user: { userId: "user-2", firstName: "Omar", lastName: "Ali", email: "omar.ali@example.com" } },
-        { logId: "log-3", action: "ADOPTION_REQUEST_APPROVED", entityType: "ADOPTION_REQUEST", entityId: null, createdAt: new Date("2026-09-13T13:10:00.000Z"), user: { userId: "user-3", firstName: "Lina", lastName: "Haddad", email: "lina.haddad@example.com" } },
-      ],
-    },
-  };
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [activityAnalytics, setActivityAnalytics] = useState<UserActivityAnalyticsDto | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const activityAnalytics: UserActivityAnalytics = {
-    summary: { totalActivities: 780, uniqueActiveUsers: 48, averageActivitiesPerActiveUser: 16.25 },
-    trend: [
-      { date: "2026-09-09", count: 32, uniqueUsers: 11 },
-      { date: "2026-09-10", count: 41, uniqueUsers: 13 },
-      { date: "2026-09-11", count: 46, uniqueUsers: 15 },
-      { date: "2026-09-12", count: 38, uniqueUsers: 12 },
-      { date: "2026-09-13", count: 53, uniqueUsers: 17 },
-      { date: "2026-09-14", count: 49, uniqueUsers: 16 },
-      { date: "2026-09-15", count: 58, uniqueUsers: 18 },
-    ],
-    actions: [
-      { name: "LOGIN", count: 240 },
-      { name: "PET_CREATED", count: 86 },
-      { name: "ADOPTION_REQUEST_APPROVED", count: 54 },
-      { name: "USER_CREATED", count: 28 },
-      { name: "SUPPLY_CREATED", count: 18 },
-    ],
-    entities: [
-      { name: "USER", count: 314 },
-      { name: "PET", count: 196 },
-      { name: "ADOPTION_REQUEST", count: 142 },
-      { name: "ADOPTION", count: 74 },
-      { name: "SUPPLY", count: 54 },
-    ],
-  };
+  useEffect(() => {
+    let active = true;
 
-  const loading = false;
-  const completedAdoptionsCount = 150;
+    async function loadDashboard() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const [dashboard, analytics] = await Promise.all([
+          apiFetch<DashboardData>("/dashboard/admin"),
+          apiFetch<UserActivityAnalyticsDto>("/dashboard/user-activity?limit=10"),
+        ]);
+
+        if (!active) return;
+        setData(dashboard);
+        setActivityAnalytics(analytics);
+      } catch (err) {
+        if (!active) return;
+        setError(err instanceof Error ? err.message : t("dashboard_load_error"));
+        setData(null);
+        setActivityAnalytics(null);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadDashboard();
+
+    return () => {
+      active = false;
+    };
+  }, [t]);
 
   const numberFormatter = new Intl.NumberFormat(lang === "ar" ? "ar-JO" : lang);
-  const totalAdoptions = completedAdoptionsCount;
+  const totalAdoptions = data?.adoptions.approved;
 
   const adoptionStatusData = useMemo(
     () => [
@@ -171,11 +154,17 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
         />
         <KpiCard
           label={t("admin_total_adoptions")}
-          value={metricValue(totalAdoptions, loading, false, t, numberFormatter)}
+          value={metricValue(totalAdoptions, loading, !!error, t, numberFormatter)}
           icon={<HeartHandshake size={20} />}
           accent="bg-rose-50"
         />
       </div>
+      {error && (
+        <div className="mb-5 flex items-center gap-2 rounded-[8px] border border-red-100 bg-red-50 px-4 py-3">
+          <AlertCircle size={16} className="shrink-0 text-red-500" />
+          <p className="font-['Poppins',sans-serif] text-[13px] text-red-600">{error}</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
         {features.map(({ id, labelKey, descKey, icon: Icon, color, bg }) => (
@@ -396,8 +385,10 @@ function formatTrendLabel(value: string, lang: string) {
   return new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" }).format(date);
 }
 
-function formatActivityDate(value: Date) {
-  return value.toISOString().slice(0, 10);
+function formatActivityDate(value: Date | string) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
 }
 
 function metricValue(

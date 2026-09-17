@@ -138,7 +138,11 @@ export default function StaffPetsPage({ onNavigate, role = "employee", activePag
   }
 
   async function uploadImage(file?: File) {
-    if (!imagePet || !file) return;
+    if (!imagePet) return;
+    if (!file) {
+      setError("Please choose an image file first.");
+      return;
+    }
     const validation = validateImageFile(file, t);
     if (validation) {
       setError(validation);
@@ -257,7 +261,7 @@ export default function StaffPetsPage({ onNavigate, role = "employee", activePag
       </Modal>
 
       <Modal title={t("pet_upload_image")} open={!!imagePet} onClose={() => setImagePet(null)} onConfirm={() => uploadImage(inputRef.current?.files?.[0])} confirmLabel={saving ? t("pet_uploading") : t("action_upload")} size="sm">
-        <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="w-full text-[13px] font-['Poppins',sans-serif]" />
+        <input ref={inputRef} type="file" accept="image/*,.jpg,.jpeg,.png,.webp" className="w-full text-[13px] font-['Poppins',sans-serif]" />
         <p className="mt-2 font-['Poppins',sans-serif] text-[12px] text-black/50">{t("pet_upload_hint")}</p>
       </Modal>
     </DashboardLayout>

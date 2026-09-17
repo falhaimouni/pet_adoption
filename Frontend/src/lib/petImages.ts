@@ -1,8 +1,12 @@
-import defaultPetImage from "../imports/Home/735b39631c3076cb0778dad52f238169e2713381.png";
-import { resolveAssetUrl } from "./api";
+import defaultPetImage from "../assets/default-pet.jpeg";
+import { PetImageResponse, resolveAssetUrl } from "./api";
 
 export function getPetImageUrl(imageUrl?: string | null) {
   return resolveAssetUrl(imageUrl) || defaultPetImage;
+}
+
+export function getPrimaryPetImageUrl(images?: PetImageResponse[] | null) {
+  return getPetImageUrl(images?.[images.length - 1]?.imageUrl);
 }
 
 export { defaultPetImage };

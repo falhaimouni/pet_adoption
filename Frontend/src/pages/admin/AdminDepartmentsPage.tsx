@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Building2, Edit, Eye, Plus, Search, Trash2, Users } from "lucide-react";
+import { Building2, Edit, Eye, Power, Plus, Search, Users } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import Badge, { statusBadge } from "../../components/Badge";
 import EmptyState from "../../components/EmptyState";
@@ -149,6 +149,10 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
 
   async function deleteDepartment() {
     if (!deleteItem) return;
+    if (employeeCount(deleteItem) > 0) {
+      setError(t("department_move_users_first").replace("{count}", String(employeeCount(deleteItem))));
+      return;
+    }
     setSaving(true);
     setError("");
     try {
@@ -156,7 +160,7 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
       setDeleteItem(null);
       loadDepartments();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("error_delete_department"));
+      setError(err instanceof Error ? err.message : t("error_deactivate_department"));
     } finally {
       setSaving(false);
     }
@@ -199,6 +203,8 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
               <tbody>
                 {filtered.map((department) => {
                   const active = department.isActive !== false;
+                  const assignedEmployees = employeeCount(department);
+                  const canDeactivate = active && assignedEmployees === 0;
                   return (
                     <tr key={department.departmentId} className="border-b border-gray-50 hover:bg-[rgba(8,157,151,0.03)] transition-colors">
                       <td className="py-3 px-3 font-['Poppins',sans-serif] font-medium text-[13px] text-black whitespace-nowrap">{department.departmentName}</td>
@@ -211,7 +217,21 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
                         <div className="flex gap-2">
                           <button onClick={() => openView(department)} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label={t("aria_view_item").replace("{name}", department.departmentName)}><Eye size={14} /></button>
                           <button onClick={() => openEdit(department)} className="text-blue-400 hover:text-blue-600 transition-colors" aria-label={t("aria_edit_item").replace("{name}", department.departmentName)}><Edit size={14} /></button>
-                          <button onClick={() => setDeleteItem(department)} className="text-red-400 hover:text-red-600 transition-colors" aria-label={t("aria_delete_item").replace("{name}", department.departmentName)}><Trash2 size={14} /></button>
+                          <button
+                            onClick={() => canDeactivate && setDeleteItem(department)}
+                            disabled={!canDeactivate}
+                            title={
+                              !active
+                                ? t("department_already_inactive")
+                                : assignedEmployees > 0
+                                  ? t("department_move_users_first").replace("{count}", String(assignedEmployees))
+                                  : t("aria_deactivate_item").replace("{name}", department.departmentName)
+                            }
+                            className={`transition-colors ${canDeactivate ? "text-red-400 hover:text-red-600" : "text-gray-300 cursor-not-allowed"}`}
+                            aria-label={t("aria_deactivate_item").replace("{name}", department.departmentName)}
+                          >
+                            <Power size={14} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -253,6 +273,11 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
                 <p className="font-['Poppins',sans-serif] text-[13px] text-black">{employeeCount(viewItem)}</p>
               </div>
             </div>
+            {employeeCount(viewItem) > 0 && (
+              <p className="font-['Poppins',sans-serif] text-[12px] text-amber-700 bg-amber-50 rounded-[10px] px-3 py-2">
+                {t("department_move_users_before_deactivate")}
+              </p>
+            )}
             <div>
               <span className="font-['Poppins',sans-serif] text-[12px] text-black/50 block mb-2">{t("department_users")}</span>
               {(viewItem.employees ?? []).length === 0 ? (
@@ -299,10 +324,17 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
         </div>
       </Modal>
 
-      <Modal title={t("delete_department")} open={!!deleteItem} onClose={() => setDeleteItem(null)} onConfirm={deleteDepartment} confirmLabel={saving ? t("common_deleting") : t("action_delete")} confirmDestructive size="sm">
-        <p className="font-['Poppins',sans-serif] text-[14px] text-black">
-          {t("confirm_delete_department").replace("{department}", deleteItem?.departmentName ?? "")}
-        </p>
+      <Modal title={t("deactivate_department")} open={!!deleteItem} onClose={() => setDeleteItem(null)} onConfirm={deleteDepartment} confirmLabel={saving ? t("common_deactivating") : t("action_deactivate")} confirmDestructive confirmDisabled={saving || Boolean(deleteItem && employeeCount(deleteItem) > 0)} size="sm">
+        <div className="space-y-3">
+          <p className="font-['Poppins',sans-serif] text-[14px] text-black">
+            {t("confirm_deactivate_department").replace("{department}", deleteItem?.departmentName ?? "")}
+          </p>
+          {deleteItem && employeeCount(deleteItem) > 0 && (
+            <p className="font-['Poppins',sans-serif] text-[12px] text-amber-700 bg-amber-50 rounded-[10px] px-3 py-2">
+              {t("department_move_users_first").replace("{count}", String(employeeCount(deleteItem)))}
+            </p>
+          )}
+        </div>
       </Modal>
     </DashboardLayout>
   );

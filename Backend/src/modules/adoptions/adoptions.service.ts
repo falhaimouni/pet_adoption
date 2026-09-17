@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { CreateAdoptionRequestDto } from '@shared/dto/adoption-request.dto';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, QueryFailedError, Repository } from 'typeorm';
 
 import { ActivityLog } from '../../database/entities/activity-log.entity';
 import { AdoptionRequest } from '../../database/entities/adoption-request.entity';
@@ -191,19 +191,11 @@ export class AdoptionsService {
     dto: CreateAdoptionRequestDto,
   ): Promise<AdoptionRequestResponse> {
     return this.dataSource.transaction(async (manager) => {
-      const adopterRepo = manager.getRepository(Adopter);
       const petRepo = manager.getRepository(Pet);
       const requestRepo = manager.getRepository(AdoptionRequest);
       const logRepo = manager.getRepository(ActivityLog);
 
-      const adopter = await adopterRepo.findOne({
-        where: { userId },
-        relations: ['user'],
-      });
-
-      if (!adopter) {
-        throw new NotFoundException('Adopter profile not found');
-      }
+      const adopter = await this.findOrCreateAdopterProfile(manager, userId);
 
       const pet = await petRepo
         .createQueryBuilder('pet')
@@ -752,5 +744,57 @@ export class AdoptionsService {
 
   private today(): string {
     return new Date().toISOString().split('T')[0];
+  }
+
+  private async findOrCreateAdopterProfile(
+    manager: EntityManager,
+    userId: string,
+  ): Promise<Adopter> {
+    const adopterRepo = manager.getRepository(Adopter);
+    const existingAdopter = await adopterRepo.findOne({
+      where: { userId },
+      relations: ['user'],
+    });
+
+    if (existingAdopter) {
+      return existingAdopter;
+    }
+
+    const user = await manager.getRepository(User).findOne({
+      where: { userId, status: 'active' },
+      relations: ['role'],
+    });
+
+    if (
+      !user ||
+      !user.role ||
+      user.role.roleName !== 'ADOPTER' ||
+      user.role.isActive === false
+    ) {
+      throw new NotFoundException('Adopter profile not found');
+    }
+
+    try {
+      return await adopterRepo.save(
+        adopterRepo.create({
+          userId,
+          user,
+          registrationDate: this.today(),
+        }),
+      );
+    } catch (error) {
+      if (error instanceof QueryFailedError && (error as any).code === '23505') {
+        const adopter = await adopterRepo.findOne({
+          where: { userId },
+          relations: ['user'],
+        });
+
+        if (adopter) {
+          return adopter;
+        }
+      }
+
+      throw error;
+    }
   }
 }

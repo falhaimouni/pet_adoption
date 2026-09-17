@@ -14,7 +14,14 @@ async function bootstrap() {
   //helps application shut down cleanly when the process is stopped. (for docker and DB connections)
   app.enableShutdownHooks();
   //middleware that adds security headers to each response
-  app.use(helmet());
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }));
+
+  // Serve uploaded files from the uploads folder
+  app.useStaticAssets(resolveUploadRoot(), {
+    prefix: '/uploads/',
+  });
 
   // Crucial: This enables the @IsEmail, @MinLength, etc. validations in your DTOs
   app.useGlobalPipes(new ValidationPipe({

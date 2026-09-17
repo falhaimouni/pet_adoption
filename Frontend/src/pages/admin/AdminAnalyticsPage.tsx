@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Download, TrendingUp } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AlertCircle, Download } from "lucide-react";
 import {
   AreaChart, Area, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -8,49 +8,81 @@ import DashboardLayout from "../../components/DashboardLayout";
 import KpiCard from "../../components/KpiCard";
 import { Users, PawPrint, Heart, MessageSquare } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
-
-const userGrowth = [
-  { month: "Jan", users: 95, adopters: 80, staff: 10, vets: 3, managers: 1, admins: 1 },
-  { month: "Feb", users: 102, adopters: 86, staff: 10, vets: 3, managers: 2, admins: 1 },
-  { month: "Mar", users: 110, adopters: 94, staff: 10, vets: 3, managers: 2, admins: 1 },
-  { month: "Apr", users: 119, adopters: 102, staff: 11, vets: 3, managers: 2, admins: 1 },
-  { month: "May", users: 128, adopters: 110, staff: 11, vets: 3, managers: 2, admins: 1 },
-  { month: "Jun", users: 138, adopters: 120, staff: 11, vets: 3, managers: 2, admins: 1 },
-  { month: "Jul", users: 134, adopters: 116, staff: 11, vets: 3, managers: 2, admins: 1 },
-];
-
-const roleDistribution = [
-  { name: "Adopters", value: 120 },
-  { name: "Staff", value: 11 },
-  { name: "Vets", value: 3 },
-  { name: "Managers", value: 2 },
-  { name: "Admins", value: 1 },
-];
-
-const adoptionTrend = [
-  { month: "Jan", adoptions: 8, rejections: 3 },
-  { month: "Feb", adoptions: 12, rejections: 4 },
-  { month: "Mar", adoptions: 10, rejections: 2 },
-  { month: "Apr", adoptions: 15, rejections: 5 },
-  { month: "May", adoptions: 18, rejections: 3 },
-  { month: "Jun", adoptions: 22, rejections: 4 },
-  { month: "Jul", adoptions: 17, rejections: 2 },
-];
-
-const storageData = [
-  { category: "Images", gb: 4.2 },
-  { category: "PDFs", gb: 1.8 },
-  { category: "Docs", gb: 0.5 },
-  { category: "Other", gb: 0.3 },
-];
+import { apiFetch } from "../../lib/api";
+import type { AdminDashboardDto, UserActivityAnalyticsDto } from "@shared/dto";
 
 const COLORS = ["#089D97", "#47BDB8", "#80CECE", "#047975", "#B2E0DF"];
 
 interface AdminAnalyticsPageProps { onNavigate: (page: string) => void; }
 
 export default function AdminAnalyticsPage({ onNavigate }: AdminAnalyticsPageProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [period, setPeriod] = useState("7m");
+  const [dashboard, setDashboard] = useState<AdminDashboardDto | null>(null);
+  const [activity, setActivity] = useState<UserActivityAnalyticsDto | null>(null);
+  const [adoptionReport, setAdoptionReport] = useState<ReportResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadAnalytics() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const [dashboardData, activityData, adoptionData] = await Promise.all([
+          apiFetch<AdminDashboardDto>("/dashboard/admin"),
+          apiFetch<UserActivityAnalyticsDto>("/dashboard/user-activity?limit=5"),
+          apiFetch<ReportResponse>("/reports/adoptions"),
+        ]);
+
+        if (!active) return;
+        setDashboard(dashboardData);
+        setActivity(activityData);
+        setAdoptionReport(adoptionData);
+      } catch (err) {
+        if (!active) return;
+        setError(err instanceof Error ? err.message : t("dashboard_load_error"));
+        setDashboard(null);
+        setActivity(null);
+        setAdoptionReport(null);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadAnalytics();
+
+    return () => {
+      active = false;
+    };
+  }, [t]);
+
+  const numberFormatter = new Intl.NumberFormat(lang === "ar" ? "ar-JO" : lang);
+  const userActivityTrend = useMemo(
+    () =>
+      (activity?.trend ?? []).map((item) => ({
+        date: formatDateLabel(item.date, lang),
+        activities: item.count,
+        activeUsers: item.uniqueUsers,
+      })),
+    [activity, lang],
+  );
+  const roleDistribution = useMemo(
+    () => [
+      { name: t("role_adopters"), value: dashboard?.users.adopter ?? 0 },
+      { name: t("role_employee_plural"), value: dashboard?.users.employee ?? 0 },
+      { name: t("role_vets"), value: dashboard?.users.vet ?? 0 },
+      { name: t("role_managers"), value: dashboard?.users.manager ?? 0 },
+      { name: t("role_admins"), value: dashboard?.users.admin ?? 0 },
+    ],
+    [dashboard, t],
+  );
+  const adoptionTrend = useMemo(() => adoptionStatusByMonth(adoptionReport?.data ?? [], lang), [adoptionReport, lang]);
+  const topUsers = activity?.topUsers ?? [];
+  const value = (metric?: number) => loading ? "..." : numberFormatter.format(metric ?? 0);
 
   return (
     <DashboardLayout role="admin" activePage="admin-analytics" onNavigate={onNavigate} pageTitle={t("analytics_system")} breadcrumbs={[t("role_admin"), t("nav_analytics")]}>
@@ -65,20 +97,26 @@ export default function AdminAnalyticsPage({ onNavigate }: AdminAnalyticsPagePro
           <Download size={15} /> {t("action_export")}
         </button>
       </div>
+      {error && (
+        <div className="mb-5 flex items-center gap-2 rounded-[12px] border border-red-100 bg-red-50 px-4 py-3">
+          <AlertCircle size={16} className="shrink-0 text-red-500" />
+          <p className="font-['Poppins',sans-serif] text-[13px] text-red-600">{error}</p>
+        </div>
+      )}
 
       {/* KPI row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard icon={<Users size={20} />} label={t("admin_total_users")} value="137" trend="up" trendValue={t("analytics_trend_month").replace("{value}", "+12%")} />
-        <KpiCard icon={<PawPrint size={20} />} label={t("analytics_pets_listed")} value="64" trend="up" trendValue={t("analytics_trend_week").replace("{value}", "+4")} />
-        <KpiCard icon={<Heart size={20} />} label={t("nav_adoptions")} value="102" trend="up" trendValue={t("analytics_trend_month").replace("{value}", "+18")} />
-        <KpiCard icon={<MessageSquare size={20} />} label={t("analytics_active_chats")} value="23" trend="up" trendValue={t("analytics_open_count").replace("{count}", "+7")} />
+        <KpiCard icon={<Users size={20} />} label={t("admin_total_users")} value={value(dashboard?.users.total)} />
+        <KpiCard icon={<PawPrint size={20} />} label={t("analytics_pets_listed")} value={value(dashboard?.pets.total)} />
+        <KpiCard icon={<Heart size={20} />} label={t("nav_adoptions")} value={value(dashboard?.adoptions.approved)} />
+        <KpiCard icon={<MessageSquare size={20} />} label={t("admin_total_activities")} value={value(activity?.summary.totalActivities)} />
       </div>
 
       {/* User growth */}
       <div className="bg-white rounded-[15px] shadow-md p-5 mb-5">
-        <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-4">{t("analytics_user_growth")}</h3>
+        <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black mb-4">{t("admin_user_activity_over_time")}</h3>
         <ResponsiveContainer width="100%" height={240}>
-          <AreaChart data={userGrowth} margin={{ top: 5, right: 20, left: -20, bottom: 0 }}>
+          <AreaChart data={userActivityTrend} margin={{ top: 5, right: 20, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="userGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#089D97" stopOpacity={0.2} />
@@ -86,11 +124,11 @@ export default function AdminAnalyticsPage({ onNavigate }: AdminAnalyticsPagePro
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="month" tick={{ fontFamily: "Poppins", fontSize: 11 }} axisLine={false} tickLine={false} />
+            <XAxis dataKey="date" tick={{ fontFamily: "Poppins", fontSize: 11 }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontFamily: "Poppins", fontSize: 11 }} axisLine={false} tickLine={false} />
             <Tooltip contentStyle={{ fontFamily: "Poppins", fontSize: 12, borderRadius: 10 }} />
-            <Area type="monotone" dataKey="users" stroke="#089D97" strokeWidth={2.5} fill="url(#userGrad)" />
-            <Line type="monotone" dataKey="adopters" stroke="#80CECE" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
+            <Area type="monotone" dataKey="activities" stroke="#089D97" strokeWidth={2.5} fill="url(#userGrad)" />
+            <Line type="monotone" dataKey="activeUsers" stroke="#80CECE" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -112,7 +150,7 @@ export default function AdminAnalyticsPage({ onNavigate }: AdminAnalyticsPagePro
               {roleDistribution.map((r, i) => (
                 <div key={r.name} className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: COLORS[i] }} />
-                  <span className="font-['Poppins',sans-serif] text-[12px] text-black/70">{t(`role_${r.name.toLowerCase()}`) === `role_${r.name.toLowerCase()}` ? r.name : t(`role_${r.name.toLowerCase()}`)}</span>
+                  <span className="font-['Poppins',sans-serif] text-[12px] text-black/70">{r.name}</span>
                   <span className="font-['Poppins',sans-serif] text-[12px] font-semibold text-black ml-auto">{r.value}</span>
                 </div>
               ))}
@@ -137,27 +175,57 @@ export default function AdminAnalyticsPage({ onNavigate }: AdminAnalyticsPagePro
         </div>
       </div>
 
-      {/* Storage */}
+      {/* Top users */}
       <div className="bg-white rounded-[15px] shadow-md p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black">{t("analytics_storage_usage")}</h3>
-          <p className="font-['Poppins',sans-serif] text-[13px] text-black/50">{t("analytics_storage_used").replace("{used}", "6.8 GB").replace("{total}", "50 GB")}</p>
+          <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black">{t("admin_user_activity_summary")}</h3>
+          <p className="font-['Poppins',sans-serif] text-[13px] text-black/50">{t("admin_unique_active_users")}: {value(activity?.summary.uniqueActiveUsers)}</p>
         </div>
-        <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden mb-4">
-          <div className="h-full bg-[#089D97] rounded-full" style={{ width: "13.6%" }} />
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {storageData.map((s, i) => (
-            <div key={s.category} className="text-center">
-              <div className="w-8 h-8 rounded-full mx-auto mb-1" style={{ background: COLORS[i] + "33" }}>
-                <div className="w-3 h-3 rounded-full mx-auto mt-2.5" style={{ background: COLORS[i] }} />
-              </div>
-              <p className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black">{s.gb} GB</p>
-              <p className="font-['Poppins',sans-serif] text-[11px] text-black/50">{t(`storage_${s.category.toLowerCase()}`)}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {topUsers.length === 0 && <p className="font-['Poppins',sans-serif] text-[13px] text-black/40">{t("admin_no_activity_analytics")}</p>}
+          {topUsers.map((user, i) => (
+            <div key={user.userId} className="rounded-[12px] bg-[#f0f8f7] p-4">
+              <div className="w-8 h-8 rounded-full mb-2 flex items-center justify-center font-['Poppins',sans-serif] text-[12px] font-semibold text-white" style={{ background: COLORS[i % COLORS.length] }}>{i + 1}</div>
+              <p className="font-['Poppins',sans-serif] font-semibold text-[13px] text-black truncate">{user.firstName} {user.lastName}</p>
+              <p className="font-['Poppins',sans-serif] text-[11px] text-black/50 truncate">{user.email}</p>
+              <p className="font-['Poppins',sans-serif] font-semibold text-[18px] text-[#089D97] mt-2">{numberFormatter.format(user.activityCount)}</p>
             </div>
           ))}
         </div>
       </div>
     </DashboardLayout>
   );
+}
+
+interface ReportResponse {
+  summary: Record<string, string | number>;
+  data: Record<string, unknown>[];
+}
+
+function formatDateLabel(value: string, lang: string) {
+  const locale = lang === "ar" ? "ar-JO" : lang;
+  return new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" }).format(new Date(`${value}T00:00:00Z`));
+}
+
+function adoptionStatusByMonth(rows: Record<string, unknown>[], lang: string) {
+  const locale = lang === "ar" ? "ar-JO" : lang;
+  const months = new Map<string, { month: string; adoptions: number; rejections: number }>();
+
+  rows.forEach((row) => {
+    const rawDate = typeof row.requestDate === "string" ? row.requestDate : "";
+    const date = rawDate ? new Date(rawDate) : null;
+    if (!date || Number.isNaN(date.getTime())) return;
+
+    const key = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+    const label = new Intl.DateTimeFormat(locale, { month: "short" }).format(date);
+    const current = months.get(key) ?? { month: label, adoptions: 0, rejections: 0 };
+    const status = String(row.status ?? "").toUpperCase();
+
+    if (status === "APPROVED") current.adoptions += 1;
+    if (status === "REJECTED" || status === "CANCELED" || status === "CANCELLED") current.rejections += 1;
+
+    months.set(key, current);
+  });
+
+  return [...months.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, value]) => value);
 }
