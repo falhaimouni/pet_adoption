@@ -9,6 +9,7 @@ import { randomBytes } from 'crypto';
 import { DataSource, QueryFailedError, Repository } from 'typeorm';
 
 import { User } from '../../database/entities/user.entity';
+import { Adopter } from '../../database/entities/adopter.entity';
 import { ActivityLog } from '../../database/entities/activity-log.entity';
 import { OAuthAccount } from '../../database/entities/oauth-account.entity';
 import { Role } from '../../database/entities/role.entity';
@@ -178,6 +179,12 @@ export class OAuthService {
             providerUserId,
           }),
         );
+        await manager.getRepository(Adopter).save(
+          manager.getRepository(Adopter).create({
+            userId: createdUser.userId,
+            registrationDate: this.today(),
+          }),
+        );
         await manager.getRepository(ActivityLog).save(
           manager.getRepository(ActivityLog).create({
             userId: null,
@@ -238,5 +245,9 @@ export class OAuthService {
         this.pendingSessions.delete(code);
       }
     }
+  }
+
+  private today() {
+    return new Date().toISOString().slice(0, 10);
   }
 }

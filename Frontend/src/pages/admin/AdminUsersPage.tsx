@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, Edit, Trash2, Eye, RefreshCw, UserPlus, Camera } from "lucide-react";
+import { Search, Edit, Eye, RefreshCw, UserPlus, Camera, UserX } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import Badge, { statusBadge } from "../../components/Badge";
 import Modal from "../../components/Modal";
@@ -523,7 +523,17 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
                       <div className="flex gap-2">
                         <button onClick={() => openView(u)} className="text-[#089D97] hover:text-[#047975] transition-colors"><Eye size={15} /></button>
                         {canManageRow && <button onClick={() => openEdit(u)} className="text-blue-400 hover:text-blue-600 transition-colors"><Edit size={15} /></button>}
-                        {canDelete && canManageRow && <button onClick={() => setDeleteUser(u)} className="text-red-400 hover:text-red-600 transition-colors"><Trash2 size={15} /></button>}
+                        {canDelete && canManageRow && (
+                          <button
+                            onClick={() => setDeleteUser(u)}
+                            disabled={u.status === "inactive"}
+                            title={u.status === "inactive" ? t("user_already_inactive") : t("aria_deactivate_item").replace("{name}", `${u.firstName} ${u.lastName}`.trim())}
+                            className={`transition-colors ${u.status === "inactive" ? "text-gray-300 cursor-not-allowed" : "text-red-400 hover:text-red-600"}`}
+                            aria-label={t("aria_deactivate_item").replace("{name}", `${u.firstName} ${u.lastName}`.trim())}
+                          >
+                            <UserX size={15} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -672,10 +682,15 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
         </div>
       </Modal>
 
-      <Modal title={t("deactivate_user")} open={!!deleteUser} onClose={() => setDeleteUser(null)} onConfirm={deactivateUser} confirmLabel={saving ? t("common_deactivating") : t("action_deactivate")} confirmDestructive size="sm">
-        <p className="font-['Poppins',sans-serif] text-[14px] text-black">
-          {t("confirm_deactivate_user").replace("{name}", `${deleteUser?.firstName ?? ""} ${deleteUser?.lastName ?? ""}`.trim())}
-        </p>
+      <Modal title={t("deactivate_user")} open={!!deleteUser} onClose={() => setDeleteUser(null)} onConfirm={deactivateUser} confirmLabel={saving ? t("common_deactivating") : t("action_deactivate")} confirmDestructive confirmDisabled={saving || Boolean(deleteUser && deleteUser.status === "inactive")} size="sm">
+        <div className="space-y-3">
+          <p className="font-['Poppins',sans-serif] text-[14px] text-black">
+            {t("confirm_deactivate_user").replace("{name}", `${deleteUser?.firstName ?? ""} ${deleteUser?.lastName ?? ""}`.trim())}
+          </p>
+          <p className="font-['Poppins',sans-serif] text-[12px] text-amber-700 bg-amber-50 rounded-[10px] px-3 py-2">
+            {t("deactivate_user_department_note")}
+          </p>
+        </div>
       </Modal>
     </DashboardLayout>
   );
