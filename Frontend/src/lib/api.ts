@@ -16,11 +16,11 @@ export class ApiError extends Error {
 }
 
 export function getAccessToken() {
-  return localStorage.getItem(ACCESS_TOKEN_KEY) ?? sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? "";
+  return sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? "";
 }
 
 export function getRefreshToken() {
-  return localStorage.getItem(REFRESH_TOKEN_KEY) ?? sessionStorage.getItem(REFRESH_TOKEN_KEY) ?? "";
+  return sessionStorage.getItem(REFRESH_TOKEN_KEY) ?? "";
 }
 
 export function setAuthTokens(accessToken: string, refreshToken: string) {

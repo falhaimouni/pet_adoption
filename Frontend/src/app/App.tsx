@@ -347,14 +347,14 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <AuthProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <LanguageProvider>
           <CartProvider>
             <AppRouter />
           </CartProvider>
-        </AuthProvider>
-      </LanguageProvider>
-    </ThemeProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }

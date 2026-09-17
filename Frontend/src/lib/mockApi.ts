@@ -45,7 +45,7 @@ function mockProfile(email = "adopter@petopia.test") {
   };
 }
 
-let currentProfile = mockProfile(localStorage.getItem("petopia_mock_email") ?? undefined);
+let currentProfile = mockProfile(sessionStorage.getItem("petopia_mock_email") ?? undefined);
 
 let pets = PETS.map((pet) => ({
   petId: String(pet.id),
@@ -489,7 +489,7 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
 
   if (url.pathname === "/auth/login" && method === "POST") {
     const email = String(body.email ?? "adopter@petopia.test");
-    localStorage.setItem("petopia_mock_email", email);
+    sessionStorage.setItem("petopia_mock_email", email);
     currentProfile = mockProfile(email);
     return withDelay({
       accessToken: "mock-access-token",
