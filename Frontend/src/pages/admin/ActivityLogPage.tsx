@@ -1,24 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Filter, ChevronRight, X } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import Badge from "../../components/Badge";
 import Pagination from "../../components/Pagination";
 import { useLanguage } from "../../context/LanguageContext";
+import { apiFetch } from "../../lib/api";
+import type { AdminDashboardDto } from "@shared/dto";
 
 interface LogEntry {
   id: number; user: string; role: string; action: string; resource: string; resourceId: string; ip: string; timestamp: string; details: string; severity: "info" | "warning" | "critical";
 }
-
-const LOGS: LogEntry[] = [
-  { id: 1, user: "Admin", role: "admin", action: "DELETE_USER", resource: "User", resourceId: "USR-088", ip: "192.168.1.1", timestamp: "2026-07-15 09:14:22", details: "Deleted user account for omar_test@example.com. Reason: Duplicate account.", severity: "critical" },
-  { id: 2, user: "Lina Mansour", role: "manager", action: "EXPORT_REPORT", resource: "Report", resourceId: "RPT-012", ip: "192.168.1.15", timestamp: "2026-07-15 08:55:10", details: "Exported Adoption Summary PDF for date range 2026-01-01 to 2026-07-14.", severity: "info" },
-  { id: 3, user: "Sara Khalil", role: "employee", action: "APPROVE_REQUEST", resource: "AdoptionRequest", resourceId: "REQ-204", ip: "192.168.1.22", timestamp: "2026-07-14 16:40:05", details: "Approved adoption request by Roaa Abushreeha for pet Mochi (DOG-011).", severity: "info" },
-  { id: 4, user: "Admin", role: "admin", action: "EDIT_ROLE", resource: "Role", resourceId: "ROLE-3", ip: "192.168.1.1", timestamp: "2026-07-14 13:20:00", details: "Modified permissions for Vet role. Added: manage_vaccinations. Removed: manage_inventory.", severity: "warning" },
-  { id: 5, user: "Nadia Farhat", role: "employee", action: "DELETE_PET", resource: "Pet", resourceId: "PET-072", ip: "192.168.1.30", timestamp: "2026-07-14 10:05:33", details: "Removed pet listing for Whiskers (CAT-072). Reason: Deceased.", severity: "warning" },
-  { id: 6, user: "Admin", role: "admin", action: "CREATE_USER", resource: "User", resourceId: "USR-137", ip: "192.168.1.1", timestamp: "2026-07-13 14:00:11", details: "Created new employee account for nadia.farhat@petopia.com.", severity: "info" },
-  { id: 7, user: "Dr. Ahmad Nasser", role: "vet", action: "ADD_MEDICAL_RECORD", resource: "MedicalRecord", resourceId: "MED-099", ip: "192.168.1.18", timestamp: "2026-07-12 11:30:00", details: "Added checkup record for pet Buddy (DOG-005). Diagnosis: Healthy.", severity: "info" },
-  { id: 8, user: "Admin", role: "admin", action: "UPLOAD_FILE", resource: "File", resourceId: "FILE-041", ip: "192.168.1.1", timestamp: "2026-07-11 09:00:00", details: "Uploaded supplier_contract.pdf to Files (Contracts category).", severity: "info" },
-];
 
 const severityStyles: Record<LogEntry["severity"], string> = {
   info: "bg-blue-50 text-blue-600",
@@ -35,8 +26,40 @@ export default function ActivityLogPage({ onNavigate }: ActivityLogPageProps) {
   const [roleFilter, setRoleFilter] = useState("all");
   const [drawer, setDrawer] = useState<LogEntry | null>(null);
   const [page, setPage] = useState(1);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [error, setError] = useState("");
 
-  const filtered = LOGS.filter((l) => {
+  useEffect(() => {
+    let active = true;
+
+    apiFetch<AdminDashboardDto>("/dashboard/admin")
+      .then((dashboard) => {
+        if (!active) return;
+        setLogs(dashboard.activity.recentActivityLogs.map((item, index) => ({
+          id: index + 1,
+          user: item.user ? `${item.user.firstName} ${item.user.lastName}` : "System",
+          role: "-",
+          action: item.action,
+          resource: item.entityType,
+          resourceId: item.entityId ?? "-",
+          ip: "-",
+          timestamp: formatTimestamp(item.createdAt),
+          details: `${item.action} on ${item.entityType}${item.entityId ? ` #${item.entityId}` : ""}`,
+          severity: "info",
+        })));
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err instanceof Error ? err.message : t("dashboard_load_error"));
+        setLogs([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [t]);
+
+  const filtered = logs.filter((l) => {
     const ms = l.user.toLowerCase().includes(search.toLowerCase()) || l.action.toLowerCase().includes(search.toLowerCase()) || l.resource.toLowerCase().includes(search.toLowerCase());
     const msev = severityFilter === "all" || l.severity === severityFilter;
     const mr = roleFilter === "all" || l.role === roleFilter;
@@ -65,6 +88,7 @@ export default function ActivityLogPage({ onNavigate }: ActivityLogPageProps) {
                 {["admin", "manager", "employee", "vet", "adopter"].map((r) => <option key={r} value={r}>{t(`role_${r}`)}</option>)}
               </select>
             </div>
+            {error && <p className="font-['Poppins',sans-serif] text-[13px] text-red-600 mb-4">{error}</p>}
 
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -96,7 +120,7 @@ export default function ActivityLogPage({ onNavigate }: ActivityLogPageProps) {
             </div>
             <div className="flex items-center justify-between mt-3">
               <p className="font-['Poppins',sans-serif] text-[12px] text-black/40">{filtered.length} entries</p>
-              <Pagination page={page} totalPages={5} onPage={setPage} />
+              <Pagination page={page} totalPages={1} onPage={setPage} />
             </div>
           </div>
         </div>
@@ -135,4 +159,10 @@ export default function ActivityLogPage({ onNavigate }: ActivityLogPageProps) {
       </div>
     </DashboardLayout>
   );
+}
+
+function formatTimestamp(value: Date | string) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().replace("T", " ").slice(0, 19);
 }
