@@ -82,62 +82,61 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
   return (
     <div className="min-h-screen bg-[rgba(186,216,211,0.99)] flex flex-col relative overflow-x-hidden">
       <Navbar onNavigate={onNavigate} />
-      <div className="relative flex flex-col md:flex-row flex-1 md:min-h-0 overflow-x-hidden pb-[70px] md:pb-[56px]">
+      {/* Fluid px layout: stacks on mobile/tablet, 2 cols on desktop. No vw so zoom stays stable — same as login. */}
+      <div className="w-full max-w-[1280px] mx-auto grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-8 lg:gap-6 items-center flex-1 px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
 
       {/* ── Left Panel ── */}
-      <div className="relative flex-1 flex flex-col items-center justify-start pt-6 pb-0 md:pt-0 md:pb-0 min-h-[360px] md:min-h-[620px] overflow-hidden">
+      <div className="relative flex justify-center lg:justify-start min-h-[420px] sm:min-h-[480px] lg:min-h-[560px]">
 
         {/* One illustration group: the rabbits stay attached to their background shape. */}
-        <div className="absolute inset-0 flex items-start justify-start pointer-events-none">
-          <div className="relative w-[min(88vw,480px)] md:w-[42vw] h-[500px] md:h-[45vw] bg-[#089D97]/25 translate-x-[20px] md:translate-x-[1vw] translate-y-[20px] md:translate-y-[2vw] [border-radius:58%_42%_55%_45%/48%_56%_44%_52%]">
+        <div className="relative w-full max-w-[340px] sm:max-w-[440px] lg:max-w-[540px] mx-auto lg:mx-0">
+          <div className="relative w-full max-w-[520px] h-[420px] sm:h-[500px] lg:h-[560px] bg-[#089D97]/25 [border-radius:58%_42%_55%_45%/48%_56%_44%_52%] pointer-events-none">
             <div className="absolute z-10 bottom-0 left-[6%] flex items-end">
               <img
                 src={tanBunnyImg}
                 alt={t("signup_brown_rabbit_alt")}
-                className="w-[min(50vw,210px)] md:w-[18vw] h-auto object-contain"
+                className="w-[150px] sm:w-[180px] lg:w-[210px] h-auto object-contain"
               />
               <img
                 src={grayBunnyImg}
                 alt={t("signup_gray_rabbit_alt")}
-                className="w-[min(42vw,175px)] md:w-[15vw] h-auto object-contain -ml-12 md:-ml-[6vw] md:translate-y-[0.4vw]"
+                className="w-[125px] sm:w-[150px] lg:w-[175px] h-auto object-contain -ml-8 sm:-ml-12 translate-y-[6px]"
               />
             </div>
           </div>
-        </div>
 
-        {/* Paw prints scattered */}
-        <PawPrint size={28} className="absolute top-[18%] right-[12%] text-white/70 rotate-12 pointer-events-none" fill="currentColor" />
-        <PawPrint size={36} className="absolute top-[38%] right-[4%] text-white/80 -rotate-12 pointer-events-none hidden 2xl:block" fill="currentColor" />
-        <PawPrint size={22} className="absolute bottom-[16%] left-[46%] text-[#089D97]/60 rotate-12 pointer-events-none" fill="currentColor" />
-        <PawPrint size={34} className="absolute bottom-[6%] left-[8%] text-white/80 -rotate-12 pointer-events-none" fill="currentColor" />
-        <PawPrint size={30} className="absolute bottom-[5%] right-[8%] text-white/80 rotate-12 pointer-events-none hidden 2xl:block" fill="currentColor" />
+          {/* Paw prints scattered */}
+          <PawPrint size={28} className="absolute top-[18%] right-[12%] text-white/70 rotate-12 pointer-events-none" fill="currentColor" />
+          <PawPrint size={22} className="absolute bottom-[16%] left-[46%] text-[#089D97]/60 rotate-12 pointer-events-none" fill="currentColor" />
+          <PawPrint size={34} className="absolute bottom-[6%] left-[8%] text-white/80 -rotate-12 pointer-events-none hidden sm:block" fill="currentColor" />
 
-        {/* Join Petopia section — inspo: left-up (Join at ~57,195 / Petopia at ~188,213) */}
-        <div className="relative z-10 flex flex-col items-start w-full max-w-[490px] md:max-w-[34vw] px-6 sm:px-8 md:px-0 md:ml-[5vw] md:mr-auto mt-16 sm:mt-20 md:mt-0 md:absolute md:top-[8vw] md:left-0">
-          <p className="font-['Poppins',sans-serif] font-semibold text-[32px] sm:text-[38px] md:text-[3.5vw] text-black rotate-[-0.7deg] leading-none flex items-center gap-3 flex-wrap">
+        {/* Join Petopia section — stepped px type per breakpoint so zoom scales uniformly */}
+        <div className="absolute top-[40px] sm:top-[56px] lg:top-[64px] left-[16px] sm:left-[24px] right-[16px] sm:right-auto z-10 flex flex-col items-start w-auto sm:w-full sm:max-w-[420px]">
+          <p className="font-['Poppins',sans-serif] font-semibold text-[32px] sm:text-[40px] lg:text-[44px] text-black leading-[1.1] flex items-center gap-2 sm:gap-3 flex-wrap text-balance break-words">
             {t("signup_tagline")}{" "}
-            <span className="font-['Prata',serif] font-normal text-[#047975] text-[40px] md:text-[3vw] leading-none">Petopia</span>
-            <PawPrint size={34} className="text-[#089D97]/50 -rotate-12" fill="currentColor" />
+            <span className="font-['Prata',serif] font-normal text-[#047975] text-[30px] sm:text-[36px] lg:text-[40px] leading-none">Petopia</span>
+            <PawPrint size={26} className="text-[#089D97]/50 -rotate-12" fill="currentColor" />
           </p>
-          <p className="font-['Poppins',sans-serif] text-[15px] md:text-[1.4vw] text-black max-w-[24vw] leading-snug mt-3 md:ml-[0.1vw]">
+          <p className="font-['Poppins',sans-serif] text-[15px] sm:text-base lg:text-[17px] text-black max-w-[400px] leading-[1.6] mt-3 text-balance break-words">
             {t("signup_subtitle")}
           </p>
         </div>
 
+        </div>
       </div>
 
       {/* ── Right Panel (white card) ── */}
-      <div className="relative flex-1 md:min-h-[620px] flex items-center justify-center p-4 md:p-4">
-        <div className="w-full max-w-[500px] md:w-[31vw] md:max-w-none relative mt-6 md:mt-[2vw]">
-        <div className="relative z-10 bg-white rounded-[24px] sm:rounded-[30px] shadow-xl px-5 sm:px-6 py-5 md:px-[2.1vw] md:py-[1.2vw] origin-top">
+      <div className="relative flex justify-center lg:justify-end items-start py-4 sm:py-6 pr-14 sm:pr-[100px] lg:pr-[112px]">
+        <div className="w-full max-w-[440px] sm:max-w-[500px] lg:max-w-[520px] relative mt-[24px]">
+        <div className="relative z-10 bg-white rounded-[20px] sm:rounded-[30px] shadow-xl px-5 sm:px-8 py-6 sm:py-8 overflow-visible">
           {/* The cat is part of the card, so it stays aligned with its border at every zoom level. */}
           <img
             src={catPhotoImg}
             alt=""
-            className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-[min(30vw,130px)] xl:w-[clamp(180px,10vw,360px)] h-auto object-contain pointer-events-none hidden xl:block z-20 rotate-90"
+            className="absolute top-[120px] sm:top-[150px] -right-[64px] sm:-right-[100px] lg:-right-[120px] w-[140px] sm:w-[175px] lg:w-[200px] h-auto object-contain pointer-events-none hidden sm:block z-20 rotate-90"
           />
-          <h2 className="font-['Inter',sans-serif] font-semibold text-[24px] md:text-[1.7vw] text-black mb-1 text-center">{t("signup_title")}</h2>
-          <p className="font-['Inter',sans-serif] font-light text-[14px] md:text-[0.95vw] text-black mb-4 text-center">
+          <h2 className="font-['Inter',sans-serif] font-semibold text-[22px] sm:text-[26px] lg:text-[28px] text-black mb-1 text-center text-balance">{t("signup_title")}</h2>
+          <p className="font-['Inter',sans-serif] font-light text-[14px] sm:text-[15px] text-black mb-4 text-center text-balance">
             {t("signup_subtitle2")}
           </p>
 
@@ -149,7 +148,6 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               icon={<User size={18} />}
               value={fullName}
               onChange={setFullName}
-              responsive
             />
 
             <InputField
@@ -159,7 +157,6 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               icon={<Mail size={18} />}
               value={email}
               onChange={setEmail}
-              responsive
             />
 
             <InputField
@@ -169,7 +166,6 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               icon={<Lock size={18} />}
               value={password}
               onChange={setPassword}
-              responsive
             />
 
             <InputField
@@ -179,7 +175,6 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               icon={<Lock size={18} />}
               value={confirmPassword}
               onChange={setConfirmPassword}
-              responsive
             />
 
             {/* Terms checkbox */}
@@ -190,7 +185,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
                 className="w-4 h-4 accent-[#089D97]"
               />
-              <span className="font-['Inter',sans-serif] font-extralight text-[16px] text-black">
+              <span className="font-['Inter',sans-serif] font-extralight text-[14px] sm:text-[16px] text-black break-words">
                 {t("signup_agree")}{" "}
                 <button
                   type="button"
@@ -212,7 +207,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#089D97] text-white font-['Inter',sans-serif] font-bold text-[20px] py-3 rounded-[20px] hover:bg-[#047975] transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full bg-[#089D97] text-white font-['Inter',sans-serif] font-bold text-[18px] sm:text-[20px] py-3 rounded-[16px] sm:rounded-[20px] hover:bg-[#047975] transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? t("signup_creating") : t("signup_btn")}
             </button>
@@ -257,7 +252,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
       </div>
 
       {/* Bottom curvy shape — full-window, smooth double wave (inspo Vector at 81.23%) */}
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 w-full h-[64px] overflow-hidden z-[5]">
+      <div className="pointer-events-none absolute bottom-0 left-0 right-0 w-full h-[48px] sm:h-[64px] overflow-hidden z-[5]">
         <svg
           viewBox="0 0 1440 180"
           preserveAspectRatio="none"
