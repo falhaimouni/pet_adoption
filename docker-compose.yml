@@ -141,7 +141,8 @@ services:
       retries: 3
       start_period: 15s
     depends_on:
-      - prometheus
+      prometheus:
+        condition: service_healthy
     restart: unless-stopped
 
   postgres-exporter:
@@ -181,6 +182,12 @@ services:
       - ${DOCKER_CONTAINERD_SOCKET_PATH:-/run/containerd/containerd.sock}:/run/containerd/containerd.sock:ro
     devices:
       - /dev/kmsg:/dev/kmsg
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     networks:
       - private
     restart: unless-stopped
@@ -196,6 +203,12 @@ services:
       - alertmanager_data:/alertmanager
     secrets:
       - alert_email_app_password
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:9093/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     networks:
       - public
     restart: unless-stopped
