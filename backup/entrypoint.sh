@@ -47,6 +47,10 @@ printf '%s root /usr/local/bin/backup-db.sh >> /proc/1/fd/1 2>> /proc/1/fd/2\n' 
     "$BACKUP_SCHEDULE" \
     > /etc/cron.d/db-backup
 
+printf '%s root /usr/local/bin/backup-uploads.sh >> /proc/1/fd/1 2>> /proc/1/fd/2\n' \
+    "$BACKUP_SCHEDULE" \
+    >> /etc/cron.d/db-backup
+
 chmod 0644 /etc/cron.d/db-backup
 
 echo "Backup scheduler started."
