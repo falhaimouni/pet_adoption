@@ -100,6 +100,7 @@ services:
       - '--storage.tsdb.path=/prometheus'
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/rules:/etc/prometheus/rules:ro
       - prometheus_data:/prometheus
     ports:
       - "127.0.0.1:9090:9090"
@@ -182,12 +183,31 @@ services:
     networks:
       - private
     restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:v0.34.1
+    container_name: pet_adoption_alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    secrets:
+      - alert_email_app_password
+    networks:
+      - public
+    restart: unless-stopped
 volumes:
   postgres_data:
   backend_uploads:
   prometheus_data:
   grafana_data:
+  alertmanager_data:
 networks:
   public:
   private:
     internal: true
+secrets:
+  alert_email_app_password:
+    environment: ALERT_EMAIL_APP_PASSWORD
