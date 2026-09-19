@@ -1,67 +1,71 @@
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { CartProvider } from "../context/CartContext";
 import { AuthProvider, useAuth, UserRole } from "../context/AuthContext";
 import { ThemeProvider } from "../context/ThemeContext";
 import { LanguageProvider, useLanguage } from "../context/LanguageContext";
 
-import HomePage from "../pages/HomePage";
-import AboutPage from "../pages/AboutPage";
-import TermsPage from "../pages/TermsPage";
-import PrivacyPolicyPage from "../pages/PrivacyPolicyPage";
-import LoginPage from "../pages/LoginPage";
-import OAuthCallbackPage from "../pages/OAuthCallbackPage";
-import SignUpPage from "../pages/SignUpPage";
-import ForgotPasswordPage from "../pages/ForgotPasswordPage";
-import ResetPasswordPage from "../pages/ResetPasswordPage";
-import PetsListPage from "../pages/PetsListPage";
-import PetDetailPage from "../pages/PetDetailPage";
-import ShopPage from "../pages/ShopPage";
-import CartPage from "../pages/CartPage";
-import NotificationsPage from "../pages/NotificationsPage";
-import UserProfilePage from "../pages/UserProfilePage";
-import SettingsPage from "../pages/SettingsPage";
-import DashboardLayout from "../components/DashboardLayout";
+const HomePage = lazy(() => import("../pages/HomePage"));
+const AboutPage = lazy(() => import("../pages/AboutPage"));
+const TermsPage = lazy(() => import("../pages/TermsPage"));
+const PrivacyPolicyPage = lazy(() => import("../pages/PrivacyPolicyPage"));
+const LoginPage = lazy(() => import("../pages/LoginPage"));
+const OAuthCallbackPage = lazy(() => import("../pages/OAuthCallbackPage"));
+const SignUpPage = lazy(() => import("../pages/SignUpPage"));
+const ForgotPasswordPage = lazy(() => import("../pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("../pages/ResetPasswordPage"));
+const PetsListPage = lazy(() => import("../pages/PetsListPage"));
+const PetDetailPage = lazy(() => import("../pages/PetDetailPage"));
+const ShopPage = lazy(() => import("../pages/ShopPage"));
+const CartPage = lazy(() => import("../pages/CartPage"));
+const NotificationsPage = lazy(() => import("../pages/NotificationsPage"));
+const UserProfilePage = lazy(() => import("../pages/UserProfilePage"));
+const SettingsPage = lazy(() => import("../pages/SettingsPage"));
+const DashboardLayout = lazy(() => import("../components/DashboardLayout"));
 
-import MyRequestsPage from "../pages/adopter/MyRequestsPage";
-import MyAdoptionsPage from "../pages/adopter/MyAdoptionsPage";
-import ChatsListPage from "../pages/adopter/ChatsListPage";
-import ChatDetailPage from "../pages/adopter/ChatDetailPage";
-import AdopterDashboardPage from "../pages/adopter/AdopterDashboardPage";
+const MyRequestsPage = lazy(() => import("../pages/adopter/MyRequestsPage"));
+const MyAdoptionsPage = lazy(() => import("../pages/adopter/MyAdoptionsPage"));
+const ChatsListPage = lazy(() => import("../pages/adopter/ChatsListPage"));
+const ChatDetailPage = lazy(() => import("../pages/adopter/ChatDetailPage"));
+const AdopterDashboardPage = lazy(() => import("../pages/adopter/AdopterDashboardPage"));
 
-// Employee pages
-import StaffDashboardPage from "../pages/staff/StaffDashboardPage";
-import StaffPetsPage from "../pages/staff/StaffPetsPage";
-import StaffRequestsPage from "../pages/staff/StaffRequestsPage";
-import StaffAdoptionsPage from "../pages/staff/StaffAdoptionsPage";
-import StaffChatsListPage from "../pages/staff/StaffChatsListPage";
-import StaffChatDetailPage from "../pages/staff/StaffChatDetailPage";
+const StaffDashboardPage = lazy(() => import("../pages/staff/StaffDashboardPage"));
+const StaffPetsPage = lazy(() => import("../pages/staff/StaffPetsPage"));
+const StaffRequestsPage = lazy(() => import("../pages/staff/StaffRequestsPage"));
+const StaffAdoptionsPage = lazy(() => import("../pages/staff/StaffAdoptionsPage"));
+const StaffChatsListPage = lazy(() => import("../pages/staff/StaffChatsListPage"));
+const StaffChatDetailPage = lazy(() => import("../pages/staff/StaffChatDetailPage"));
 
-// Vet pages
-import VetDashboardPage from "../pages/vet/VetDashboardPage";
-import VetPetsPage from "../pages/vet/VetPetsPage";
-import VetMedicalPage from "../pages/vet/VetMedicalPage";
-import VetVaccinationsPage from "../pages/vet/VetVaccinationsPage";
-import VetProfilePage from "../pages/vet/VetProfilePage";
+const VetDashboardPage = lazy(() => import("../pages/vet/VetDashboardPage"));
+const VetPetsPage = lazy(() => import("../pages/vet/VetPetsPage"));
+const VetMedicalPage = lazy(() => import("../pages/vet/VetMedicalPage"));
+const VetVaccinationsPage = lazy(() => import("../pages/vet/VetVaccinationsPage"));
+const VetProfilePage = lazy(() => import("../pages/vet/VetProfilePage"));
 
-// Manager pages
-import ManagerDashboardPage from "../pages/manager/ManagerDashboardPage";
-import ManagerAnalyticsPage from "../pages/manager/ManagerAnalyticsPage";
-import ManagerInventoryPage from "../pages/manager/ManagerInventoryPage";
+const ManagerDashboardPage = lazy(() => import("../pages/manager/ManagerDashboardPage"));
+const ManagerAnalyticsPage = lazy(() => import("../pages/manager/ManagerAnalyticsPage"));
+const ManagerInventoryPage = lazy(() => import("../pages/manager/ManagerInventoryPage"));
 
-// Admin pages
-import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
-import AdminUsersPage from "../pages/admin/AdminUsersPage";
-import AdminInventoryPage from "../pages/admin/AdminInventoryPage";
-import AdminSuppliersPage from "../pages/admin/AdminSuppliersPage";
-import AdminReportsPage from "../pages/admin/AdminReportsPage";
-import AdminAnalyticsPage from "../pages/admin/AdminAnalyticsPage";
-import AdminRolesPage from "../pages/admin/AdminRolesPage";
-import AdminFilesPage from "../pages/admin/AdminFilesPage";
-import ActivityLogPage from "../pages/admin/ActivityLogPage";
-import AdminDepartmentsPage from "../pages/admin/AdminDepartmentsPage";
-import AdminOrdersPage from "../pages/admin/AdminOrdersPage";
+const AdminDashboardPage = lazy(() => import("../pages/admin/AdminDashboardPage"));
+const AdminUsersPage = lazy(() => import("../pages/admin/AdminUsersPage"));
+const AdminInventoryPage = lazy(() => import("../pages/admin/AdminInventoryPage"));
+const AdminSuppliersPage = lazy(() => import("../pages/admin/AdminSuppliersPage"));
+const AdminReportsPage = lazy(() => import("../pages/admin/AdminReportsPage"));
+const AdminAnalyticsPage = lazy(() => import("../pages/admin/AdminAnalyticsPage"));
+const AdminRolesPage = lazy(() => import("../pages/admin/AdminRolesPage"));
+const AdminFilesPage = lazy(() => import("../pages/admin/AdminFilesPage"));
+const ActivityLogPage = lazy(() => import("../pages/admin/ActivityLogPage"));
+const AdminDepartmentsPage = lazy(() => import("../pages/admin/AdminDepartmentsPage"));
+const AdminOrdersPage = lazy(() => import("../pages/admin/AdminOrdersPage"));
 
 export type Role = UserRole;
+
+function RouteLoadingFallback() {
+  return (
+    <div className="min-h-screen bg-[#f0f8f7] flex items-center justify-center font-['Poppins',sans-serif] text-[#089D97]">
+      Loading...
+    </div>
+  );
+}
 
 // Pages anyone can view without logging in.
 const PUBLIC_PAGES = new Set<string>([
@@ -351,7 +355,9 @@ export default function App() {
       <ThemeProvider>
         <LanguageProvider>
           <CartProvider>
-            <AppRouter />
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <AppRouter />
+            </Suspense>
           </CartProvider>
         </LanguageProvider>
       </ThemeProvider>
