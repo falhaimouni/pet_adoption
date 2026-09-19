@@ -1,8 +1,8 @@
 import defaultPetImage from "../assets/default-pet.jpeg";
-import { PetImageResponse, resolveAssetUrl } from "./api";
+import { PetImageResponse } from "./api";
 
 export function getPetImageUrl(imageUrl?: string | null) {
-  return resolveAssetUrl(imageUrl) || defaultPetImage;
+  return imageUrl || defaultPetImage;
 }
 
 export function getPrimaryPetImageUrl(images?: PetImageResponse[] | null) {

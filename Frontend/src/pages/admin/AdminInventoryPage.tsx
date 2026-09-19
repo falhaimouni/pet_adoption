@@ -82,6 +82,10 @@ function readError(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function supplyCategoryKey(category: string) {
+  return `supply_category_${category.toLowerCase()}`;
+}
+
 export default function AdminInventoryPage({ onNavigate, role = "admin", activePage = "admin-inventory" }: AdminInventoryPageProps) {
   const { t } = useLanguage();
   const [supplies, setSupplies] = useState<Supply[]>([]);
@@ -324,7 +328,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
           </div>
           <select value={category} onChange={(e) => { setCategory(e.target.value); setPage(1); }} className="border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[12px] bg-white outline-none focus:border-[#089D97]">
             <option value="all">{t("report_all_categories")}</option>
-            {categories.map((item) => <option key={item} value={item}>{t(`supply_category_${item.toLowerCase()}`)}</option>)}
+            {categories.map((item) => <option key={item} value={item}>{t(supplyCategoryKey(item))}</option>)}
           </select>
           <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[12px] bg-white outline-none focus:border-[#089D97]">
             <option value="all">{t("inventory_all_stock")}</option>
@@ -375,7 +379,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
                         {(label === "OUT_OF_STOCK" || label === "LOW_STOCK") && <AlertTriangle size={12} className="text-yellow-500 inline mr-1" />}
                         {item.supplyName}
                       </td>
-                      <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60">{t(`supply_category_${item.category.toLowerCase()}`)}</td>
+                      <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60">{t(supplyCategoryKey(item.category))}</td>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] font-semibold text-[13px] text-black">{item.quantity}</td>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/50">{item.lowStockLimit}</td>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60 whitespace-nowrap">{item.supplier?.supplierName ?? item.supplierId}</td>
@@ -421,7 +425,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
           <label className="block">
             <span className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_category")}</span>
             <select value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97] transition-colors">
-              {categories.map((item) => <option key={item} value={item}>{t(`supply_category_${item.toLowerCase()}`)}</option>)}
+              {categories.map((item) => <option key={item} value={item}>{t(supplyCategoryKey(item))}</option>)}
             </select>
           </label>
           <label className="block">

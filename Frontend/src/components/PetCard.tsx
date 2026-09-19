@@ -3,6 +3,7 @@ import { Eye } from "lucide-react";
 import { PetResponse } from "../lib/api";
 import { useLanguage } from "../context/LanguageContext";
 import { defaultPetImage, getPrimaryPetImageUrl } from "../lib/petImages";
+import AuthenticatedImage from "./AuthenticatedImage";
 
 interface PetCardProps {
   pet: PetResponse;
@@ -52,8 +53,9 @@ export default function PetCard({ pet, onViewDetails, onAdopt }: PetCardProps) {
         {!imgLoaded && !imgError && (
           <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-[#e0f2f0] via-[#f0f9f8] to-[#e0f2f0] bg-[length:200%_100%]" />
         )}
-        <img
+        <AuthenticatedImage
           src={imgError ? defaultPetImage : imageUrl}
+          fallback={defaultPetImage}
           alt={pet.name}
           onLoad={() => setImgLoaded(true)}
           onError={() => { setImgLoaded(true); setImgError(true); }}

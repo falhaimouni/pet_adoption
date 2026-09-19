@@ -4,6 +4,7 @@ import { Product, defaultSupplyImage } from "../data/products";
 import { useCart } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
+import AuthenticatedImage from "./AuthenticatedImage";
 
 interface ProductCardProps {
   product: Product;
@@ -60,8 +61,9 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
         {!imgLoaded && !imgError && (
           <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 bg-[length:200%_100%]" />
         )}
-        <img
+        <AuthenticatedImage
           src={imgError ? defaultSupplyImage : product.image}
+          fallback={defaultSupplyImage}
           alt={product.name}
           onLoad={() => setImgLoaded(true)}
           onError={() => { setImgLoaded(true); setImgError(true); }}

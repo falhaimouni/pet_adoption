@@ -5,11 +5,12 @@ import Badge, { statusBadge } from "../../components/Badge";
 import Modal from "../../components/Modal";
 import Pagination from "../../components/Pagination";
 import EmptyState from "../../components/EmptyState";
-import { apiFetch, resolveAssetUrl } from "../../lib/api";
+import { apiFetch } from "../../lib/api";
 import { validateImageFile } from "../../lib/validation";
 import type { UserRole } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import profileImg from "../../imports/MyPetopia/0ade9078bed97f834442fbb8c3bc4424aaf43269.png";
+import AuthenticatedImage from "../../components/AuthenticatedImage";
 
 interface UserRecord {
   userId: string;
@@ -310,7 +311,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
       address: user.employeeProfile?.address ?? user.address ?? "",
       status: user.status,
     });
-    setEditAvatarPreview(user.avatar ? resolveAssetUrl(user.avatar) : "");
+    setEditAvatarPreview(user.avatar ?? "");
     setEditAvatarFile(null);
     setFormError("");
   }
@@ -509,7 +510,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
                     <td className="py-3 px-3">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-full bg-[rgba(8,157,151,0.15)] overflow-hidden shrink-0 flex items-center justify-center">
-                          <img src={u.avatar ? resolveAssetUrl(u.avatar) : profileImg} alt="" className="w-full h-full object-cover" />
+                          <AuthenticatedImage src={u.avatar ?? profileImg} fallback={profileImg} alt="" className="w-full h-full object-cover" />
                         </div>
                         <span className="font-['Poppins',sans-serif] font-medium text-[13px] text-black whitespace-nowrap">{u.firstName} {u.lastName}</span>
                       </div>
@@ -555,7 +556,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
           <div className="space-y-3">
             <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
               <div className="w-12 h-12 rounded-full bg-[rgba(8,157,151,0.15)] overflow-hidden">
-                <img src={viewUser.avatar ? resolveAssetUrl(viewUser.avatar) : profileImg} alt="" className="w-full h-full object-cover" />
+                <AuthenticatedImage src={viewUser.avatar ?? profileImg} fallback={profileImg} alt="" className="w-full h-full object-cover" />
               </div>
               <div>
                 <p className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black">{viewUser.firstName} {viewUser.lastName}</p>
@@ -578,7 +579,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
             {formError && <p className="sm:col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
             <div className="sm:col-span-2 flex items-center gap-4">
               <div className="w-16 h-16 rounded-full bg-[rgba(8,157,151,0.15)] overflow-hidden shrink-0 flex items-center justify-center">
-                <img src={editAvatarPreview || profileImg} alt={t("profile_avatar_alt")} className="w-full h-full object-cover" />
+                <AuthenticatedImage src={editAvatarPreview || profileImg} fallback={profileImg} alt={t("profile_avatar_alt")} className="w-full h-full object-cover" />
               </div>
               <div>
                 <button type="button" onClick={() => editAvatarRef.current?.click()} className="inline-flex items-center gap-2 px-3 py-2 bg-[#089D97] text-white rounded-[10px] font-['Poppins',sans-serif] text-[12px] font-medium hover:bg-[#047975] transition-colors">
