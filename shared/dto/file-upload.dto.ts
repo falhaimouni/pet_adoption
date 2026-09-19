@@ -5,5 +5,5 @@ export class UploadFileDto {
   @IsOptional()
   @IsString()
   @IsIn(Object.values(FileUploadCategory))
-  category?: string;
+  category?: FileUploadCategory;
 }

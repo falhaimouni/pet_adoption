@@ -109,11 +109,14 @@ export class SupplyService{
       file: Express.Multer.File,
     ) {
       let uploadedFile;
+      let previousImageFileId: string | null | undefined;
       try {
         const supply = await this.supplyRepo.findOneBy({ supplyId, isActive: true });
         if (!supply) {
           throw new NotFoundException('Supply not found');
         }
+
+        previousImageFileId = supply.imageFileId;
 
         uploadedFile = await this.uploadsService.createFileRecord(
           file,
@@ -124,12 +127,23 @@ export class SupplyService{
         supply.imageFileId = uploadedFile.fileId;
         await this.supplyRepo.save(supply);
 
-        return { imageUrl: uploadedFile.fileUrl };
+        if (previousImageFileId) {
+          await this.uploadsService.deleteReplacementFile(previousImageFileId);
+        }
+
+        return {
+          imageUrl: this.uploadsService.getFileReference(uploadedFile),
+        };
       } catch (error) {
         await this.uploadsService.rollbackFileUpload(
           file.path,
           uploadedFile?.fileId,
         );
+        if (previousImageFileId !== undefined && uploadedFile) {
+          await this.supplyRepo.update(supplyId, {
+            imageFileId: previousImageFileId ?? null,
+          });
+        }
         throw error;
       }
     }

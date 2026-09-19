@@ -254,15 +254,25 @@ export class UsersService {
   }
 
   async uploadAvatar(userId: string, file: Express.Multer.File) {
+    const currentUser = await this.userRepo.findOneBy({ userId });
+    const previousAvatar = currentUser?.avatar;
     const uploadedFile = await this.uploadsService.createFileRecord(
       file,
       FileUploadCategory.AVATAR,
       userId,
     );
 
-    return this.updateProfile(userId, {
-      avatar: uploadedFile.fileUrl,
-    });
+    try {
+      const profile = await this.updateProfile(userId, {
+        avatar: uploadedFile.fileUrl,
+      });
+      await this.deletePreviousAvatar(previousAvatar, uploadedFile.fileId);
+      return profile;
+    } catch (error) {
+      await this.userRepo.update(userId, { avatar: previousAvatar ?? null });
+      await this.uploadsService.rollbackFileUpload(file.path, uploadedFile.fileId);
+      throw error;
+    }
   }
 
   async uploadManagedUserAvatar(
@@ -284,11 +294,36 @@ export class UsersService {
       currentUser.userId,
     );
 
-    return this.updateUser(
-      id,
-      { avatar: uploadedFile.fileUrl },
-      currentUser,
-    );
+    const previousAvatar = targetUser.avatar;
+
+    try {
+      const updatedUser = await this.updateUser(
+        id,
+        { avatar: uploadedFile.fileUrl },
+        currentUser,
+      );
+      await this.deletePreviousAvatar(previousAvatar, uploadedFile.fileId);
+      return updatedUser;
+    } catch (error) {
+      await this.userRepo.update(id, { avatar: previousAvatar ?? null });
+      await this.uploadsService.rollbackFileUpload(file.path, uploadedFile.fileId);
+      throw error;
+    }
+  }
+
+  private async deletePreviousAvatar(
+    avatarUrl: string | null | undefined,
+    replacementFileId: string,
+  ): Promise<void> {
+    if (!avatarUrl || avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
+      return;
+    }
+
+    const previousFile = await this.uploadsService.findFileByUrl(avatarUrl);
+
+    if (previousFile && previousFile.fileId !== replacementFileId) {
+      await this.uploadsService.deleteReplacementFile(previousFile.fileId);
+    }
   }
 
   async updateProfile(id: string, data: UpdateProfileDto) {

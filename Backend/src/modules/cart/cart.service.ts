@@ -248,7 +248,12 @@ export class CartService {
     if (!cart) return cart;
 
     for (const item of cart.cartItems ?? []) {
-      item.imageUrl = item.product?.supplies?.[0]?.imageFile?.fileUrl ?? null;
+      const imageFile = item.product?.supplies?.[0]?.imageFile;
+      item.imageUrl = imageFile
+        ? /^https?:\/\//i.test(imageFile.fileUrl)
+          ? imageFile.fileUrl
+          : `/files/${imageFile.fileId}`
+        : null;
     }
 
     return cart;

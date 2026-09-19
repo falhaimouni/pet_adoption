@@ -1,5 +1,6 @@
 import { FileUploadCategory } from '@shared/enums';
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { MedicalRecord } from './medical-record.entity';
 import { User } from './user.entity';
 
 @Entity('file_uploads')
@@ -25,10 +26,20 @@ export class FileUpload {
   @Column({ name: 'mime_type', type: 'varchar', length: 120, nullable: true })
   mimeType?: string | null;
 
+  @Column({ name: 'medical_record_id', type: 'uuid', nullable: true })
+  medicalRecordId?: string | null;
+
   @CreateDateColumn({ name: 'uploaded_at', type: 'timestamp' })
   uploadedAt!: Date;
 
   @ManyToOne(() => User, (user) => user.uploadedFiles, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'uploaded_by' })
   uploadedByUser?: User | null;
+
+  @ManyToOne(() => MedicalRecord, (medicalRecord) => medicalRecord.documents, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'medical_record_id' })
+  medicalRecord?: MedicalRecord | null;
 }

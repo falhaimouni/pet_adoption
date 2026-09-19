@@ -1,8 +1,16 @@
 //decides whether the uploaded file is allowed
 import { BadRequestException } from '@nestjs/common';
 import { Request } from 'express';
+import { extname } from 'path';
+
+import { FileUploadCategory } from '@shared/enums';
+import {
+  isUploadMimeExtensionMatch,
+  UPLOAD_RULES,
+} from '@shared/constants';
 
 export function fileFilter(
+  category: FileUploadCategory,
   req: Request,
   file: Express.Multer.File,
   //a function that is called later
@@ -12,16 +20,19 @@ export function fileFilter(
     acceptFile: boolean,
   ) => void,
 ) {
-  const allowedMimeTypes = [
-    'image/jpeg',
-    'image/png',
-    'image/webp',
-  ];
+  const rule = UPLOAD_RULES[category];
+  //extension is the part after the file name
+  const extension = extname(file.originalname).toLowerCase();
+  //mime is the type of the file
+  const mimeTypeSupported = rule.mimeTypes.includes(file.mimetype);
+  const extensionSupported = rule.extensions.includes(extension);
+  //checks if the file type and extension match
+  const matchingType = isUploadMimeExtensionMatch(file.mimetype, extension);
 
-  if (!allowedMimeTypes.includes(file.mimetype)) {
+  if (!mimeTypeSupported || !extensionSupported || !matchingType) {
     return callback(
       new BadRequestException(
-        'Only JPG, PNG and WEBP images are allowed.',
+        'The uploaded file type or extension is not supported for this category.',
       ),
       false,
     );

@@ -88,7 +88,11 @@ export class StoreService{
       sellingPrice: supply.sellingPrice,
       inStock: supply.quantity > 0,
       storeListed: supply.storeListed,
-      imageUrl: supply.imageFile?.fileUrl ?? null,
+      imageUrl: supply.imageFile
+        ? /^https?:\/\//i.test(supply.imageFile.fileUrl)
+          ? supply.imageFile.fileUrl
+          : `/files/${supply.imageFile.fileId}`
+        : null,
     }));  
     return { data, total, page, limit };//here TypeORM sends the query
   }
@@ -119,7 +123,11 @@ export class StoreService{
       quantity: supply.quantity,
       inStock: supply.quantity > 0,
       storeListed: supply.storeListed,
-      imageUrl: supply.imageFile?.fileUrl ?? null,
+      imageUrl: supply.imageFile
+        ? /^https?:\/\//i.test(supply.imageFile.fileUrl)
+          ? supply.imageFile.fileUrl
+          : `/files/${supply.imageFile.fileId}`
+        : null,
     };
   }
 
