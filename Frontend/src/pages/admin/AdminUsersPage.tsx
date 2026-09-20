@@ -216,7 +216,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
     return ms && mr && mt;
   });
 
-  function loadUsers(nextStatus = statusFilter) {
+  function loadUsers(nextStatus: string = statusFilter) {
     setLoading(true);
     setError("");
     apiFetch<UserRecord[]>(`/users?status=${nextStatus}`)
@@ -398,12 +398,13 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
   async function deactivateUser() {
     if (!deleteUser) return;
     setSaving(true);
+    setFormError("");
     try {
       await apiFetch(`/users/${deleteUser.userId}`, { method: "DELETE" });
       setDeleteUser(null);
       loadUsers();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("error_deactivate_user"));
+      setFormError(err instanceof Error ? err.message : t("error_deactivate_user"));
     } finally {
       setSaving(false);
     }
@@ -470,7 +471,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
               <button key={r} onClick={() => setRoleFilter(r)} className={`px-3 py-1.5 rounded-[20px] font-['Poppins',sans-serif] text-[12px] capitalize transition-colors ${roleFilter === r ? "bg-[#089D97] text-white" : "bg-gray-100 text-black/70 hover:bg-gray-200"}`}>{r}</button>
             ))}
           </div>
-          <button onClick={loadUsers} className="flex items-center gap-2 px-3 py-2 border border-gray-200 text-black/60 rounded-[10px] font-['Poppins',sans-serif] text-[12px] hover:bg-gray-50 transition-colors">
+          <button onClick={() => loadUsers()} className="flex items-center gap-2 px-3 py-2 border border-gray-200 text-black/60 rounded-[10px] font-['Poppins',sans-serif] text-[12px] hover:bg-gray-50 transition-colors">
             <RefreshCw size={14} /> {t("action_refresh")}
           </button>
           {canCreateEmployee && (
@@ -489,7 +490,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
         {loading ? (
           <div className="space-y-2">{[1, 2, 3, 4, 5].map((n) => <div key={n} className="h-[58px] rounded-[10px] bg-gray-50 animate-pulse" />)}</div>
         ) : error ? (
-          <EmptyState icon={<Search size={28} />} title={t("users_unable_load")} description={error} actionLabel={t("action_try_again")} onAction={loadUsers} />
+          <EmptyState icon={<Search size={28} />} title={t("users_unable_load")} description={error} actionLabel={t("action_try_again")} onAction={() => loadUsers()} />
         ) : filtered.length === 0 ? (
           <EmptyState icon={<Search size={28} />} title={t("users_empty_title")} description={t("users_empty_desc")} />
         ) : (
@@ -526,7 +527,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
                         {canManageRow && <button onClick={() => openEdit(u)} className="text-blue-400 hover:text-blue-600 transition-colors"><Edit size={15} /></button>}
                         {canDelete && canManageRow && (
                           <button
-                            onClick={() => setDeleteUser(u)}
+                            onClick={() => { setFormError(""); setDeleteUser(u); }}
                             disabled={u.status === "inactive"}
                             title={u.status === "inactive" ? t("user_already_inactive") : t("aria_deactivate_item").replace("{name}", `${u.firstName} ${u.lastName}`.trim())}
                             className={`transition-colors ${u.status === "inactive" ? "text-gray-300 cursor-not-allowed" : "text-red-400 hover:text-red-600"}`}
@@ -685,6 +686,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
 
       <Modal title={t("deactivate_user")} open={!!deleteUser} onClose={() => setDeleteUser(null)} onConfirm={deactivateUser} confirmLabel={saving ? t("common_deactivating") : t("action_deactivate")} confirmDestructive confirmDisabled={saving || Boolean(deleteUser && deleteUser.status === "inactive")} size="sm">
         <div className="space-y-3">
+          {formError && <p className="text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
           <p className="font-['Poppins',sans-serif] text-[14px] text-black">
             {t("confirm_deactivate_user").replace("{name}", `${deleteUser?.firstName ?? ""} ${deleteUser?.lastName ?? ""}`.trim())}
           </p>

@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
+import { resolveUploadRoot } from './modules/uploads/upload-path.util';
 
 
 async function bootstrap() {
