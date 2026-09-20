@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { ApiError, apiFetch, clearAuthTokens, resolveAssetUrl, setAuthTokens } from "../lib/api";
+import { ApiError, apiFetch, clearAuthTokens, setAuthTokens } from "../lib/api";
 
 export type UserRole = "adopter" | "employee" | "vet" | "manager" | "admin";
 
@@ -97,7 +97,7 @@ function mapProfileUser(profile: ProfileResponse): AuthUser {
     name,
     username: profile.email.split("@")[0],
     role: mapRole(profile.role?.roleName ?? "ADOPTER"),
-    avatar: profile.avatar ? resolveAssetUrl(profile.avatar) : undefined,
+    avatar: profile.avatar ?? undefined,
     provider: profile.provider,
     status: profile.status,
     phone: profile.phone ?? undefined,

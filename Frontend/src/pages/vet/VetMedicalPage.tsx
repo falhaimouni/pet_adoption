@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
-import { Plus, Edit, Trash2, ArrowLeft, Stethoscope } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Plus, Edit, Trash2, ArrowLeft, Stethoscope, Upload, Download, FileText } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import Modal from "../../components/Modal";
 import Badge from "../../components/Badge";
 import EmptyState from "../../components/EmptyState";
 import { apiFetch, PaginatedResponse, PetResponse } from "../../lib/api";
 import { useLanguage } from "../../context/LanguageContext";
+import { downloadFileUrl } from "../../lib/fileAccess";
+import { validateDocumentFile } from "../../lib/validation";
 
 interface MedicalEntry {
   entryId: string;
@@ -20,6 +22,16 @@ interface MedicalEntry {
 interface MedicalRecord {
   pet: { name: string; species: string; breed?: string | null; age?: number | null; gender?: string | null };
   entries: MedicalEntry[];
+  documents?: MedicalDocument[];
+}
+
+interface MedicalDocument {
+  fileId: string;
+  fileName: string;
+  fileUrl: string;
+  mimeType?: string | null;
+  fileSize: number;
+  uploadedAt: string;
 }
 
 interface VetMedicalPageProps {
@@ -46,6 +58,8 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [formError, setFormError] = useState("");
+  const [documentError, setDocumentError] = useState("");
+  const documentInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -149,10 +163,58 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
     }
   }
 
+  async function uploadDocument(file?: File) {
+    if (!effectivePetId) {
+      setDocumentError(t("medical_choose_pet_error"));
+      return;
+    }
+    if (!file) {
+      setDocumentError("Please choose a PDF file first.");
+      return;
+    }
+    const validation = validateDocumentFile(file);
+    if (validation) {
+      setDocumentError(validation);
+      return;
+    }
+
+    const body = new FormData();
+    body.append("file", file);
+
+    setSaving(true);
+    setDocumentError("");
+    try {
+      await apiFetch(`/pets/${effectivePetId}/medical-record/documents`, {
+        method: "POST",
+        body,
+      });
+      if (documentInputRef.current) documentInputRef.current.value = "";
+      loadRecord();
+    } catch (err) {
+      setDocumentError(err instanceof Error ? err.message : "Unable to upload document.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteDocument(fileId: string) {
+    setSaving(true);
+    setDocumentError("");
+    try {
+      await apiFetch(`/files/${fileId}`, { method: "DELETE" });
+      loadRecord();
+    } catch (err) {
+      setDocumentError(err instanceof Error ? err.message : "Unable to delete document.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const pet = record?.pet;
   const selectedPet = useMemo(() => pets.find((item) => item.petId === effectivePetId), [pets, effectivePetId]);
   const displayPet = pet ?? selectedPet;
   const entries = record?.entries ?? [];
+  const documents = record?.documents ?? [];
 
   return (
     <DashboardLayout role="vet" activePage="vet-medical" onNavigate={onNavigate} pageTitle={`${t("vet_medical_records")}${displayPet ? ` - ${displayPet.name}` : ""}`} breadcrumbs={[t("role_vet"), t("dash_pets"), displayPet?.name ?? t("vet_medical_records")]}>
@@ -207,6 +269,54 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
             ))}
           </div>
         )}
+
+        <div className="bg-white rounded-[15px] shadow-md p-5 mt-5">
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <div>
+              <p className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black">Medical documents</p>
+              <p className="font-['Poppins',sans-serif] text-[12px] text-black/50">PDF documents up to 10 MB</p>
+            </div>
+            <div className="ml-auto flex items-center gap-2">
+              <input
+                ref={documentInputRef}
+                type="file"
+                accept="application/pdf,.pdf"
+                className="hidden"
+                onChange={(event) => uploadDocument(event.target.files?.[0])}
+              />
+              <button
+                disabled={!effectivePetId || saving}
+                onClick={() => documentInputRef.current?.click()}
+                className="flex items-center gap-2 px-4 py-2 bg-[#089D97] text-white rounded-[10px] font-['Poppins',sans-serif] text-[13px] font-medium hover:bg-[#047975] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Upload size={15} /> Upload PDF
+              </button>
+            </div>
+          </div>
+          {documentError && <p className="mb-3 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{documentError}</p>}
+          {documents.length === 0 ? (
+            <div className="border border-dashed border-gray-200 rounded-[12px] p-4 text-center">
+              <FileText size={22} className="mx-auto text-gray-300 mb-2" />
+              <p className="font-['Poppins',sans-serif] text-[13px] text-black/50">No documents uploaded.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {documents.map((doc) => (
+                <div key={doc.fileId} className="flex items-center gap-3 border border-gray-100 rounded-[12px] px-3 py-2">
+                  <FileText size={18} className="text-red-400 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="font-['Poppins',sans-serif] text-[13px] font-medium text-black truncate">{doc.fileName}</p>
+                    <p className="font-['Poppins',sans-serif] text-[11px] text-black/45">{Math.max(doc.fileSize / 1024, 1).toFixed(0)} KB · {doc.uploadedAt?.slice(0, 10)}</p>
+                  </div>
+                  <div className="ml-auto flex gap-2">
+                    <button onClick={() => downloadFileUrl(doc.fileUrl, doc.fileName)} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label="Download document"><Download size={15} /></button>
+                    <button disabled={saving} onClick={() => deleteDocument(doc.fileId)} className="text-red-400 hover:text-red-600 transition-colors disabled:opacity-40" aria-label="Delete document"><Trash2 size={15} /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <Modal title={editTarget ? t("vet_edit_entry") : t("medical_add_entry")} open={addOpen} onClose={() => { setAddOpen(false); setEditTarget(null); }} onConfirm={saveEntry} confirmLabel={saving ? t("common_saving") : editTarget ? t("action_save_changes") : t("vet_add_entry")} size="md">

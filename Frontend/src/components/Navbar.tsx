@@ -6,6 +6,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { useTheme } from "../context/ThemeContext";
 import { useCart } from "../context/CartContext";
 import { apiFetch } from "../lib/api";
+import AuthenticatedImage from "./AuthenticatedImage";
 
 interface NavbarProps {
   activePage?: string;
@@ -267,7 +268,7 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
                 className="flex items-center gap-2 px-3 py-1.5 rounded-[12px] hover:bg-[#f0f9f8] transition-colors"
               >
                 {user.avatar ? (
-                  <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
+                  <AuthenticatedImage src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#089D97] to-[#047975] flex items-center justify-center">
                     <span className="font-['Poppins',sans-serif] font-bold text-[11px] text-white">{initials}</span>
@@ -364,7 +365,7 @@ export default function Navbar({ activePage, onNavigate }: NavbarProps) {
             <>
               <div className="flex items-center gap-3 px-3 py-3 border-t border-[#f0f8f7] mt-1">
                 {user.avatar ? (
-                  <img src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover" />
+                  <AuthenticatedImage src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover" />
                 ) : (
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#089D97] to-[#047975] flex items-center justify-center">
                     <span className="font-bold text-[11px] text-white">{initials}</span>

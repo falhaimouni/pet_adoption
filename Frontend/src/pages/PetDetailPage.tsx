@@ -6,6 +6,7 @@ import { apiFetch, PetResponse } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { defaultPetImage, getPrimaryPetImageUrl } from "../lib/petImages";
+import AuthenticatedImage from "../components/AuthenticatedImage";
 
 interface PetDetailPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
@@ -116,8 +117,9 @@ export default function PetDetailPage({ onNavigate, petId, embedded = false }: P
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="flex flex-col gap-4">
               <div className="relative bg-white rounded-[24px] shadow-sm overflow-hidden aspect-[4/3] flex items-center justify-center">
-                <img
+                <AuthenticatedImage
                   src={imageError ? defaultPetImage : imageUrl}
+                  fallback={defaultPetImage}
                   alt={pet.name}
                   onError={() => setImageError(true)}
                   className="w-full h-full object-contain"

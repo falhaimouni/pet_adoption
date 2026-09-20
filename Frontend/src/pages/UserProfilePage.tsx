@@ -7,8 +7,9 @@ import Navbar from "../components/Navbar";
 import BackHomeButton from "../components/BackHomeButton";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
-import { apiFetch, resolveAssetUrl } from "../lib/api";
+import { apiFetch } from "../lib/api";
 import { validateImageFile } from "../lib/validation";
+import AuthenticatedImage from "../components/AuthenticatedImage";
 
 interface UserProfilePageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
@@ -78,7 +79,7 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
           address: form.address.trim(),
         }),
       });
-      let nextAvatar = profile.avatar ? resolveAssetUrl(profile.avatar) : user?.avatar;
+      let nextAvatar = profile.avatar ?? user?.avatar;
       if (avatarFile) {
         const body = new FormData();
         body.append("file", avatarFile);
@@ -86,7 +87,7 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
           method: "POST",
           body,
         });
-        nextAvatar = uploaded.avatar ? resolveAssetUrl(uploaded.avatar) : undefined;
+        nextAvatar = uploaded.avatar ?? undefined;
       }
       updateUser({ name: `${profile.firstName} ${profile.lastName}`.trim(), phone: profile.phone ?? undefined, address: profile.address ?? undefined, avatar: nextAvatar });
       setAvatarPreview(nextAvatar ?? "");
@@ -165,7 +166,7 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
         <div className="bg-white rounded-[20px] shadow-lg p-6 mb-6 flex flex-col sm:flex-row sm:items-end gap-5">
           <div className="relative self-start">
             {avatarPreview ? (
-              <img src={avatarPreview} alt={t("profile_avatar_alt")} className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md" />
+              <AuthenticatedImage src={avatarPreview} alt={t("profile_avatar_alt")} className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md" />
             ) : (
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#089D97] to-[#047975] flex items-center justify-center border-4 border-white shadow-md">
                 <span className="font-['Poppins',sans-serif] font-bold text-2xl text-white">{initials}</span>

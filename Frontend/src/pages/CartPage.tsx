@@ -7,6 +7,7 @@ import { useCart } from "../context/CartContext";
 import { defaultSupplyImage } from "../data/products";
 import { useLanguage } from "../context/LanguageContext";
 import { apiFetch } from "../lib/api";
+import AuthenticatedImage from "../components/AuthenticatedImage";
 
 interface CartPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
@@ -162,13 +163,10 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
               <div className="divide-y divide-[#f0f8f7]">
                 {items.map(({ product, quantity }) => (
                   <article key={product.id} className="py-4 flex gap-4">
-                    <img
+                    <AuthenticatedImage
                       src={product.image}
+                      fallback={defaultSupplyImage}
                       alt={product.name}
-                      onError={(event) => {
-                        event.currentTarget.onerror = null;
-                        event.currentTarget.src = defaultSupplyImage;
-                      }}
                       className="w-20 h-20 rounded-[14px] object-cover bg-[#f0f8f7] shrink-0"
                     />
                     <div className="flex-1 min-w-0">

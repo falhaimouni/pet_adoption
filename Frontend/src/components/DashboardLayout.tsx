@@ -12,6 +12,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { useTheme } from "../context/ThemeContext";
 import { apiFetch } from "../lib/api";
 import { useCart } from "../context/CartContext";
+import AuthenticatedImage from "./AuthenticatedImage";
 
 export type Role = "adopter" | "employee" | "vet" | "manager" | "admin";
 
@@ -288,7 +289,7 @@ export default function DashboardLayout({
             </button>
             <div className="flex items-center gap-2">
               <div className="w-[46px] h-[46px] bg-[rgba(217,217,217,0.82)] rounded-full flex items-center justify-center overflow-hidden">
-                <img src={profileImg} alt={t("profile_avatar_alt")} className="w-full h-full object-contain" />
+                <AuthenticatedImage src={user?.avatar ?? profileImg} fallback={profileImg} alt={t("profile_avatar_alt")} className="w-full h-full object-contain" />
               </div>
               <div className="hidden sm:flex flex-col">
                 <span className="font-['Poppins',sans-serif] font-medium text-[13px] text-black leading-tight">{displayName}</span>
@@ -322,7 +323,7 @@ export default function DashboardLayout({
           {/* Profile */}
           <div className="flex flex-col items-center px-4 pb-4 border-b border-white/30">
             <div className="w-[56px] h-[56px] bg-[rgba(217,217,217,0.82)] rounded-full flex items-center justify-center overflow-hidden mb-2">
-              <img src={profileImg} alt={t("profile_avatar_alt")} className="w-full h-full object-contain" />
+              <AuthenticatedImage src={user?.avatar ?? profileImg} fallback={profileImg} alt={t("profile_avatar_alt")} className="w-full h-full object-contain" />
             </div>
             <p className="font-['Poppins',sans-serif] font-semibold text-[13px] text-black text-center">{displayName}</p>
             <span className="mt-1 px-3 py-0.5 bg-white/50 rounded-full font-['Poppins',sans-serif] text-[11px] text-[#047975]">

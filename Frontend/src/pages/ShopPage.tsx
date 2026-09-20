@@ -8,7 +8,8 @@ import { Product, defaultSupplyImage } from "../data/products";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
-import { apiFetch, resolveAssetUrl } from "../lib/api";
+import { apiFetch } from "../lib/api";
+import AuthenticatedImage from "../components/AuthenticatedImage";
 
 interface ShopPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
@@ -48,7 +49,7 @@ function mapSupplyToProduct(supply: StoreSupply): Product {
     category: supply.category,
     subCategory: supply.category,
     price: Number(supply.sellingPrice),
-    image: resolveAssetUrl(supply.imageUrl) || defaultSupplyImage,
+    image: supply.imageUrl || defaultSupplyImage,
     rating: 0,
     reviewCount: 0,
     inStock,
@@ -118,6 +119,10 @@ export default function ShopPage({ onNavigate, embedded = false }: ShopPageProps
     setSort("featured");
   }
 
+  function categoryLabel(value: string) {
+    return t(`supply_category_${value.toLowerCase()}`);
+  }
+
   return (
     <div className={embedded ? "" : "min-h-screen bg-[#f0f8f7]"}>
       {!embedded && <Navbar onNavigate={onNavigate} activePage="shop" />}
@@ -150,7 +155,7 @@ export default function ShopPage({ onNavigate, embedded = false }: ShopPageProps
                 onClick={() => setCategory(cat)}
                 className={`px-4 py-2 rounded-[20px] font-['Poppins',sans-serif] text-[13px] font-medium whitespace-nowrap transition-all ${category === cat ? "bg-[#089D97] text-white shadow-md" : "bg-white text-[#1a2e2d] hover:bg-[#e0f2f0]"}`}
               >
-                {cat === "All" ? t("shop_all") : cat}
+                {cat === "All" ? t("shop_all") : categoryLabel(cat)}
               </button>
             ))}
           </div>
@@ -193,18 +198,15 @@ export default function ShopPage({ onNavigate, embedded = false }: ShopPageProps
       <Modal title={quickView?.name ?? ""} open={!!quickView} onClose={() => setQuickView(null)} size="md">
         {quickView && (
           <div className="grid sm:grid-cols-[160px_1fr] gap-4">
-            <img
+            <AuthenticatedImage
               src={quickView.image}
+              fallback={defaultSupplyImage}
               alt={quickView.name}
-              onError={(event) => {
-                event.currentTarget.onerror = null;
-                event.currentTarget.src = defaultSupplyImage;
-              }}
               className="w-full aspect-square rounded-[14px] object-cover bg-[#f0f8f7]"
             />
             <div>
-              <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87] mb-1">{quickView.category}</p>
-              <p className="font-['Poppins',sans-serif] text-[14px] text-[#1a2e2d] leading-relaxed">{quickView.description}</p>
+              <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87] mb-1">{categoryLabel(quickView.category)}</p>
+              <p className="font-['Poppins',sans-serif] text-[14px] text-[#1a2e2d] leading-relaxed">{quickView.name}</p>
               <p className="font-['Poppins',sans-serif] font-bold text-[22px] text-[#089D97] mt-4">${quickView.price.toFixed(2)}</p>
               <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87] mt-2">{quickView.inStock ? t("stock_in") : t("stock_out")}</p>
             </div>
