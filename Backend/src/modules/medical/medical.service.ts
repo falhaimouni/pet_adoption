@@ -10,6 +10,10 @@ import { MedicalEntry } from '../../database/entities/medical-entry.entity';
 import { MedicalRecord } from '../../database/entities/medical-record.entity';
 import { Pet } from '../../database/entities/pet.entity';
 import { User } from '../../database/entities/user.entity';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
+import { FileUpload } from '../../database/entities/file-upload.entity';
+import { FileUploadCategory } from '@shared/enums';
+import { UploadsService } from '../uploads/uploads.service';
 
 interface MedicalVeterinarianResponse {
   userId: string;
@@ -58,7 +62,34 @@ export class MedicalService {
 
     @InjectRepository(Pet)
     private readonly petRepo: Repository<Pet>,
+
+    @InjectRepository(ActivityLog)
+    private readonly activityLogRepo: Repository<ActivityLog>,
+
+    private readonly uploadsService: UploadsService,
   ) {}
+
+  async uploadMedicalDocument(
+    petId: string,
+    veterinarianId: string,
+    file: Express.Multer.File,
+  ): Promise<FileUpload> {
+    let record: MedicalRecord;
+
+    try {
+      record = await this.getExistingRecordForPet(petId);
+    } catch (error) {
+      await this.uploadsService.rollbackFileUpload(file.path);
+      throw error;
+    }
+
+    return this.uploadsService.createFileRecord(
+      file,
+      FileUploadCategory.DOCUMENT,
+      veterinarianId,
+      record.recordId,
+    );
+  }
 
   async findRecordByPet(petId: string): Promise<MedicalRecordResponse> {
     await this.ensurePetExists(petId);
@@ -91,7 +122,7 @@ export class MedicalService {
     veterinarianId: string,
     dto: CreateMedicalEntryDto,
   ): Promise<MedicalEntryResponse> {
-    const record = await this.findOrCreateRecord(petId);
+    const { record, created } = await this.findOrCreateRecord(petId);
 
     const entry = this.medicalEntryRepo.create({
       recordId: record.recordId,
@@ -104,6 +135,18 @@ export class MedicalService {
     });
 
     const savedEntry = await this.medicalEntryRepo.save(entry);
+
+    if (created) {
+      await this.activityLogRepo.save(
+        this.activityLogRepo.create({
+          userId: veterinarianId,
+          action: 'MEDICAL_RECORD_CREATED',
+          entityType: 'MEDICAL_RECORD',
+          entityId: record.recordId,
+        }),
+      );
+    }
+
     return this.findEntry(savedEntry.entryId);
   }
 
@@ -144,6 +187,18 @@ export class MedicalService {
     }
 
     return entry;
+  }
+
+  private async getExistingRecordForPet(petId: string): Promise<MedicalRecord> {
+    await this.ensurePetExists(petId);
+
+    const record = await this.medicalRecordRepo.findOne({ where: { petId } });
+
+    if (!record) {
+      throw new NotFoundException('Medical record not found');
+    }
+
+    return record;
   }
 
   private mapRecordResponse(record: MedicalRecord): MedicalRecordResponse {
@@ -198,13 +253,16 @@ export class MedicalService {
     });
 
     if (existingRecord) {
-      return existingRecord;
+      return { record: existingRecord, created: false };
     }
 
     try {
-      return await this.medicalRecordRepo.save(
-        this.medicalRecordRepo.create({ petId }),
-      );
+      return {
+        record: await this.medicalRecordRepo.save(
+          this.medicalRecordRepo.create({ petId }),
+        ),
+        created: true,
+      };
     } catch (error) {
       if (!(error instanceof QueryFailedError && (error as any).code === '23505')) {
         throw error;
@@ -214,7 +272,7 @@ export class MedicalService {
       if (!record) {
         throw error;
       }
-      return record;
+      return { record, created: false };
     }
   }
 

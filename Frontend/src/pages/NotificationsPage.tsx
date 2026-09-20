@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { apiFetch } from "../lib/api";
 
-type Role = "adopter" | "staff" | "vet" | "manager" | "admin";
+type Role = "adopter" | "employee" | "vet" | "manager" | "admin";
 
 interface NotificationItem {
   id: string;
@@ -64,7 +64,7 @@ export default function NotificationsPage({ onNavigate, role }: NotificationsPag
     { key: "INVENTORY", label: t("notif_inventory") },
     { key: "SYSTEM", label: t("notif_system") },
   ];
-  const locale = lang === "ar" ? "ar-JO" : "en-US";
+  const locale = lang === "ar" ? "ar-JO" : lang === "fr" ? "fr-FR" : "en-US";
 
   async function markRead(id: string) {
     const updated = await apiFetch<NotificationItem>(`/notifications/${id}/read`, { method: "PATCH" });
@@ -114,8 +114,8 @@ export default function NotificationsPage({ onNavigate, role }: NotificationsPag
                   <div key={n.id} className="bg-white rounded-[12px] shadow-sm border border-[rgba(8,157,151,0.2)] px-4 py-3 flex gap-3 items-start">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${bgFor(n.type)}`}>{iconFor(n.type)}</div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black">{n.title}</p>
-                      <p className="font-['Poppins',sans-serif] text-[12px] text-black/60 mt-0.5 leading-relaxed">{n.message}</p>
+                      <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black">{translateNotification(n.title, t)}</p>
+                      <p className="font-['Poppins',sans-serif] text-[12px] text-black/60 mt-0.5 leading-relaxed">{translateNotification(n.message, t)}</p>
                       <p className="font-['Poppins',sans-serif] text-[11px] text-black/35 mt-1">{new Date(n.createdAt).toLocaleString(locale)}</p>
                     </div>
                     <button onClick={() => markRead(n.id)} title={t("notif_mark_all")} className="w-7 h-7 rounded-full bg-[rgba(8,157,151,0.1)] text-[#089D97] flex items-center justify-center hover:bg-[rgba(8,157,151,0.2)] transition-colors"><Check size={13} /></button>
@@ -133,8 +133,8 @@ export default function NotificationsPage({ onNavigate, role }: NotificationsPag
                   <div key={n.id} className="bg-white rounded-[12px] shadow-sm px-4 py-3 flex gap-3 items-start opacity-75">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${bgFor(n.type)}`}>{iconFor(n.type)}</div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-['Poppins',sans-serif] font-medium text-[14px] text-black">{n.title}</p>
-                      <p className="font-['Poppins',sans-serif] text-[12px] text-black/50 mt-0.5 leading-relaxed">{n.message}</p>
+                      <p className="font-['Poppins',sans-serif] font-medium text-[14px] text-black">{translateNotification(n.title, t)}</p>
+                      <p className="font-['Poppins',sans-serif] text-[12px] text-black/50 mt-0.5 leading-relaxed">{translateNotification(n.message, t)}</p>
                       <p className="font-['Poppins',sans-serif] text-[11px] text-black/30 mt-1">{new Date(n.createdAt).toLocaleString(locale)}</p>
                     </div>
                   </div>
@@ -146,4 +146,14 @@ export default function NotificationsPage({ onNavigate, role }: NotificationsPag
       )}
     </DashboardLayout>
   );
+}
+
+function translateNotification(value: string, t: (key: string) => string) {
+  const map: Record<string, string> = {
+    "New adoption request": "notification_new_adoption_request",
+    "Mochi has a new interested adopter.": "notification_new_adoption_request_msg",
+    "Low stock": "notification_low_stock",
+    "Some store supplies are near the low stock limit.": "notification_low_stock_msg",
+  };
+  return map[value] ? t(map[value]) : value;
 }

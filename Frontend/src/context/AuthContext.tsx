@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { ApiError, apiFetch, clearAuthTokens, resolveAssetUrl, setAuthTokens } from "../lib/api";
 
-export type UserRole = "adopter" | "staff" | "vet" | "manager" | "admin";
+export type UserRole = "adopter" | "employee" | "vet" | "manager" | "admin";
 
 export interface AuthUser {
   id: string;
@@ -54,7 +54,7 @@ function mapRole(roleName: string): UserRole {
   switch (roleName.toUpperCase()) {
     case "ADMIN": return "admin";
     case "MANAGER": return "manager";
-    case "EMPLOYEE": return "staff";
+    case "EMPLOYEE": return "employee";
     case "VET": return "vet";
     default: return "adopter";
   }
@@ -110,8 +110,10 @@ function mapProfileUser(profile: ProfileResponse): AuthUser {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? (JSON.parse(stored) as AuthUser) : null;
+      const stored = sessionStorage.getItem(STORAGE_KEY);
+      if (!stored) return null;
+      const parsed = JSON.parse(stored) as AuthUser;
+      return parsed.role === "staff" ? { ...parsed, role: "employee" } : parsed;
     } catch {
       return null;
     }
@@ -122,8 +124,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = user !== null;
 
   useEffect(() => {
-    if (user) localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    else localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+    if (user) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+    else sessionStorage.removeItem(STORAGE_KEY);
   }, [user]);
 
   useEffect(() => {

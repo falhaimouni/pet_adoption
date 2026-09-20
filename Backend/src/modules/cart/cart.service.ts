@@ -10,6 +10,13 @@ import { AddCartItemDto } from './cart.dto';
 
 @Injectable()
 export class CartService {
+  private readonly cartRelations = [
+    'cartItems',
+    'cartItems.product',
+    'cartItems.product.supplies',
+    'cartItems.product.supplies.imageFile',
+  ];
+
   constructor(
     @InjectRepository(Cart)
     private readonly cartRepo: Repository<Cart>,
@@ -26,14 +33,14 @@ export class CartService {
   async getMyCart(userId: string) {
     const cart = await this.cartRepo.findOne({
       where: { userId },
-      relations: ['cartItems', 'cartItems.product'],
+      relations: this.cartRelations,
     });
 
     if (!cart) {
       return this.createEmptyCart(userId);
     }
 
-    return cart;
+    return this.withSupplyImages(cart);
   }
 
   async addItem(userId: string, dto: AddCartItemDto) {
@@ -101,10 +108,11 @@ export class CartService {
         await cartItemRepo.save(cartItem);
       }
 
-      return cartRepo.findOne({
+      const savedCart = await cartRepo.findOne({
         where: { cartId: cart.cartId },
-        relations: ['cartItems', 'cartItems.product'],
+        relations: this.cartRelations,
       });
+      return this.withSupplyImages(savedCart);
     });
   }
 
@@ -127,10 +135,11 @@ export class CartService {
         cart = await cartRepo.save(cartRepo.create({ userId }));
       }
 
-      return cartRepo.findOne({
+      const savedCart = await cartRepo.findOne({
         where: { cartId: cart.cartId },
-        relations: ['cartItems', 'cartItems.product'],
+        relations: this.cartRelations,
       });
+      return this.withSupplyImages(savedCart);
     });
   }
 
@@ -196,10 +205,11 @@ export class CartService {
       cartItem.subtotal = (unitPrice * quantity).toFixed(2);
       await cartItemRepo.save(cartItem);
 
-      return manager.getRepository(Cart).findOne({
+      const savedCart = await manager.getRepository(Cart).findOne({
         where: { cartId: cart.cartId },
-        relations: ['cartItems', 'cartItems.product'],
+        relations: this.cartRelations,
       });
+      return this.withSupplyImages(savedCart);
     });
   }
 
@@ -232,5 +242,20 @@ export class CartService {
     });
 
     return { success: true, message: 'Cart deleted successfully' };
+  }
+
+  private withSupplyImages(cart: Cart | null): Cart | null {
+    if (!cart) return cart;
+
+    for (const item of cart.cartItems ?? []) {
+      const imageFile = item.product?.supplies?.[0]?.imageFile;
+      item.imageUrl = imageFile
+        ? /^https?:\/\//i.test(imageFile.fileUrl)
+          ? imageFile.fileUrl
+          : `/files/${imageFile.fileId}`
+        : null;
+    }
+
+    return cart;
   }
 }

@@ -8,8 +8,7 @@ import { OrderItem } from '../../database/entities/order-item.entity';
 import { Payment } from '../../database/entities/payment.entity';
 import { Product } from '../../database/entities/product.entity';
 import { User } from '../../database/entities/user.entity';
-
-import { PaymentModule } from '../payments/payments.module';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
 
 import { CheckoutController } from './checkout.controller';
 import { CheckoutService } from './checkout.service';
@@ -24,15 +23,12 @@ import { CheckoutService } from './checkout.service';
       OrderItem,
       Payment,
       User,
+      ActivityLog,
     ]),
-
-    PaymentModule,
   ],
-
   controllers: [
     CheckoutController,
   ],
-
   providers: [
     CheckoutService,
   ],

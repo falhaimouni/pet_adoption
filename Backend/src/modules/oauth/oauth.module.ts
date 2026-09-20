@@ -5,6 +5,8 @@ import { PassportModule } from '@nestjs/passport';
 import { User } from '../../database/entities/user.entity';
 import { OAuthAccount } from '../../database/entities/oauth-account.entity';
 import { Role } from '../../database/entities/role.entity';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
+import { Adopter } from '../../database/entities/adopter.entity';
 
 import { OAuthController } from './oauth.controller';
 import { OAuthService } from './oauth.service';
@@ -20,6 +22,8 @@ import { AuthModule } from '../auth/auth.module';
       User,
       OAuthAccount,
       Role,
+      ActivityLog,
+      Adopter,
     ]),
 
     AuthModule,

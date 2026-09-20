@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { Roles } from "../roles/roles.decorator";
 import { RolesGuard } from "../roles/roles.guard";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
@@ -8,6 +8,7 @@ import { StoreSupplyDetailsDto } from "@shared/dto/StoreSupplyDetails.dto";
 import { StoreQueryDto } from "@shared/dto/StoreQuery.dto";
 import { CreateSupplyDto, UpdateSupplyDto } from "@shared/dto/supply.dto";
 import { SupplyService } from "../inventory/services/supply.service";
+import { RequestWithUser } from '@shared/types/auth.types';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('store')
 export class StoreController{
@@ -32,9 +33,9 @@ export class StoreController{
 
   @Post('supplies')
   @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
-  createSupply(@Body() createSupplyDto: CreateSupplyDto)
+  createSupply(@Body() createSupplyDto: CreateSupplyDto, @Req() req: RequestWithUser)
   {
-    return this.inventorySupplyService.createSupply(createSupplyDto);
+    return this.inventorySupplyService.createSupply(createSupplyDto, req.user.userId);
   }
 
   @Patch('supplies/:id')

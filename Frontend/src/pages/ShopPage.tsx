@@ -4,11 +4,11 @@ import Navbar from "../components/Navbar";
 import ProductCard from "../components/ProductCard";
 import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
-import { Product, productImage } from "../data/products";
+import { Product, defaultSupplyImage } from "../data/products";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
-import { apiFetch } from "../lib/api";
+import { apiFetch, resolveAssetUrl } from "../lib/api";
 
 interface ShopPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
@@ -22,7 +22,9 @@ interface StoreSupply {
   category: string;
   sellingPrice: string;
   quantity?: number;
-  inStock: boolean;
+  inStock?: boolean;
+  imageUrl?: string | null;
+  status?: string;
 }
 
 interface StoreResponse {
@@ -32,20 +34,24 @@ interface StoreResponse {
   limit: number;
 }
 
-function mapSupplyToProduct(supply: StoreSupply, index: number): Product {
+function mapSupplyToProduct(supply: StoreSupply): Product {
+  const inStock =
+    supply.inStock ??
+    ((supply.quantity ?? 0) > 0 && (supply.status == null || supply.status === "AVAILABLE"));
+
   return {
     id: supply.productId,
     productId: supply.productId,
     supplyId: supply.supplyId,
     name: supply.supplyName,
-    brand: "Petopia Store",
+    brand: "Petopia",
     category: supply.category,
     subCategory: supply.category,
     price: Number(supply.sellingPrice),
-    image: productImage(index),
+    image: resolveAssetUrl(supply.imageUrl) || defaultSupplyImage,
     rating: 0,
     reviewCount: 0,
-    inStock: supply.inStock,
+    inStock,
     description: `${supply.supplyName} · ${supply.category}`,
     forSpecies: [],
   };
@@ -87,7 +93,7 @@ export default function ShopPage({ onNavigate, embedded = false }: ShopPageProps
         if (!cancelled) setProducts(response.data.map(mapSupplyToProduct));
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Unable to load store supplies.");
+        if (!cancelled) setError(err instanceof Error ? err.message : t("shop_supply_load_error"));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -172,7 +178,7 @@ export default function ShopPage({ onNavigate, embedded = false }: ShopPageProps
             {[1, 2, 3, 4].map((row) => <div key={row} className="h-[340px] rounded-[20px] bg-white animate-pulse" />)}
           </div>
         ) : error ? (
-          <EmptyState icon={<SlidersHorizontal size={32} />} title={t("shop_load_error")} description={error} actionLabel="Try again" onAction={clearFilters} />
+          <EmptyState icon={<SlidersHorizontal size={32} />} title={t("shop_load_error")} description={error} actionLabel={t("common_try_again")} onAction={clearFilters} />
         ) : sortedProducts.length === 0 ? (
           <EmptyState icon={<SlidersHorizontal size={32} />} title={t("shop_no_found")} description={t("shop_no_found_desc")} actionLabel={t("shop_clear")} onAction={clearFilters} />
         ) : (
@@ -187,12 +193,20 @@ export default function ShopPage({ onNavigate, embedded = false }: ShopPageProps
       <Modal title={quickView?.name ?? ""} open={!!quickView} onClose={() => setQuickView(null)} size="md">
         {quickView && (
           <div className="grid sm:grid-cols-[160px_1fr] gap-4">
-            <img src={quickView.image} alt={quickView.name} className="w-full aspect-square rounded-[14px] object-cover bg-[#f0f8f7]" />
+            <img
+              src={quickView.image}
+              alt={quickView.name}
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = defaultSupplyImage;
+              }}
+              className="w-full aspect-square rounded-[14px] object-cover bg-[#f0f8f7]"
+            />
             <div>
               <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87] mb-1">{quickView.category}</p>
               <p className="font-['Poppins',sans-serif] text-[14px] text-[#1a2e2d] leading-relaxed">{quickView.description}</p>
               <p className="font-['Poppins',sans-serif] font-bold text-[22px] text-[#089D97] mt-4">${quickView.price.toFixed(2)}</p>
-              <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87] mt-2">{quickView.inStock ? "In stock" : "Out of stock"}</p>
+              <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87] mt-2">{quickView.inStock ? t("stock_in") : t("stock_out")}</p>
             </div>
           </div>
         )}

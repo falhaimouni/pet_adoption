@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Eye } from "lucide-react";
 import { PetResponse } from "../lib/api";
 import { useLanguage } from "../context/LanguageContext";
-import { getPetImageUrl, defaultPetImage } from "../lib/petImages";
+import { defaultPetImage, getPrimaryPetImageUrl } from "../lib/petImages";
 
 interface PetCardProps {
   pet: PetResponse;
@@ -32,7 +32,7 @@ export default function PetCard({ pet, onViewDetails, onAdopt }: PetCardProps) {
 
   const speciesColor = SPECIES_COLORS[pet.species] ?? SPECIES_COLORS.default;
   const status = pet.adoptionStatus.toUpperCase();
-  const imageUrl = getPetImageUrl(pet.images?.[0]?.imageUrl);
+  const imageUrl = getPrimaryPetImageUrl(pet.images);
   const formattedAge = pet.age == null ? t("common_unknown") : `${pet.age} ${pet.age === 1 ? t("common_year") : t("common_years")}`;
   const statusText =
     status === "AVAILABLE" ? t("status_available") :
@@ -43,7 +43,7 @@ export default function PetCard({ pet, onViewDetails, onAdopt }: PetCardProps) {
   useEffect(() => {
     setImgLoaded(false);
     setImgError(false);
-  }, [pet.petId, pet.images?.[0]?.imageUrl]);
+  }, [pet.petId, imageUrl]);
 
   return (
     <article className="bg-white rounded-[22px] shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group border border-transparent hover:border-[rgba(8,157,151,0.12)] flex flex-col">

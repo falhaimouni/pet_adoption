@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Home, User, Heart, Bell, Settings,
   LogOut, Menu, X, Syringe, BarChart2, Package, Users,
-  FileText, ClipboardList, Stethoscope, Tag,
+  FileText, ClipboardList, Stethoscope, Tag, Building2,
   ChevronRight, Sun, Moon, Globe, MessageCircle, ShoppingCart,
 } from "lucide-react";
 import logoImg from "../imports/MyPetopia/be6bd1f12e9a602c8830a9c39abaf73ad65d4682.png";
@@ -13,7 +13,7 @@ import { useTheme } from "../context/ThemeContext";
 import { apiFetch } from "../lib/api";
 import { useCart } from "../context/CartContext";
 
-export type Role = "adopter" | "staff" | "vet" | "manager" | "admin";
+export type Role = "adopter" | "employee" | "vet" | "manager" | "admin";
 
 export interface NavItem {
   id: string;
@@ -23,6 +23,8 @@ export interface NavItem {
 }
 
 type TFn = (key: string) => string;
+const nextLang = { en: "ar", ar: "fr", fr: "en" } as const;
+const langLabel = { en: "ع", ar: "FR", fr: "EN" } as const;
 
 function getNavItems(role: Role, t: TFn): NavItem[] {
   switch (role) {
@@ -34,13 +36,14 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "chats",          label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
         { id: "notifications",  label: t("nav_notifications"), icon: <Bell size={16} /> },
       ];
-    case "staff":
+    case "employee":
       return [
         { id: "staff-dashboard",  label: t("nav_dashboard"),         icon: <Home size={16} /> },
         { id: "staff-pets",       label: t("dash_pets"),             icon: <Heart size={16} /> },
         { id: "staff-requests",   label: t("nav_adoption_requests"), icon: <ClipboardList size={16} /> },
         { id: "staff-adoptions",  label: t("nav_adoptions"),         icon: <Heart size={16} /> },
         { id: "staff-chats",      label: t("nav_chats"),             icon: <MessageCircle size={16} /> },
+        { id: "staff-orders",     label: t("nav_orders"),            icon: <ShoppingCart size={16} /> },
         { id: "staff-inventory",  label: t("nav_inventory"),         icon: <Package size={16} /> },
         { id: "staff-suppliers",  label: t("nav_suppliers"),         icon: <Tag size={16} /> },
         { id: "staff-reports",    label: t("nav_reports"),           icon: <FileText size={16} /> },
@@ -64,6 +67,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "manager-adoptions", label: t("nav_adoptions"),     icon: <Heart size={16} /> },
         { id: "manager-chats",     label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
         { id: "manager-users",     label: t("nav_users"),         icon: <Users size={16} /> },
+        { id: "manager-orders",    label: t("nav_orders"),        icon: <ShoppingCart size={16} /> },
         { id: "manager-inventory", label: t("nav_inventory"),     icon: <Package size={16} /> },
         { id: "manager-suppliers", label: t("nav_suppliers"),     icon: <Tag size={16} /> },
         { id: "manager-reports",   label: t("nav_reports"),       icon: <FileText size={16} /> },
@@ -77,6 +81,8 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "admin-adoptions", label: t("nav_adoptions"),     icon: <Heart size={16} /> },
         { id: "admin-chats",     label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
         { id: "admin-users",     label: t("nav_users"),         icon: <Users size={16} /> },
+        { id: "admin-departments", label: t("nav_departments"), icon: <Building2 size={16} /> },
+        { id: "admin-orders",    label: t("nav_orders"),        icon: <ShoppingCart size={16} /> },
         { id: "admin-inventory", label: t("nav_inventory"),     icon: <Package size={16} /> },
         { id: "admin-suppliers", label: t("nav_suppliers"),     icon: <Tag size={16} /> },
         { id: "admin-reports",   label: t("nav_reports"),       icon: <FileText size={16} /> },
@@ -88,7 +94,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
 function petsPageForRole(role: Role) {
   const map: Record<Role, string> = {
     adopter: "pets",
-    staff: "staff-pets",
+    employee: "staff-pets",
     vet: "vet-pets",
     manager: "manager-pets",
     admin: "admin-pets",
@@ -99,7 +105,7 @@ function petsPageForRole(role: Role) {
 function homePageForRole(role: Role) {
   const map: Record<Role, string> = {
     adopter: "adopter-dashboard",
-    staff: "staff-dashboard",
+    employee: "staff-dashboard",
     vet: "vet-dashboard",
     manager: "manager-dashboard",
     admin: "admin-dashboard",
@@ -110,7 +116,7 @@ function homePageForRole(role: Role) {
 function getRoleLabel(role: Role, t: TFn) {
   const map: Record<Role, string> = {
     adopter: t("role_adopter"),
-    staff:   t("role_staff"),
+    employee: t("role_employee"),
     vet:     t("role_vet"),
     manager: t("role_manager"),
     admin:   t("role_admin"),
@@ -139,7 +145,7 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuth();
-  const { t, lang, setLang } = useLanguage();
+  const { t, lang, setLang, isRtl } = useLanguage();
   const { isDark, toggleTheme } = useTheme();
   const { count } = useCart();
   const displayName = userName ?? user?.name ?? "Guest";
@@ -170,6 +176,12 @@ export default function DashboardLayout({
     };
   }, []);
 
+  const sidebarTransform = sidebarOpen
+    ? "translate-x-0"
+    : isRtl
+      ? "translate-x-full lg:translate-x-0"
+      : "-translate-x-full lg:translate-x-0";
+
   const topNavItems = [
     { id: "home", label: t("nav_home"), page: homePageForRole(role) },
     { id: "pets", label: t("nav_pets"), page: petsPageForRole(role) },
@@ -182,8 +194,8 @@ export default function DashboardLayout({
   ];
 
   const legalLinks = [
-    { id: "privacy", label: "Privacy", page: "privacy" },
-    { id: "terms", label: "Terms", page: "terms" },
+    { id: "privacy", label: t("nav_privacy"), page: "privacy" },
+    { id: "terms", label: t("nav_terms"), page: "terms" },
   ];
 
   return (
@@ -234,12 +246,12 @@ export default function DashboardLayout({
           <div className="flex items-center gap-2">
             {/* Language toggle */}
             <button
-              onClick={() => setLang(lang === "en" ? "ar" : "en")}
+              onClick={() => setLang(nextLang[lang])}
               aria-label={t("common_toggle_language")}
               className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-[10px] text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all font-['Poppins',sans-serif] text-[13px] font-medium"
             >
               <Globe size={15} />
-              <span>{lang === "en" ? "ع" : "EN"}</span>
+              <span>{langLabel[lang]}</span>
             </button>
 
             {/* Dark / Light toggle */}
@@ -296,14 +308,14 @@ export default function DashboardLayout({
         {/* Sidebar */}
         <aside
           className={`
-            fixed lg:relative top-0 lg:top-auto left-0 z-40 lg:z-auto
+            dashboard-sidebar fixed lg:relative top-0 lg:top-auto ${isRtl ? "right-0" : "left-0"} z-40 lg:z-auto
             w-[240px] bg-[#80bdba] rounded-r-[10px] lg:rounded-[10px]
             flex flex-col pt-4 pb-4 mt-0 lg:mt-[16px] lg:ml-[14px] mb-[16px]
             transition-transform duration-300 h-full lg:h-[calc(100vh-112px)] lg:shrink-0
-            ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+            ${sidebarTransform}
           `}
         >
-          <button className="lg:hidden absolute top-3 right-3 text-black" onClick={() => setSidebarOpen(false)}>
+          <button className={`lg:hidden absolute top-3 ${isRtl ? "left-3" : "right-3"} text-black`} onClick={() => setSidebarOpen(false)}>
             <X size={20} />
           </button>
 

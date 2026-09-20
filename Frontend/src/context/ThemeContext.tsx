@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useAuth } from "./AuthContext";
 
 type Theme = "light" | "dark";
 
@@ -11,10 +12,17 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+const DEFAULT_THEME: Theme = "light";
+const LEGACY_THEME_KEY = "petopia_theme";
+
+function isTheme(value: string | null): value is Theme {
+  return value === "light" || value === "dark";
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    return (localStorage.getItem("petopia_theme") as Theme) ?? "light";
-  });
+  const { user } = useAuth();
+  const storageKey = `petopia_theme:${user?.id ?? "guest"}`;
+  const [theme, setThemeState] = useState<Theme>(() => DEFAULT_THEME);
 
   const isDark = theme === "dark";
 
@@ -26,7 +34,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   function setTheme(t: Theme) {
     setThemeState(t);
-    localStorage.setItem("petopia_theme", t);
+    sessionStorage.setItem(storageKey, t);
     applyTheme(t);
   }
 
@@ -35,9 +43,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    localStorage.removeItem(LEGACY_THEME_KEY);
+    const stored = sessionStorage.getItem(storageKey);
+    setThemeState(isTheme(stored) ? stored : DEFAULT_THEME);
+  }, [storageKey]);
+
+  useEffect(() => {
     applyTheme(theme);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [theme]);
 
   return (
     <ThemeContext.Provider value={{ theme, isDark, toggleTheme, setTheme }}>

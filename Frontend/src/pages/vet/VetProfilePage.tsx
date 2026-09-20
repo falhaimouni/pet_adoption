@@ -205,7 +205,7 @@ export default function VetProfilePage({ onNavigate }: VetProfilePageProps) {
           <div className="bg-white rounded-[20px] shadow-md p-5">
             <h3 className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black mb-3">{t("settings_security")}</h3>
             {user?.provider === "GOOGLE" ? (
-              <p className="font-['Poppins',sans-serif] text-[13px] text-black/60">Password management is handled through Google.</p>
+              <p className="font-['Poppins',sans-serif] text-[13px] text-black/60">{t("security_google_password_unavailable")}</p>
             ) : (
               <div className="flex flex-col gap-2">
                 <button onClick={() => onNavigate("settings")} className="w-full py-2.5 border border-[#089D97] text-[#089D97] rounded-[12px] font-['Poppins',sans-serif] font-medium text-[13px] hover:bg-[rgba(8,157,151,0.06)] transition-colors">

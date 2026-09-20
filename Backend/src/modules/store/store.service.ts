@@ -29,6 +29,7 @@ export class StoreService{
       .andWhere('supply.isActive = :active', {active: true})
       .andWhere('supply.storeListed = :storeListed', {storeListed: true})
       .innerJoin('supply.product', 'product')
+      .leftJoinAndSelect('supply.imageFile', 'imageFile')
       .andWhere('product.isActive = :productActive', { productActive: true });
 
     if (query.search)
@@ -87,6 +88,11 @@ export class StoreService{
       sellingPrice: supply.sellingPrice,
       inStock: supply.quantity > 0,
       storeListed: supply.storeListed,
+      imageUrl: supply.imageFile
+        ? /^https?:\/\//i.test(supply.imageFile.fileUrl)
+          ? supply.imageFile.fileUrl
+          : `/files/${supply.imageFile.fileId}`
+        : null,
     }));  
     return { data, total, page, limit };//here TypeORM sends the query
   }
@@ -100,6 +106,7 @@ export class StoreService{
       .andWhere('supply.status = :status', {status: SupplyStatusEnum.AVAILABLE})
       .andWhere('supply.quantity > 0')
       .innerJoin('supply.product', 'product')
+      .leftJoinAndSelect('supply.imageFile', 'imageFile')
       .andWhere('product.isActive = :productActive', { productActive: true })
       .getOne();
     if (!supply)
@@ -116,6 +123,11 @@ export class StoreService{
       quantity: supply.quantity,
       inStock: supply.quantity > 0,
       storeListed: supply.storeListed,
+      imageUrl: supply.imageFile
+        ? /^https?:\/\//i.test(supply.imageFile.fileUrl)
+          ? supply.imageFile.fileUrl
+          : `/files/${supply.imageFile.fileId}`
+        : null,
     };
   }
 

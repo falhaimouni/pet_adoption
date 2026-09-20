@@ -5,24 +5,20 @@ import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
-import { resolveUploadRoot } from './modules/uploads/upload-path.util';
-//check if file or folder exists
-// import { existsSync } from 'fs';
-// import { join } from 'path';
 
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    //to get the raw body of the request for stripe webhook verification
-    rawBody: true,
-  });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   //helps application shut down cleanly when the process is stopped. (for docker and DB connections)
   app.enableShutdownHooks();
   //middleware that adds security headers to each response
-  app.use(helmet());
-  //serve uploaded files from the uploads folder
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }));
+
+  // Serve uploaded files from the uploads folder
   app.useStaticAssets(resolveUploadRoot(), {
     prefix: '/uploads/',
   });

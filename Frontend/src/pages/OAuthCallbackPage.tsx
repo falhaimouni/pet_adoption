@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth, type UserRole } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 interface OAuthCallbackPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
@@ -10,7 +11,7 @@ function pageForRole(role: UserRole): string {
   switch (role) {
     case "admin": return "admin-dashboard";
     case "manager": return "manager-dashboard";
-    case "staff": return "staff-dashboard";
+    case "employee": return "staff-dashboard";
     case "vet": return "vet-dashboard";
     default: return "pets";
   }
@@ -18,6 +19,7 @@ function pageForRole(role: UserRole): string {
 
 export default function OAuthCallbackPage({ onNavigate, code }: OAuthCallbackPageProps) {
   const { completeGoogleLogin, returnTo, setReturnTo } = useAuth();
+  const { t } = useLanguage();
   const [error, setError] = useState("");
   const attemptedRef = useRef(false);
 
@@ -56,7 +58,7 @@ export default function OAuthCallbackPage({ onNavigate, code }: OAuthCallbackPag
     <div className="min-h-screen bg-[#f0f8f7] flex items-center justify-center px-4 font-['Poppins',sans-serif]">
       <div className="w-full max-w-sm bg-white rounded-[15px] shadow-md p-5 text-center">
         <p className="text-[#089D97] font-semibold">
-          {error ? "Google sign-in failed" : "Completing Google sign-in..."}
+          {error ? t("oauth_google_failed") : t("oauth_google_completing")}
         </p>
         {error && <p className="mt-3 text-[13px] text-red-600">{error}</p>}
         {error && (
@@ -65,7 +67,7 @@ export default function OAuthCallbackPage({ onNavigate, code }: OAuthCallbackPag
             onClick={() => onNavigate("login")}
             className="mt-4 px-4 py-2 bg-[#089D97] text-white rounded-[10px] text-[13px] font-medium"
           >
-            Back to login
+            {t("forgot_back")}
           </button>
         )}
       </div>

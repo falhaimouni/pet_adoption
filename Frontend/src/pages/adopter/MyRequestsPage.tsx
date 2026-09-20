@@ -70,7 +70,7 @@ export default function MyRequestsPage({ onNavigate }: MyRequestsPageProps) {
         {loading ? (
           <div className="space-y-2">{[1, 2, 3].map((n) => <div key={n} className="h-[58px] rounded-[10px] bg-gray-50 animate-pulse" />)}</div>
         ) : error ? (
-          <EmptyState icon={<ClipboardList size={28} />} title="Unable to load requests" description={error} />
+          <EmptyState icon={<ClipboardList size={28} />} title={t("requests_load_error")} description={error} />
         ) : filtered.length === 0 ? (
           <EmptyState icon={<ClipboardList size={28} />} title={t("requests_no_found")} description={t("requests_no_found_desc")} action={{ label: t("requests_browse"), onClick: () => onNavigate("pets") }} />
         ) : (

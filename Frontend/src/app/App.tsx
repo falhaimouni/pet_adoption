@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { CartProvider } from "../context/CartContext";
 import { AuthProvider, useAuth, UserRole } from "../context/AuthContext";
 import { ThemeProvider } from "../context/ThemeContext";
-import { LanguageProvider } from "../context/LanguageContext";
+import { LanguageProvider, useLanguage } from "../context/LanguageContext";
 
 import SystemStatusPage from "../pages/SystemStatusPage";
 import HomePage from "../pages/HomePage";
@@ -23,49 +23,55 @@ import UserProfilePage from "../pages/UserProfilePage";
 import SettingsPage from "../pages/SettingsPage";
 import DashboardLayout from "../components/DashboardLayout";
 
-import MyRequestsPage from "../pages/adopter/MyRequestsPage";
-import MyAdoptionsPage from "../pages/adopter/MyAdoptionsPage";
-import ChatsListPage from "../pages/adopter/ChatsListPage";
-import ChatDetailPage from "../pages/adopter/ChatDetailPage";
-import AdopterDashboardPage from "../pages/adopter/AdopterDashboardPage";
+const MyRequestsPage = lazy(() => import("../pages/adopter/MyRequestsPage"));
+const MyAdoptionsPage = lazy(() => import("../pages/adopter/MyAdoptionsPage"));
+const ChatsListPage = lazy(() => import("../pages/adopter/ChatsListPage"));
+const ChatDetailPage = lazy(() => import("../pages/adopter/ChatDetailPage"));
+const AdopterDashboardPage = lazy(() => import("../pages/adopter/AdopterDashboardPage"));
 
-// Staff pages
-import StaffDashboardPage from "../pages/staff/StaffDashboardPage";
-import StaffPetsPage from "../pages/staff/StaffPetsPage";
-import StaffRequestsPage from "../pages/staff/StaffRequestsPage";
-import StaffAdoptionsPage from "../pages/staff/StaffAdoptionsPage";
-import StaffChatsListPage from "../pages/staff/StaffChatsListPage";
-import StaffChatDetailPage from "../pages/staff/StaffChatDetailPage";
+const StaffDashboardPage = lazy(() => import("../pages/staff/StaffDashboardPage"));
+const StaffPetsPage = lazy(() => import("../pages/staff/StaffPetsPage"));
+const StaffRequestsPage = lazy(() => import("../pages/staff/StaffRequestsPage"));
+const StaffAdoptionsPage = lazy(() => import("../pages/staff/StaffAdoptionsPage"));
+const StaffChatsListPage = lazy(() => import("../pages/staff/StaffChatsListPage"));
+const StaffChatDetailPage = lazy(() => import("../pages/staff/StaffChatDetailPage"));
 
-// Vet pages
-import VetDashboardPage from "../pages/vet/VetDashboardPage";
-import VetPetsPage from "../pages/vet/VetPetsPage";
-import VetMedicalPage from "../pages/vet/VetMedicalPage";
-import VetVaccinationsPage from "../pages/vet/VetVaccinationsPage";
-import VetProfilePage from "../pages/vet/VetProfilePage";
+const VetDashboardPage = lazy(() => import("../pages/vet/VetDashboardPage"));
+const VetPetsPage = lazy(() => import("../pages/vet/VetPetsPage"));
+const VetMedicalPage = lazy(() => import("../pages/vet/VetMedicalPage"));
+const VetVaccinationsPage = lazy(() => import("../pages/vet/VetVaccinationsPage"));
+const VetProfilePage = lazy(() => import("../pages/vet/VetProfilePage"));
 
-// Manager pages
-import ManagerDashboardPage from "../pages/manager/ManagerDashboardPage";
-import ManagerAnalyticsPage from "../pages/manager/ManagerAnalyticsPage";
-import ManagerInventoryPage from "../pages/manager/ManagerInventoryPage";
+const ManagerDashboardPage = lazy(() => import("../pages/manager/ManagerDashboardPage"));
+const ManagerAnalyticsPage = lazy(() => import("../pages/manager/ManagerAnalyticsPage"));
+const ManagerInventoryPage = lazy(() => import("../pages/manager/ManagerInventoryPage"));
 
-// Admin pages
-import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
-import AdminUsersPage from "../pages/admin/AdminUsersPage";
-import AdminInventoryPage from "../pages/admin/AdminInventoryPage";
-import AdminSuppliersPage from "../pages/admin/AdminSuppliersPage";
-import AdminReportsPage from "../pages/admin/AdminReportsPage";
-import AdminAnalyticsPage from "../pages/admin/AdminAnalyticsPage";
-import AdminRolesPage from "../pages/admin/AdminRolesPage";
-import AdminFilesPage from "../pages/admin/AdminFilesPage";
-import ActivityLogPage from "../pages/admin/ActivityLogPage";
+const AdminDashboardPage = lazy(() => import("../pages/admin/AdminDashboardPage"));
+const AdminUsersPage = lazy(() => import("../pages/admin/AdminUsersPage"));
+const AdminInventoryPage = lazy(() => import("../pages/admin/AdminInventoryPage"));
+const AdminSuppliersPage = lazy(() => import("../pages/admin/AdminSuppliersPage"));
+const AdminReportsPage = lazy(() => import("../pages/admin/AdminReportsPage"));
+const AdminAnalyticsPage = lazy(() => import("../pages/admin/AdminAnalyticsPage"));
+const AdminRolesPage = lazy(() => import("../pages/admin/AdminRolesPage"));
+const AdminFilesPage = lazy(() => import("../pages/admin/AdminFilesPage"));
+const ActivityLogPage = lazy(() => import("../pages/admin/ActivityLogPage"));
+const AdminDepartmentsPage = lazy(() => import("../pages/admin/AdminDepartmentsPage"));
+const AdminOrdersPage = lazy(() => import("../pages/admin/AdminOrdersPage"));
 
 export type Role = UserRole;
+
+function RouteLoadingFallback() {
+  return (
+    <div className="min-h-screen bg-[#f0f8f7] flex items-center justify-center font-['Poppins',sans-serif] text-[#089D97]">
+      Loading...
+    </div>
+  );
+}
 
 // Pages anyone can view without logging in.
 const PUBLIC_PAGES = new Set<string>([
   "home", "login", "signup", "status", "about", "terms",
-  "privacy", "forgot-password", "reset-password", "pets", "pet-detail", "shop",
+  "privacy", "forgot-password", "reset-password", "pets", "pet-detail",
   "oauth-callback",
 ]);
 
@@ -73,7 +79,7 @@ const PUBLIC_PAGES = new Set<string>([
 const ROLE_PAGES: Record<string, UserRole[]> = {
   about: ["adopter"],
   pets: ["adopter"],
-  "pet-detail": ["adopter", "staff", "vet", "manager", "admin"],
+  "pet-detail": ["adopter", "employee", "vet", "manager", "admin"],
   shop: ["adopter"],
   cart: ["adopter"],
   orders: ["adopter"],
@@ -83,18 +89,19 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   "my-adoptions": ["adopter"],
   chats: ["adopter"],
   "chat-detail": ["adopter"],
-  "user-profile": ["adopter", "staff", "vet", "manager", "admin"],
-  settings: ["adopter", "staff", "vet", "manager", "admin"],
-  notifications: ["adopter", "staff", "vet", "manager", "admin"],
-  "staff-dashboard": ["staff"],
-  "staff-pets": ["staff"],
-  "staff-requests": ["staff"],
-  "staff-adoptions": ["staff"],
-  "staff-chats": ["staff"],
-  "staff-chat-detail": ["staff"],
-  "staff-inventory": ["staff"],
-  "staff-suppliers": ["staff"],
-  "staff-reports": ["staff"],
+  "user-profile": ["adopter", "employee", "vet", "manager", "admin"],
+  settings: ["adopter", "employee", "vet", "manager", "admin"],
+  notifications: ["adopter", "employee", "vet", "manager", "admin"],
+  "staff-dashboard": ["employee"],
+  "staff-pets": ["employee"],
+  "staff-requests": ["employee"],
+  "staff-adoptions": ["employee"],
+  "staff-chats": ["employee"],
+  "staff-chat-detail": ["employee"],
+  "staff-orders": ["employee"],
+  "staff-inventory": ["employee"],
+  "staff-suppliers": ["employee"],
+  "staff-reports": ["employee"],
   "vet-dashboard": ["vet"],
   "vet-pets": ["vet"],
   "vet-medical": ["vet"],
@@ -108,6 +115,7 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   "manager-chats": ["manager"],
   "manager-chat-detail": ["manager"],
   "manager-users": ["manager"],
+  "manager-orders": ["manager"],
   "manager-analytics": ["manager"],
   "manager-inventory": ["manager"],
   "manager-suppliers": ["manager"],
@@ -119,6 +127,8 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   "admin-chats": ["admin"],
   "admin-chat-detail": ["admin"],
   "admin-users": ["admin"],
+  "admin-departments": ["admin"],
+  "admin-orders": ["admin"],
   "admin-inventory": ["admin"],
   "admin-suppliers": ["admin"],
   "admin-reports": ["admin"],
@@ -132,7 +142,7 @@ function homePageForRole(role: UserRole): string {
   switch (role) {
     case "admin": return "admin-dashboard";
     case "manager": return "manager-dashboard";
-    case "staff": return "staff-dashboard";
+    case "employee": return "staff-dashboard";
     case "vet": return "vet-dashboard";
     default: return "adopter-dashboard";
   }
@@ -142,6 +152,7 @@ type Params = Record<string, unknown>;
 
 function AppRouter() {
   const { user, isAuthenticated, loading, logout, setReturnTo } = useAuth();
+  const { t } = useLanguage();
   const initialRoute = readHashRoute();
   const [currentPage, setCurrentPage] = useState<string>(initialRoute.page);
   const [params, setParams] = useState<Params>(initialRoute.params);
@@ -203,7 +214,7 @@ function AppRouter() {
   };
 
   if (loading) {
-    return <div className="min-h-screen bg-[#f0f8f7] flex items-center justify-center font-['Poppins',sans-serif] text-[#089D97]">Loading...</div>;
+    return <div className="min-h-screen bg-[#f0f8f7] flex items-center justify-center font-['Poppins',sans-serif] text-[#089D97]">{t("common_loading")}</div>;
   }
 
   return renderPage(currentPage, navigate, params, user?.role);
@@ -284,16 +295,17 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "chats": return <ChatsListPage onNavigate={navigate} />;
     case "chat-detail": return <ChatDetailPage onNavigate={navigate} conversationId={params.conversationId as string} />;
 
-    // Staff
+    // Employee
     case "staff-dashboard": return <StaffDashboardPage onNavigate={navigate} />;
     case "staff-pets": return <StaffPetsPage onNavigate={navigate} />;
     case "staff-requests": return <StaffRequestsPage onNavigate={navigate} />;
     case "staff-adoptions": return <StaffAdoptionsPage onNavigate={navigate} />;
     case "staff-chats": return <StaffChatsListPage onNavigate={navigate} />;
     case "staff-chat-detail": return <StaffChatDetailPage onNavigate={navigate} conversationId={params.conversationId as string} />;
-    case "staff-inventory": return <AdminInventoryPage onNavigate={navigate} role="staff" activePage="staff-inventory" />;
-    case "staff-suppliers": return <AdminSuppliersPage onNavigate={navigate} role="staff" activePage="staff-suppliers" />;
-    case "staff-reports": return <AdminReportsPage onNavigate={navigate} role="staff" activePage="staff-reports" />;
+    case "staff-orders": return <AdminOrdersPage onNavigate={navigate} role="employee" activePage="staff-orders" />;
+    case "staff-inventory": return <AdminInventoryPage onNavigate={navigate} role="employee" activePage="staff-inventory" />;
+    case "staff-suppliers": return <AdminSuppliersPage onNavigate={navigate} role="employee" activePage="staff-suppliers" />;
+    case "staff-reports": return <AdminReportsPage onNavigate={navigate} role="employee" activePage="staff-reports" />;
 
     // Vet
     case "vet-dashboard": return <VetDashboardPage onNavigate={navigate} />;
@@ -311,6 +323,7 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "manager-chats": return <StaffChatsListPage onNavigate={navigate} role="manager" activePage="manager-chats" detailPage="manager-chat-detail" readOnly />;
     case "manager-chat-detail": return <StaffChatDetailPage onNavigate={navigate} conversationId={params.conversationId as string} role="manager" activePage="manager-chats" listPage="manager-chats" readOnly />;
     case "manager-users": return <AdminUsersPage onNavigate={navigate} role="manager" activePage="manager-users" />;
+    case "manager-orders": return <AdminOrdersPage onNavigate={navigate} role="manager" activePage="manager-orders" />;
     case "manager-analytics": return <ManagerAnalyticsPage onNavigate={navigate} />;
     case "manager-inventory": return <ManagerInventoryPage onNavigate={navigate} />;
     case "manager-suppliers": return <AdminSuppliersPage onNavigate={navigate} role="manager" activePage="manager-suppliers" />;
@@ -324,6 +337,8 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "admin-chats": return <StaffChatsListPage onNavigate={navigate} role="admin" activePage="admin-chats" detailPage="admin-chat-detail" readOnly />;
     case "admin-chat-detail": return <StaffChatDetailPage onNavigate={navigate} conversationId={params.conversationId as string} role="admin" activePage="admin-chats" listPage="admin-chats" readOnly />;
     case "admin-users": return <AdminUsersPage onNavigate={navigate} />;
+    case "admin-departments": return <AdminDepartmentsPage onNavigate={navigate} />;
+    case "admin-orders": return <AdminOrdersPage onNavigate={navigate} />;
     case "admin-inventory": return <AdminInventoryPage onNavigate={navigate} role="admin" activePage="admin-inventory" />;
     case "admin-suppliers": return <AdminSuppliersPage onNavigate={navigate} />;
     case "admin-reports": return <AdminReportsPage onNavigate={navigate} />;
@@ -338,14 +353,16 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <AuthProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <LanguageProvider>
           <CartProvider>
-            <AppRouter />
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <AppRouter />
+            </Suspense>
           </CartProvider>
-        </AuthProvider>
-      </LanguageProvider>
-    </ThemeProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }

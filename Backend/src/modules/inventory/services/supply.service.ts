@@ -8,6 +8,9 @@ import { CreateSupplierDto, UpdateSupplierDto } from "@shared/dto/supplier.dto";
 import { CreateSupplyDto, UpdateSupplyDto } from "@shared/dto/supply.dto";
 import { PaginatedSuppliesDto } from "@shared/dto/paginatedSupplies.dto";
 import { NotificationsService } from "../../notifications/notifications.service";
+import { ActivityLog } from '../../../database/entities/activity-log.entity';
+import { FileUploadCategory } from '@shared/enums';
+import { UploadsService } from '../../uploads/uploads.service';
 // import { TypeOrmModule } from "@nestjs/typeorm";
 // import {CreateSupplyDto, UpdateSupplyDto} from "../../../../shared/dto/supply.dto.ts"
 // import {CreateSupplierDto, UpdateSupplierDto} from "../../../../shared/dto/supplier.dto.ts"
@@ -28,6 +31,11 @@ export class SupplyService{
     private readonly dataSource: DataSource,
 
     private readonly notificationsService: NotificationsService,
+
+    @InjectRepository(ActivityLog)
+    private readonly activityLogRepo: Repository<ActivityLog>,
+
+    private readonly uploadsService: UploadsService,
   ){}
   async getSupplies(query: InventoryQueryDto): Promise<PaginatedSuppliesDto>
   {
@@ -35,7 +43,9 @@ export class SupplyService{
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
 
-    const queryBuilder = this.supplyRepo.createQueryBuilder('supply');
+    const queryBuilder = this.supplyRepo
+      .createQueryBuilder('supply')
+      .leftJoinAndSelect('supply.imageFile', 'imageFile');
     if (query.search)
     {
       queryBuilder.andWhere('supply.supplyName ILIKE :search',
@@ -81,15 +91,61 @@ export class SupplyService{
       const supply = await this.supplyRepo.findOne(
       {
         where: {supplyId: id,
-          isActive:true
+          isActive:true,
         },
-        relations:{supplier: true}
+        relations:{supplier: true, imageFile: true}
       });
       if (!supply)
       {
         throw new NotFoundException('Supply not found');
       }
+
       return supply;
+    }
+
+    async uploadSupplyImage(
+      supplyId: string,
+      userId: string,
+      file: Express.Multer.File,
+    ) {
+      let uploadedFile;
+      let previousImageFileId: string | null | undefined;
+      try {
+        const supply = await this.supplyRepo.findOneBy({ supplyId, isActive: true });
+        if (!supply) {
+          throw new NotFoundException('Supply not found');
+        }
+
+        previousImageFileId = supply.imageFileId;
+
+        uploadedFile = await this.uploadsService.createFileRecord(
+          file,
+          FileUploadCategory.SUPPLY_IMAGE,
+          userId,
+        );
+
+        supply.imageFileId = uploadedFile.fileId;
+        await this.supplyRepo.save(supply);
+
+        if (previousImageFileId) {
+          await this.uploadsService.deleteReplacementFile(previousImageFileId);
+        }
+
+        return {
+          imageUrl: this.uploadsService.getFileReference(uploadedFile),
+        };
+      } catch (error) {
+        await this.uploadsService.rollbackFileUpload(
+          file.path,
+          uploadedFile?.fileId,
+        );
+        if (previousImageFileId !== undefined && uploadedFile) {
+          await this.supplyRepo.update(supplyId, {
+            imageFileId: previousImageFileId ?? null,
+          });
+        }
+        throw error;
+      }
     }
 
     async getLowStockSupplies()
@@ -103,7 +159,7 @@ export class SupplyService{
         .getMany();
     }
 
-    async createSupply(createSupplyDto: CreateSupplyDto)
+    async createSupply(createSupplyDto: CreateSupplyDto, actorUserId: string)
     {
       const supplier = await this.supplierRepo.findOneBy({
         supplierId:createSupplyDto.supplierId,
@@ -153,7 +209,16 @@ export class SupplyService{
             purchasePrice: createSupplyDto.purchasePrice.toString(),
           });
 
-          return manager.getRepository(Supply).save(supply);
+          const savedSupply = await manager.getRepository(Supply).save(supply);
+          await manager.getRepository(ActivityLog).save(
+            manager.getRepository(ActivityLog).create({
+              userId: actorUserId,
+              action: 'SUPPLY_CREATED',
+              entityType: 'SUPPLY',
+              entityId: savedSupply.supplyId,
+            }),
+          );
+          return savedSupply;
         });
       } catch (error) {
         if (error instanceof QueryFailedError && (error as any).code === '23505') {
@@ -227,8 +292,7 @@ export class SupplyService{
         supply: savedSupply,
       };
     }
-
-    async deleteSupply(id: string)
+    async deleteSupply(id: string, actorUserId: string)
     {
       const supply = await this.supplyRepo.findOneBy({
       supplyId: id,
@@ -242,6 +306,14 @@ export class SupplyService{
       supply.storeListed = false;
       await this.supplyRepo.save(supply);
       await this.productRepo.update(supply.productId, { isActive: false });
+      await this.activityLogRepo.save(
+        this.activityLogRepo.create({
+          userId: actorUserId,
+          action: 'SUPPLY_DEACTIVATED',
+          entityType: 'SUPPLY',
+          entityId: id,
+        }),
+      );
       return {
       success: true,
       message: 'Supply deleted successfully'

@@ -20,7 +20,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
       {/* Hero Section */}
       <main className="flex-1 relative">
-        <div className="max-w-[1400px] mx-auto px-6 py-10 lg:py-16 flex flex-col lg:flex-row items-center gap-10 lg:gap-0 min-h-[calc(100vh-80px)]">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-10 lg:py-16 flex flex-col lg:flex-row items-center gap-10 lg:gap-0 min-h-[calc(100vh-80px)] overflow-hidden">
 
           {/* Left: Text Content */}
           <div className="flex-1 z-10 max-w-[600px]">
@@ -29,7 +29,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               <img src={birdImg} alt="" className="w-full h-full object-cover" />
             </div>
 
-            <h1 className="font-['Poppins',sans-serif] font-bold text-[42px] sm:text-[52px] lg:text-[60px] text-black leading-tight mb-6">
+            <h1 className="font-['Poppins',sans-serif] font-bold text-[clamp(2.25rem,11vw,3.75rem)] text-black leading-tight mb-6 break-words">
               {t("home_hero_line1")}
               <br />
               {t("home_hero_line2")}
@@ -40,16 +40,16 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               {" "}{t("home_hero_desc1")}
             </p>
 
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-col xs:flex-row sm:flex-row flex-wrap gap-3 sm:gap-4">
               <button
                 onClick={() => onNavigate("pets")}
-                className="bg-[#089D97] text-white font-['Poppins',sans-serif] font-semibold text-[18px] px-8 py-3 rounded-[20px] hover:bg-[#047975] transition-colors shadow-md"
+                className="bg-[#089D97] text-white font-['Poppins',sans-serif] font-semibold text-[16px] sm:text-[18px] px-6 sm:px-8 py-3 rounded-[20px] hover:bg-[#047975] transition-colors shadow-md"
               >
                 {t("home_browse_pets")}
               </button>
               <button
                 onClick={() => onNavigate("signup")}
-                className="border-2 border-[#089D97] text-[#089D97] font-['Poppins',sans-serif] font-semibold text-[18px] px-8 py-3 rounded-[20px] hover:bg-[#089D97] hover:text-white transition-colors"
+                className="border-2 border-[#089D97] text-[#089D97] font-['Poppins',sans-serif] font-semibold text-[16px] sm:text-[18px] px-6 sm:px-8 py-3 rounded-[20px] hover:bg-[#089D97] hover:text-white transition-colors"
               >
                 {t("home_get_started")}
               </button>
@@ -57,11 +57,11 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           </div>
 
           {/* Right: Images */}
-          <div className="flex-1 relative flex items-center justify-center lg:justify-end min-h-[400px] lg:min-h-[600px] w-full lg:w-auto">
+          <div className="flex-1 relative flex items-center justify-center lg:justify-end min-h-[320px] sm:min-h-[400px] lg:min-h-[600px] w-full lg:w-auto overflow-hidden">
             {/* Teal ellipse background */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div
-                className="w-[590px] h-[600px] rounded-full opacity-30 mx-[0px] mt-[20px] mb-[10px]"
+                className="w-[min(92vw,590px)] aspect-square rounded-full opacity-30 mt-[20px] mb-[10px]"
                 style={{ background: "#089D97" }}
               />
             </div>
@@ -70,14 +70,14 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             <img
               src={goldenDogImg}
               alt="Golden Retriever"
-              className="relative z-10 w-[320px] sm:w-[380px] lg:w-[448px] h-auto object-contain drop-shadow-lg mx-[200px] my-[-22px]"
+              className="relative z-10 w-[min(72vw,320px)] sm:w-[380px] lg:w-[448px] h-auto object-contain drop-shadow-lg my-[-22px]"
             />
 
             {/* Cat — bottom right decorative */}
             <img
               src={catImg}
               alt="Cat"
-              className="absolute bottom-[-40px] right-[-20px] lg:right-[-60px] w-[180px] sm:w-[220px] lg:w-[260px] h-auto object-contain z-20 pointer-events-none mx-[180px] my-[10px]"
+              className="absolute bottom-[-24px] right-[4%] lg:right-[-20px] w-[150px] sm:w-[220px] lg:w-[260px] h-auto object-contain z-20 pointer-events-none my-[10px]"
             />
 
             {/* Adobe Express sticker — top right */}

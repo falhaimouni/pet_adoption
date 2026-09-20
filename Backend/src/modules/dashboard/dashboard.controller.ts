@@ -1,4 +1,5 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { UserActivityAnalyticsQueryDto } from '@shared/dto';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../roles/roles.decorator';
@@ -21,5 +22,12 @@ export class DashboardController {
   @Get('manager')
   getManagerDashboard() {
     return this.dashboardService.getManagerDashboard();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'MANAGER')
+  @Get('user-activity')
+  getUserActivityAnalytics(@Query() query: UserActivityAnalyticsQueryDto) {
+    return this.dashboardService.getUserActivityAnalytics(query);
   }
 }

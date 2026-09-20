@@ -6,6 +6,7 @@ import EmptyState from "../../components/EmptyState";
 import Modal from "../../components/Modal";
 import { apiFetch } from "../../lib/api";
 import type { UserRole } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface AdoptionRequest {
   requestId: string;
@@ -18,7 +19,8 @@ interface AdoptionRequest {
 
 interface StaffRequestsPageProps { onNavigate: (page: string) => void; role?: UserRole; activePage?: string; }
 
-export default function StaffRequestsPage({ onNavigate, role = "staff", activePage = "staff-requests" }: StaffRequestsPageProps) {
+export default function StaffRequestsPage({ onNavigate, role = "employee", activePage = "staff-requests" }: StaffRequestsPageProps) {
+  const { t } = useLanguage();
   const [requests, setRequests] = useState<AdoptionRequest[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -32,7 +34,7 @@ export default function StaffRequestsPage({ onNavigate, role = "staff", activePa
     setError("");
     apiFetch<AdoptionRequest[]>("/adoption/requests")
       .then(setRequests)
-      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load adoption requests."))
+      .catch((err) => setError(err instanceof Error ? err.message : t("requests_load_error")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -51,16 +53,16 @@ export default function StaffRequestsPage({ onNavigate, role = "staff", activePa
   }
 
   return (
-    <DashboardLayout role={role} activePage={activePage} onNavigate={onNavigate} pageTitle="Adoption Requests" breadcrumbs={[role === "admin" ? "Admin" : role === "manager" ? "Manager" : "Staff", "Adoption Requests"]}>
+    <DashboardLayout role={role} activePage={activePage} onNavigate={onNavigate} pageTitle={t("staff_requests_title")} breadcrumbs={[t(`role_${role}`), t("staff_requests_title")]}>
       <div className="bg-white rounded-[15px] shadow-md p-5">
         <div className="flex flex-wrap gap-3 mb-5 items-center">
           <div className="flex-1 min-w-[180px] relative">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
-            <input placeholder="Search adopter or pet..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+            <input placeholder={t("staff_search_adopter")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
           </div>
           <div className="flex gap-2 flex-wrap">
             {["all", "pending", "approved", "rejected", "cancelled"].map((s) => (
-              <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1.5 rounded-[20px] font-['Poppins',sans-serif] text-[12px] capitalize transition-colors ${statusFilter === s ? "bg-[#089D97] text-white" : "bg-gray-100 text-black/70 hover:bg-gray-200"}`}>{s}</button>
+              <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1.5 rounded-[20px] font-['Poppins',sans-serif] text-[12px] capitalize transition-colors ${statusFilter === s ? "bg-[#089D97] text-white" : "bg-gray-100 text-black/70 hover:bg-gray-200"}`}>{t(s === "all" ? "status_all" : `req_${s}`)}</button>
             ))}
           </div>
         </div>
@@ -68,15 +70,15 @@ export default function StaffRequestsPage({ onNavigate, role = "staff", activePa
         {loading ? (
           <div className="space-y-2">{[1, 2, 3].map((n) => <div key={n} className="h-[58px] rounded-[10px] bg-gray-50 animate-pulse" />)}</div>
         ) : error ? (
-          <EmptyState icon={<ClipboardList size={28} />} title="Unable to load requests" description={error} />
+          <EmptyState icon={<ClipboardList size={28} />} title={t("requests_load_error")} description={error} />
         ) : filtered.length === 0 ? (
-          <EmptyState icon={<ClipboardList size={28} />} title="No requests found" description="No adoption requests match your filters." />
+          <EmptyState icon={<ClipboardList size={28} />} title={t("requests_no_found")} description={t("requests_no_match_desc")} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-gray-100">
-                  {["Adopter", "Pet", "Species", "Submitted", "Status", "Actions"].map((h) => <th key={h} className="py-2.5 px-3 font-['Poppins',sans-serif] font-semibold text-[11px] text-black/50 uppercase tracking-wider whitespace-nowrap">{h}</th>)}
+                  {[t("th_adopter"), t("th_pet"), t("th_species"), t("th_submitted"), t("th_status"), t("th_actions")].map((h) => <th key={h} className="py-2.5 px-3 font-['Poppins',sans-serif] font-semibold text-[11px] text-black/50 uppercase tracking-wider whitespace-nowrap">{h}</th>)}
                 </tr>
               </thead>
               <tbody>
@@ -89,11 +91,11 @@ export default function StaffRequestsPage({ onNavigate, role = "staff", activePa
                     <td className="py-3 px-3"><Badge label={r.status.toLowerCase()} variant={statusBadge(r.status.toLowerCase())} /></td>
                     <td className="py-3 px-3">
                       <div className="flex gap-2 items-center">
-                        <button onClick={() => setViewReq(r)} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label="View request"><Eye size={15} /></button>
+                        <button onClick={() => setViewReq(r)} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label={t("aria_view_request")}><Eye size={15} /></button>
                         {r.status.toUpperCase() === "PENDING" && (
                           <>
-                            <button onClick={() => setActionTarget({ req: r, action: "approve" })} className="text-green-500 hover:text-green-700 transition-colors" aria-label="Approve request"><CheckCircle size={15} /></button>
-                            <button onClick={() => setActionTarget({ req: r, action: "reject" })} className="text-red-400 hover:text-red-600 transition-colors" aria-label="Reject request"><XCircle size={15} /></button>
+                            <button onClick={() => setActionTarget({ req: r, action: "approve" })} className="text-green-500 hover:text-green-700 transition-colors" aria-label={t("aria_approve_request")}><CheckCircle size={15} /></button>
+                            <button onClick={() => setActionTarget({ req: r, action: "reject" })} className="text-red-400 hover:text-red-600 transition-colors" aria-label={t("aria_reject_request")}><XCircle size={15} /></button>
                           </>
                         )}
                       </div>
@@ -106,18 +108,18 @@ export default function StaffRequestsPage({ onNavigate, role = "staff", activePa
         )}
       </div>
 
-      <Modal title="Request Details" open={!!viewReq} onClose={() => setViewReq(null)} size="md">
+      <Modal title={t("req_details_title")} open={!!viewReq} onClose={() => setViewReq(null)} size="md">
         {viewReq && (
           <div className="space-y-3 font-['Poppins',sans-serif] text-[14px]">
-            <div className="flex justify-between"><span className="text-black/60">Adopter</span><span className="font-medium text-black">{viewReq.adopter.firstName} {viewReq.adopter.lastName}</span></div>
-            <div className="flex justify-between"><span className="text-black/60">Pet</span><span className="font-medium text-black">{viewReq.pet.name}</span></div>
-            <div><p className="text-black/60 mb-1">Notes</p><p className="text-black">{viewReq.notes || "-"}</p></div>
+            <div className="flex justify-between"><span className="text-black/60">{t("th_adopter")}</span><span className="font-medium text-black">{viewReq.adopter.firstName} {viewReq.adopter.lastName}</span></div>
+            <div className="flex justify-between"><span className="text-black/60">{t("req_pet_label")}</span><span className="font-medium text-black">{viewReq.pet.name}</span></div>
+            <div><p className="text-black/60 mb-1">{t("th_notes")}</p><p className="text-black">{viewReq.notes || "-"}</p></div>
           </div>
         )}
       </Modal>
 
-      <Modal title={actionTarget?.action === "approve" ? "Approve Request" : "Reject Request"} open={!!actionTarget} onClose={() => setActionTarget(null)} onConfirm={confirmAction} confirmLabel={actionTarget?.action === "approve" ? "Approve" : "Reject"} confirmDestructive={actionTarget?.action === "reject"} size="sm">
-        <p className="font-['Poppins',sans-serif] text-[14px] text-black">Confirm this request action for <span className="font-semibold">{actionTarget?.req.pet.name}</span>?</p>
+      <Modal title={actionTarget?.action === "approve" ? t("staff_req_approve_title") : t("staff_req_reject_title")} open={!!actionTarget} onClose={() => setActionTarget(null)} onConfirm={confirmAction} confirmLabel={actionTarget?.action === "approve" ? t("action_approve") : t("action_reject")} confirmDestructive={actionTarget?.action === "reject"} size="sm">
+        <p className="font-['Poppins',sans-serif] text-[14px] text-black">{t("staff_req_action_confirm").replace("{pet}", actionTarget?.req.pet.name ?? "")}</p>
       </Modal>
     </DashboardLayout>
   );

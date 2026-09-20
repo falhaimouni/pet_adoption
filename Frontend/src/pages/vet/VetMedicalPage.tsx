@@ -4,7 +4,8 @@ import DashboardLayout from "../../components/DashboardLayout";
 import Modal from "../../components/Modal";
 import Badge from "../../components/Badge";
 import EmptyState from "../../components/EmptyState";
-import { apiFetch, PetResponse } from "../../lib/api";
+import { apiFetch, PaginatedResponse, PetResponse } from "../../lib/api";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface MedicalEntry {
   entryId: string;
@@ -29,6 +30,7 @@ interface VetMedicalPageProps {
 const blank = { diagnosis: "", treatment: "", vaccinationStatus: "PENDING", medicalDate: "", notes: "" };
 
 export default function VetMedicalPage({ onNavigate, params }: VetMedicalPageProps) {
+  const { t } = useLanguage();
   const routePetId = params?.petId;
   const [selectedPetId, setSelectedPetId] = useState(routePetId ?? "");
   const effectivePetId = routePetId ?? selectedPetId;
@@ -49,15 +51,16 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
     let cancelled = false;
     setPetsLoading(true);
     setPetsError("");
-    apiFetch<PetResponse[]>("/pets")
-      .then((data) => {
+    apiFetch<PaginatedResponse<PetResponse>>("/pets?limit=100&sortBy=name&order=ASC")
+      .then((response) => {
         if (!cancelled) {
+          const data = response.data;
           setPets(data);
           if (!routePetId && data[0]) setSelectedPetId((current) => current || data[0].petId);
         }
       })
       .catch((err) => {
-        if (!cancelled) setPetsError(err instanceof Error ? err.message : "Unable to load pets.");
+        if (!cancelled) setPetsError(err instanceof Error ? err.message : t("pets_load_error"));
       })
       .finally(() => {
         if (!cancelled) setPetsLoading(false);
@@ -79,7 +82,7 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
     setError("");
     apiFetch<MedicalRecord>(`/pets/${effectivePetId}/medical-record`)
       .then(setRecord)
-      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load medical record."))
+      .catch((err) => setError(err instanceof Error ? err.message : t("medical_record_load_error")))
       .finally(() => setLoading(false));
   }
 
@@ -100,11 +103,11 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
 
   async function saveEntry() {
     if (!effectivePetId) {
-      setFormError("Choose a pet before adding a medical entry.");
+      setFormError(t("medical_choose_pet_error"));
       return;
     }
     if (!form.diagnosis.trim() || !form.treatment.trim() || !form.medicalDate) {
-      setFormError("Diagnosis, treatment, and medical date are required.");
+      setFormError(t("medical_required_error"));
       return;
     }
     const body = {
@@ -126,7 +129,7 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
       setAddOpen(false);
       loadRecord();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Unable to save medical entry.");
+      setFormError(err instanceof Error ? err.message : t("medical_save_error"));
     } finally {
       setSaving(false);
     }
@@ -140,7 +143,7 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
       setDeleteTarget(null);
       loadRecord();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to delete medical entry.");
+      setError(err instanceof Error ? err.message : t("medical_delete_error"));
     } finally {
       setSaving(false);
     }
@@ -152,25 +155,25 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
   const entries = record?.entries ?? [];
 
   return (
-    <DashboardLayout role="vet" activePage="vet-medical" onNavigate={onNavigate} pageTitle={`Medical Records${displayPet ? ` - ${displayPet.name}` : ""}`} breadcrumbs={["Vet", "Pets", displayPet?.name ?? "Medical Records"]}>
+    <DashboardLayout role="vet" activePage="vet-medical" onNavigate={onNavigate} pageTitle={`${t("vet_medical_records")}${displayPet ? ` - ${displayPet.name}` : ""}`} breadcrumbs={[t("role_vet"), t("dash_pets"), displayPet?.name ?? t("vet_medical_records")]}>
       <div className="max-w-3xl">
         <div className="bg-white rounded-[15px] shadow-md p-5 mb-5 flex flex-wrap gap-6 items-center">
-          <button onClick={() => onNavigate("vet-pets")} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label="Back to pets"><ArrowLeft size={18} /></button>
+          <button onClick={() => onNavigate("vet-pets")} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label={t("pet_back_to_pets")}><ArrowLeft size={18} /></button>
           <div>
-            <p className="font-['Poppins',sans-serif] font-semibold text-[18px] text-black">{displayPet?.name ?? "Medical Record"}</p>
-            <p className="font-['Poppins',sans-serif] text-[13px] text-[#089D97]">{[displayPet?.breed ?? displayPet?.species, displayPet?.gender, displayPet?.age == null ? null : `${displayPet.age} years`].filter(Boolean).join(" · ")}</p>
+            <p className="font-['Poppins',sans-serif] font-semibold text-[18px] text-black">{displayPet?.name ?? t("medical_record")}</p>
+            <p className="font-['Poppins',sans-serif] text-[13px] text-[#089D97]">{[displayPet?.breed ?? displayPet?.species, displayPet?.gender, displayPet?.age == null ? null : `${displayPet.age} ${displayPet.age === 1 ? t("common_year") : t("common_years")}`].filter(Boolean).join(" · ")}</p>
           </div>
           <div className="flex gap-4 ml-auto">
-            {effectivePetId && <button onClick={() => onNavigate("vet-vaccinations", { petId: effectivePetId })} className="flex items-center gap-2 px-4 py-2 border border-[#089D97] text-[#089D97] rounded-[10px] font-['Poppins',sans-serif] text-[13px] hover:bg-[rgba(8,157,151,0.1)] transition-colors">Vaccinations</button>}
-            <button disabled={!effectivePetId} onClick={() => { setEditTarget(null); setForm(blank); setFormError(""); setAddOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-[#089D97] text-white rounded-[10px] font-['Poppins',sans-serif] font-medium text-[13px] hover:bg-[#047975] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"><Plus size={15} /> Add Entry</button>
+            {effectivePetId && <button onClick={() => onNavigate("vet-vaccinations", { petId: effectivePetId })} className="flex items-center gap-2 px-4 py-2 border border-[#089D97] text-[#089D97] rounded-[10px] font-['Poppins',sans-serif] text-[13px] hover:bg-[rgba(8,157,151,0.1)] transition-colors">{t("vet_vaccinations")}</button>}
+            <button disabled={!effectivePetId} onClick={() => { setEditTarget(null); setForm(blank); setFormError(""); setAddOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-[#089D97] text-white rounded-[10px] font-['Poppins',sans-serif] font-medium text-[13px] hover:bg-[#047975] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"><Plus size={15} /> {t("vet_add_entry")}</button>
           </div>
         </div>
 
         {!routePetId && (
           <div className="bg-white rounded-[15px] shadow-md p-5 mb-5">
-            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Pet</label>
+            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("req_pet")}</label>
             <select value={selectedPetId} onChange={(e) => setSelectedPetId(e.target.value)} disabled={petsLoading || pets.length === 0} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] bg-white transition-colors disabled:opacity-60">
-              <option value="">{petsLoading ? "Loading pets..." : pets.length === 0 ? "No pets available" : "Choose pet"}</option>
+              <option value="">{petsLoading ? t("loading_pets") : pets.length === 0 ? t("no_pets_available") : t("choose_pet")}</option>
               {pets.map((item) => <option key={item.petId} value={item.petId}>{item.name} - {item.species}{item.breed ? `, ${item.breed}` : ""}</option>)}
             </select>
             {petsError && <p className="mt-2 font-['Poppins',sans-serif] text-[12px] text-red-600">{petsError}</p>}
@@ -180,9 +183,9 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
         {loading ? (
           <div className="space-y-3">{[1, 2, 3].map((n) => <div key={n} className="h-[110px] rounded-[15px] bg-white animate-pulse" />)}</div>
         ) : error ? (
-          <div className="bg-white rounded-[15px] shadow-md p-5"><EmptyState icon={<Stethoscope size={28} />} title="Unable to load medical records" description={error} actionLabel="Try again" onAction={loadRecord} /></div>
+          <div className="bg-white rounded-[15px] shadow-md p-5"><EmptyState icon={<Stethoscope size={28} />} title={t("medical_records_load_error")} description={error} actionLabel={t("common_try_again")} onAction={loadRecord} /></div>
         ) : entries.length === 0 ? (
-          <div className="bg-white rounded-[15px] shadow-md p-5"><EmptyState icon={<Stethoscope size={28} />} title="No medical entries" description="Add the first medical entry for this pet." /></div>
+          <div className="bg-white rounded-[15px] shadow-md p-5"><EmptyState icon={<Stethoscope size={28} />} title={t("medical_no_entries")} description={t("medical_no_entries_desc")} /></div>
         ) : (
           <div className="flex flex-col gap-4">
             {entries.map((entry) => (
@@ -190,7 +193,7 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <Badge label={entry.vaccinationStatus} variant="teal" />
-                    <p className="font-['Poppins',sans-serif] text-[12px] text-black/50 mt-1">{entry.medicalDate} · {[entry.veterinarian?.firstName, entry.veterinarian?.lastName].filter(Boolean).join(" ") || "Vet"}</p>
+                    <p className="font-['Poppins',sans-serif] text-[12px] text-black/50 mt-1">{entry.medicalDate} · {[entry.veterinarian?.firstName, entry.veterinarian?.lastName].filter(Boolean).join(" ") || t("role_vet")}</p>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => openEdit(entry)} className="text-blue-400 hover:text-blue-600 transition-colors"><Edit size={15} /></button>
@@ -206,36 +209,36 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
         )}
       </div>
 
-      <Modal title={editTarget ? "Edit Medical Entry" : "Add Medical Entry"} open={addOpen} onClose={() => { setAddOpen(false); setEditTarget(null); }} onConfirm={saveEntry} confirmLabel={saving ? "Saving..." : editTarget ? "Save Changes" : "Add Entry"} size="md">
+      <Modal title={editTarget ? t("vet_edit_entry") : t("medical_add_entry")} open={addOpen} onClose={() => { setAddOpen(false); setEditTarget(null); }} onConfirm={saveEntry} confirmLabel={saving ? t("common_saving") : editTarget ? t("action_save_changes") : t("vet_add_entry")} size="md">
         <div className="space-y-4">
           {formError && <p className="text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
           <div>
-            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Medical Date</label>
+            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_medical_date")}</label>
             <input type="date" value={form.medicalDate} disabled={!!editTarget} onChange={(e) => setForm((f) => ({ ...f, medicalDate: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors disabled:bg-gray-50 disabled:text-black/50" />
           </div>
           <div>
-            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Vaccination Status</label>
+            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_vaccination_status")}</label>
             <select value={form.vaccinationStatus} onChange={(e) => setForm((f) => ({ ...f, vaccinationStatus: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] bg-white transition-colors">
-              {["VACCINATED", "PENDING", "OVERDUE"].map((s) => <option key={s} value={s}>{s}</option>)}
+              {["VACCINATED", "PENDING", "OVERDUE"].map((s) => <option key={s} value={s}>{t(`vaccination_status_${s.toLowerCase()}`)}</option>)}
             </select>
           </div>
           <div>
-            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Diagnosis</label>
+            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_diagnosis")}</label>
             <textarea value={form.diagnosis} onChange={(e) => setForm((f) => ({ ...f, diagnosis: e.target.value }))} rows={3} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />
           </div>
           <div>
-            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Treatment</label>
+            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_treatment")}</label>
             <textarea value={form.treatment} onChange={(e) => setForm((f) => ({ ...f, treatment: e.target.value }))} rows={3} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />
           </div>
           <div>
-            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">Notes</label>
+            <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_notes")}</label>
             <textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} rows={3} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />
           </div>
         </div>
       </Modal>
 
-      <Modal title="Delete Entry" open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={deleteEntry} confirmLabel={saving ? "Deleting..." : "Delete"} confirmDestructive size="sm">
-        <p className="font-['Poppins',sans-serif] text-[14px] text-black">Delete the <span className="font-semibold">{deleteTarget?.diagnosis}</span> entry from {deleteTarget?.medicalDate}?</p>
+      <Modal title={t("medical_delete_entry")} open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={deleteEntry} confirmLabel={saving ? t("common_deleting") : t("action_delete")} confirmDestructive size="sm">
+        <p className="font-['Poppins',sans-serif] text-[14px] text-black">{t("medical_delete_confirm").replace("{diagnosis}", deleteTarget?.diagnosis ?? "").replace("{date}", deleteTarget?.medicalDate ?? "")}</p>
       </Modal>
     </DashboardLayout>
   );

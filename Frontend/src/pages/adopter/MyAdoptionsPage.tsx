@@ -38,7 +38,7 @@ export default function MyAdoptionsPage({ onNavigate }: MyAdoptionsPageProps) {
         </div>
       ) : error ? (
         <div className="bg-white rounded-[15px] shadow-md p-5">
-          <EmptyState icon={<Heart size={28} />} title="Unable to load adoptions" description={error} />
+          <EmptyState icon={<Heart size={28} />} title={t("adoptions_load_error")} description={error} />
         </div>
       ) : adoptions.length === 0 ? (
         <div className="bg-white rounded-[15px] shadow-md p-5">

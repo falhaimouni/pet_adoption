@@ -3,11 +3,12 @@ import { Search, SlidersHorizontal, X, ChevronDown, ChevronUp, PawPrint } from "
 import Navbar from "../components/Navbar";
 import PetCard from "../components/PetCard";
 import EmptyState from "../components/EmptyState";
+import Pagination from "../components/Pagination";
 import { useLanguage } from "../context/LanguageContext";
-import { apiFetch, PetResponse } from "../lib/api";
+import { apiFetch, PaginatedResponse, PetResponse } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { PET_SPECIES_OPTIONS } from "../lib/formOptions";
-import { getPetImageUrl } from "../lib/petImages";
+import { getPrimaryPetImageUrl } from "../lib/petImages";
 
 // Re-export for backward compat
 export type Pet = PetResponse;
@@ -38,6 +39,24 @@ interface Filters {
 }
 
 const EMPTY_FILTERS: Filters = { species: [], status: [], ageRange: "any" };
+const PETS_PAGE_SIZE = 9;
+
+type PetSortValue =
+  | "createdAt_DESC"
+  | "createdAt_ASC"
+  | "name_ASC"
+  | "name_DESC"
+  | "age_ASC"
+  | "age_DESC";
+
+const SORT_OPTIONS: { value: PetSortValue; labelKey: string }[] = [
+  { value: "createdAt_DESC", labelKey: "pets_sort_newest" },
+  { value: "createdAt_ASC", labelKey: "pets_sort_oldest" },
+  { value: "name_ASC", labelKey: "pets_sort_name_asc" },
+  { value: "name_DESC", labelKey: "pets_sort_name_desc" },
+  { value: "age_ASC", labelKey: "pets_sort_age_asc" },
+  { value: "age_DESC", labelKey: "pets_sort_age_desc" },
+];
 
 function FilterSection({
   title,
@@ -107,8 +126,17 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<PetSortValue>("createdAt_DESC");
+  const [total, setTotal] = useState(0);
+
+  const setSearchQuery = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
 
   const toggleFilter = (key: keyof Omit<Filters, "ageRange">, value: string) => {
+    setPage(1);
     setFilters((prev) => {
       const arr = prev[key] as string[];
       return { ...prev, [key]: arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value] };
@@ -130,11 +158,22 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
     if (filters.ageRange === "young") { params.set("minAge", "1"); params.set("maxAge", "2"); }
     if (filters.ageRange === "adult") { params.set("minAge", "3"); params.set("maxAge", "6"); }
     if (filters.ageRange === "senior") params.set("minAge", "7");
+    const [sortBy, order] = sort.split("_") as [string, "ASC" | "DESC"];
+    params.set("page", String(page));
+    params.set("limit", String(PETS_PAGE_SIZE));
+    params.set("sortBy", sortBy);
+    params.set("order", order);
 
     setLoading(true);
     setError("");
-    apiFetch<PetResponse[]>(`/pets${params.toString() ? `?${params}` : ""}`, { signal: controller.signal })
-      .then(setPets)
+    apiFetch<PaginatedResponse<PetResponse>>(`/pets?${params}`, { signal: controller.signal })
+      .then((response) => {
+        setPets(response.data);
+        setTotal(response.total);
+        if (response.data.length === 0 && response.total > 0 && page > 1) {
+          setPage(Math.max(1, Math.ceil(response.total / response.limit)));
+        }
+      })
       .catch((err) => {
         if (!controller.signal.aborted) setError(err instanceof Error ? err.message : t("pets_load_error_title"));
       })
@@ -143,10 +182,11 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
       });
 
     return () => controller.abort();
-  }, [search, filters]);
+  }, [search, filters, page, sort]);
 
   const activeFilterCount =
     filters.species.length + filters.status.length + (filters.ageRange !== "any" ? 1 : 0);
+  const totalPages = Math.max(1, Math.ceil(total / PETS_PAGE_SIZE));
 
   async function submitAdoptionRequest() {
     if (!adoptModalPet) return;
@@ -175,7 +215,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
       <div className="flex items-center justify-between mb-5">
         <h2 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-[#1a2e2d]">{t("pets_filters")}</h2>
         {hasActiveFilters && (
-          <button onClick={() => setFilters(EMPTY_FILTERS)} className="font-['Poppins',sans-serif] text-[12px] text-[#089D97] hover:underline flex items-center gap-1">
+          <button onClick={() => { setPage(1); setFilters(EMPTY_FILTERS); }} className="font-['Poppins',sans-serif] text-[12px] text-[#089D97] hover:underline flex items-center gap-1">
             <X size={12} /> {t("pets_clear_all")}
           </button>
         )}
@@ -205,7 +245,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
                   name="ageRange"
                   value={value}
                   checked={filters.ageRange === value}
-                  onChange={() => setFilters((f) => ({ ...f, ageRange: value }))}
+                  onChange={() => { setPage(1); setFilters((f) => ({ ...f, ageRange: value })); }}
                   className="accent-[#089D97]"
                 />
                 <span className="font-['Poppins',sans-serif] text-[13px] text-[#1a2e2d]">{t(key)}</span>
@@ -234,7 +274,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
         <div className="max-w-6xl mx-auto">
           <h1 className="font-['Prata',serif] text-[32px] lg:text-[40px] mb-2">{t("pets_title")}</h1>
           <p className="font-['Poppins',sans-serif] text-[15px] text-white/80 mb-6">
-            {pets.length} {t("pets_found")}.
+            {total} {t("pets_found")}.
           </p>
 
           {/* Search bar */}
@@ -243,11 +283,11 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
             <input
               placeholder={t("pets_search_placeholder")}
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-3.5 rounded-[14px] bg-white text-[#1a2e2d] font-['Poppins',sans-serif] text-[14px] shadow-lg outline-none focus:ring-2 focus:ring-white/50 transition-all placeholder-gray-400"
             />
             {search && (
-              <button onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <button onClick={() => setSearchQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 <X size={16} />
               </button>
             )}
@@ -259,7 +299,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
       <div className="max-w-6xl mx-auto px-5 py-5">
         <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
           <button
-            onClick={() => setFilters((f) => ({ ...f, species: [] }))}
+            onClick={() => { setPage(1); setFilters((f) => ({ ...f, species: [] })); }}
             className={`flex items-center gap-2 px-4 py-2 rounded-[20px] font-['Poppins',sans-serif] text-[13px] font-medium whitespace-nowrap transition-all ${filters.species.length === 0 ? "bg-[#089D97] text-white shadow-md" : "bg-white text-[#1a2e2d] hover:bg-[#e0f2f0]"}`}
           >
             🐾 {t("pets_all")}
@@ -267,7 +307,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
           {ALL_SPECIES.map((s) => (
             <button
               key={s}
-              onClick={() => setFilters((f) => ({ ...f, species: [s] }))}
+              onClick={() => { setPage(1); setFilters((f) => ({ ...f, species: [s] })); }}
               className={`flex items-center gap-2 px-4 py-2 rounded-[20px] font-['Poppins',sans-serif] text-[13px] font-medium whitespace-nowrap transition-all ${filters.species.length === 1 && filters.species[0] === s ? "bg-[#089D97] text-white shadow-md" : "bg-white text-[#1a2e2d] hover:bg-[#e0f2f0]"}`}
             >
               {SPECIES_ICONS[s]} {t(SPECIES_KEY_PL[s])}
@@ -287,7 +327,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
           {/* Mobile filter bar */}
           <div className="lg:hidden flex items-center justify-between mb-4">
             <p className="font-['Poppins',sans-serif] text-[14px] text-[#5a8a87]">
-              <span className="font-semibold text-[#1a2e2d]">{pets.length}</span> {t("pets_found")}
+              <span className="font-semibold text-[#1a2e2d]">{total}</span> {t("pets_found")}
             </p>
             <button
               onClick={() => setSidebarOpen(true)}
@@ -304,15 +344,29 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
           </div>
 
           {/* Desktop results count */}
-          <div className="hidden lg:flex items-center justify-between mb-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-5">
             <p className="font-['Poppins',sans-serif] text-[14px] text-[#5a8a87]">
-              {t("pets_showing")} <span className="font-semibold text-[#1a2e2d]">{pets.length}</span> {t("pets_found")}
+              {t("pets_showing")} <span className="font-semibold text-[#1a2e2d]">{pets.length}</span> {t("pets_of")} <span className="font-semibold text-[#1a2e2d]">{total}</span> {t("pets_found")}
             </p>
-            {hasActiveFilters && (
-              <button onClick={() => setFilters(EMPTY_FILTERS)} className="flex items-center gap-1 font-['Poppins',sans-serif] text-[13px] text-[#089D97] hover:underline">
-                <X size={13} /> {t("pets_clear_filters")}
-              </button>
-            )}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <label className="flex items-center gap-2 font-['Poppins',sans-serif] text-[13px] text-[#5a8a87]">
+                <span className="shrink-0">{t("pets_sort_label")}</span>
+                <select
+                  value={sort}
+                  onChange={(e) => { setSort(e.target.value as PetSortValue); setPage(1); }}
+                  className="w-full sm:w-auto border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] text-[#1a2e2d] bg-white outline-none focus:border-[#089D97] transition-colors"
+                >
+                  {SORT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
+                  ))}
+                </select>
+              </label>
+              {hasActiveFilters && (
+                <button onClick={() => { setPage(1); setFilters(EMPTY_FILTERS); }} className="flex items-center gap-1 font-['Poppins',sans-serif] text-[13px] text-[#089D97] hover:underline">
+                  <X size={13} /> {t("pets_clear_filters")}
+                </button>
+              )}
+            </div>
           </div>
 
           {loading ? (
@@ -333,22 +387,25 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
               title={t("pets_no_found")}
               description={t("pets_no_found_desc")}
               actionLabel={t("pets_clear_all_filters")}
-              onAction={() => { setSearch(""); setFilters(EMPTY_FILTERS); }}
+              onAction={() => { setSearch(""); setFilters(EMPTY_FILTERS); setPage(1); }}
             />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-              {pets.map((pet) => (
-                <PetCard
-                  key={pet.petId}
-                  pet={pet}
-                  onViewDetails={(id) => onNavigate("pet-detail", { petId: id })}
-                  onAdopt={(id) => {
-                    const p = pets.find((x) => x.petId === id);
-                    if (p) { setAdoptModalPet(p); setAdoptDone(false); }
-                  }}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                {pets.map((pet) => (
+                  <PetCard
+                    key={pet.petId}
+                    pet={pet}
+                    onViewDetails={(id) => onNavigate("pet-detail", { petId: id })}
+                    onAdopt={(id) => {
+                      const p = pets.find((x) => x.petId === id);
+                      if (p) { setAdoptModalPet(p); setAdoptDone(false); }
+                    }}
+                  />
+                ))}
+              </div>
+              <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+            </>
           )}
         </div>
       </div>
@@ -357,7 +414,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
-          <div className="relative ml-auto w-[280px] h-full bg-white shadow-2xl overflow-y-auto p-5">
+          <div className="relative ml-auto w-[min(88vw,320px)] h-full bg-white shadow-2xl overflow-y-auto p-5">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-[#1a2e2d]">{t("pets_filters")}</h2>
               <button onClick={() => setSidebarOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
@@ -366,7 +423,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
             </div>
             {Sidebar}
             <button onClick={() => setSidebarOpen(false)} className="w-full mt-5 py-3 bg-[#089D97] text-white font-['Poppins',sans-serif] font-semibold text-[14px] rounded-[12px] hover:bg-[#047975] transition-colors">
-              {t("pets_show_results")} ({pets.length})
+              {t("pets_show_results")} ({total})
             </button>
           </div>
         </div>
@@ -382,14 +439,14 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
                 <h3 className="font-['Poppins',sans-serif] font-semibold text-[20px] text-[#1a2e2d] mb-1">{t("pet_sent_title")}</h3>
                 <p className="font-['Poppins',sans-serif] text-[14px] text-[#5a8a87]">{t("pet_sent_desc")}</p>
                 <button onClick={() => setAdoptModalPet(null)} className="mt-5 px-6 py-2.5 bg-[#089D97] text-white font-['Poppins',sans-serif] font-medium rounded-[12px] hover:bg-[#047975] transition-colors">
-                  Done
+                  {t("pet_done")}
                 </button>
               </div>
             ) : (
               <>
                 <div className="flex items-center gap-3 mb-5 pb-5 border-b border-gray-100">
                   <div className="w-14 h-14 rounded-[12px] bg-[#e8f5f4] overflow-hidden flex items-center justify-center">
-                    <img src={getPetImageUrl(adoptModalPet.images?.[0]?.imageUrl)} alt={adoptModalPet.name} className="w-full h-full object-contain" />
+                    <img src={getPrimaryPetImageUrl(adoptModalPet.images)} alt={adoptModalPet.name} className="w-full h-full object-contain" />
                   </div>
                   <div>
                     <h3 className="font-['Poppins',sans-serif] font-semibold text-[18px] text-[#1a2e2d]">{t("pet_adopt_btn")} {adoptModalPet.name}</h3>
@@ -405,7 +462,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
                 </div>
                 <div className="flex gap-3 mt-5">
                   <button onClick={() => setAdoptModalPet(null)} className="flex-1 py-2.5 border-2 border-gray-200 text-[#5a8a87] font-['Poppins',sans-serif] font-medium text-[13px] rounded-[12px] hover:border-gray-300 transition-colors">
-                    Cancel
+                    {t("pet_cancel")}
                   </button>
                   <button disabled={submitting} onClick={submitAdoptionRequest} className="flex-1 py-2.5 bg-[#089D97] text-white font-['Poppins',sans-serif] font-semibold text-[13px] rounded-[12px] hover:bg-[#047975] transition-colors disabled:opacity-60">
                     {submitting ? t("pet_submitting") : t("pet_submit")}

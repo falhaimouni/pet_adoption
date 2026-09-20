@@ -45,7 +45,7 @@ function mockProfile(email = "adopter@petopia.test") {
   };
 }
 
-let currentProfile = mockProfile(localStorage.getItem("petopia_mock_email") ?? undefined);
+let currentProfile = mockProfile(sessionStorage.getItem("petopia_mock_email") ?? undefined);
 
 let pets = PETS.map((pet) => ({
   petId: String(pet.id),
@@ -76,6 +76,36 @@ const suppliers = [
   { supplierId: "supplier-3", supplierName: "Animal Care Co.", isActive: true },
 ];
 
+let departments = [
+  {
+    departmentId: "department-veterinary",
+    departmentName: "Veterinary",
+    description: "Medical care, vaccination tracking, and health checks.",
+    isActive: true,
+    createdAt: "2026-01-03T09:00:00.000Z",
+    manager: mockProfile("manager@petopia.test"),
+    employees: [] as Array<Record<string, unknown>>,
+  },
+  {
+    departmentId: "department-operations",
+    departmentName: "Operations",
+    description: "Shelter operations, adoption coordination, and daily care.",
+    isActive: true,
+    createdAt: "2026-01-04T09:00:00.000Z",
+    manager: mockProfile("admin@petopia.test"),
+    employees: [] as Array<Record<string, unknown>>,
+  },
+  {
+    departmentId: "department-customer-service",
+    departmentName: "Customer Service",
+    description: "Adopter support, chats, and request follow-up.",
+    isActive: true,
+    createdAt: "2026-01-05T09:00:00.000Z",
+    manager: null,
+    employees: [] as Array<Record<string, unknown>>,
+  },
+];
+
 let supplies = PRODUCTS.map((product) => ({
   supplyId: String(product.id),
   productId: String(product.id),
@@ -94,6 +124,55 @@ let supplies = PRODUCTS.map((product) => ({
   status: product.inStock ? "AVAILABLE" : "OUT_OF_STOCK",
   lastUpdated: now(),
 }));
+
+let mockCartItems: Array<{ productId: string; quantity: number }> = [];
+let mockOrders: Array<Record<string, unknown>> = [
+  {
+    orderId: "mock-order-demo",
+    userId: "mock-adopter",
+    totalPrice: "31.48",
+    recipientName: "Adopter Demo",
+    phoneNumber: "+962-6-5001234",
+    addressLine: "Rainbow Street",
+    city: "Amman",
+    postalCode: null,
+    deliveryNotes: "Leave at reception.",
+    orderStatus: "COMPLETED",
+    createdAt: now(),
+    updatedAt: now(),
+    user: { firstName: "Adopter", lastName: "Demo", email: "adopter@petopia.test" },
+    orderItems: [
+      {
+        orderItemId: "mock-order-item-demo-1",
+        orderId: "mock-order-demo",
+        productId: String(PRODUCTS[0].id),
+        quantity: 1,
+        unitPrice: PRODUCTS[0].price.toFixed(2),
+        subtotal: PRODUCTS[0].price.toFixed(2),
+        product: { productName: PRODUCTS[0].name },
+      },
+      {
+        orderItemId: "mock-order-item-demo-2",
+        orderId: "mock-order-demo",
+        productId: String(PRODUCTS[1].id),
+        quantity: 5,
+        unitPrice: PRODUCTS[1].price.toFixed(2),
+        subtotal: (PRODUCTS[1].price * 5).toFixed(2),
+        product: { productName: PRODUCTS[1].name },
+      },
+    ],
+    payments: [{
+      paymentId: "mock-payment-demo",
+      orderId: "mock-order-demo",
+      amount: "31.48",
+      paymentMethod: "CASH",
+      paymentStatus: "PAID",
+      paidAt: now(),
+      createdAt: now(),
+      updatedAt: now(),
+    }],
+  },
+];
 
 let notifications = [
   { id: "notif-1", notificationId: "notif-1", title: "New adoption request", message: "Mochi has a new interested adopter.", type: "ADOPTION", status: "UNREAD", createdAt: now(), isRead: false },
@@ -131,6 +210,17 @@ let users = [
     hireDate: "2026-01-10",
     address: "Amman",
   },
+}));
+
+departments = departments.map((department) => ({
+  ...department,
+  employees: users
+    .filter((user) => user.employeeProfile?.departmentId === department.departmentId)
+    .map((user) => ({
+      employeeId: `employee-${user.userId}`,
+      userId: user.userId,
+      user,
+    })),
 }));
 
 let medicalEntries = [
@@ -204,11 +294,26 @@ function listPets(params: URLSearchParams) {
   const status = params.get("status");
   const minAge = params.get("minAge");
   const maxAge = params.get("maxAge");
+  const sortBy = params.get("sortBy") ?? "createdAt";
+  const order = params.get("order") === "ASC" ? "ASC" : "DESC";
   if (species) data = data.filter((pet) => pet.species.toLowerCase() === species.toLowerCase());
   if (status) data = data.filter((pet) => pet.adoptionStatus.toLowerCase() === status.toLowerCase());
   if (minAge) data = data.filter((pet) => Number(pet.age ?? 0) >= Number(minAge));
   if (maxAge) data = data.filter((pet) => Number(pet.age ?? 0) <= Number(maxAge));
-  return data;
+  data.sort((a, b) => {
+    const left = sortBy === "age" ? Number(a.age ?? 0) : String(a[sortBy as keyof typeof a] ?? "");
+    const right = sortBy === "age" ? Number(b.age ?? 0) : String(b[sortBy as keyof typeof b] ?? "");
+    const result = typeof left === "number" && typeof right === "number"
+      ? left - right
+      : String(left).localeCompare(String(right));
+    return order === "ASC" ? result : -result;
+  });
+
+  const page = Math.max(1, Number(params.get("page") ?? 1));
+  const limit = Math.max(1, Number(params.get("limit") ?? 12));
+  const total = data.length;
+  const start = (page - 1) * limit;
+  return { data: data.slice(start, start + limit), total, page, limit };
 }
 
 function listSupplies(params: URLSearchParams) {
@@ -242,22 +347,138 @@ function listStoreSupplies(params: URLSearchParams) {
   return { data: data.slice(start, start + limit), total, page, limit };
 }
 
+function supplyForProduct(productId: string) {
+  return supplies.find(
+    (item) =>
+      String(item.productId) === productId &&
+      item.isActive !== false &&
+      item.storeListed !== false &&
+      item.status === "AVAILABLE" &&
+      Number(item.quantity ?? 0) > 0,
+  );
+}
+
+function mockCartResponse() {
+  return {
+    cartId: `mock-cart-${currentProfile.userId}`,
+    userId: currentProfile.userId,
+    cartItems: mockCartItems.map((item) => {
+      const supply = supplies.find((row) => String(row.productId) === item.productId);
+      const unitPrice = Number(supply?.sellingPrice ?? 0);
+      const productName = String(supply?.supplyName ?? "Store item");
+      return {
+        cartItemId: `mock-cart-item-${item.productId}`,
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: unitPrice.toFixed(2),
+        subtotal: (unitPrice * item.quantity).toFixed(2),
+        product: {
+          productId: item.productId,
+          productName,
+          unitPrice: unitPrice.toFixed(2),
+          isActive: supply?.isActive !== false,
+        },
+      };
+    }),
+  };
+}
+
+function mockOrderFromBody(orderId: string, body: Record<string, unknown>, status = "PENDING") {
+  const cart = mockCartResponse();
+  const total = cart.cartItems.reduce((sum, item) => sum + Number(item.subtotal), 0);
+  return {
+    orderId,
+    userId: currentProfile.userId,
+    totalPrice: total.toFixed(2),
+    recipientName: String(body.recipientName ?? ""),
+    phoneNumber: String(body.phoneNumber ?? ""),
+    addressLine: String(body.addressLine ?? ""),
+    city: String(body.city ?? ""),
+    postalCode: body.postalCode ? String(body.postalCode) : null,
+    deliveryNotes: body.deliveryNotes ? String(body.deliveryNotes) : null,
+    orderStatus: status,
+    createdAt: now(),
+    updatedAt: now(),
+    orderItems: cart.cartItems.map((item) => ({
+      orderItemId: `mock-order-item-${item.productId}`,
+      orderId,
+      productId: item.productId,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      subtotal: item.subtotal,
+      product: item.product,
+    })),
+    user: { firstName: currentProfile.firstName, lastName: currentProfile.lastName, email: currentProfile.email },
+    payments: status === "COMPLETED" ? [{
+      paymentId: `mock-payment-${orderId}`,
+      orderId,
+      amount: total.toFixed(2),
+      paymentMethod: "CASH",
+      paymentStatus: "PAID",
+      paidAt: now(),
+      createdAt: now(),
+      updatedAt: now(),
+    }] : [],
+  };
+}
+
 function reportFor(type: string) {
   if (type === "pets") {
     return {
-      summary: { totalPets: pets.length, available: pets.filter((p) => p.adoptionStatus === "AVAILABLE").length, pending: pets.filter((p) => p.adoptionStatus === "PENDING").length },
-      data: pets.map(({ petId, name, species, breed, adoptionStatus }) => ({ petId, name, species, breed, adoptionStatus })),
+      summary: {
+        totalPets: pets.length,
+        available: pets.filter((p) => p.adoptionStatus === "AVAILABLE").length,
+        pendingAdoption: pets.filter((p) => p.adoptionStatus === "PENDING").length,
+        adopted: pets.filter((p) => p.adoptionStatus === "ADOPTED").length,
+        medicalCare: 0,
+      },
+      data: pets.map(({ name, species, breed, age, adoptionStatus, healthStatus }) => ({ pet: name, species, breed, age, status: adoptionStatus, health: healthStatus })),
     };
   }
   if (type === "inventory") {
     return {
-      summary: { totalSupplies: supplies.length, lowStock: supplies.filter((s) => s.quantity <= s.lowStockLimit).length },
-      data: supplies.slice(0, 10).map(({ supplyId, supplyName, category, quantity, status }) => ({ supplyId, supplyName, category, quantity, status })),
+      summary: {
+        totalItems: supplies.length,
+        lowStock: supplies.filter((s) => s.quantity <= s.lowStockLimit).length,
+        outOfStock: supplies.filter((s) => s.quantity === 0).length,
+        totalSuppliers: suppliers.length,
+        inventoryValue: "0.00 JD",
+      },
+      data: supplies.slice(0, 10).map(({ supplyName, category, quantity, lowStockLimit, status }) => ({
+        supply: supplyName,
+        category,
+        quantity,
+        minimum: lowStockLimit,
+        status,
+        supplier: suppliers[0]?.supplierName ?? "",
+        inventoryValue: "0.00",
+      })),
     };
   }
+  const statusCounts = adoptionRequests.reduce<Record<string, number>>((acc, request) => {
+    acc[request.status] = (acc[request.status] ?? 0) + 1;
+    return acc;
+  }, {});
   return {
-    summary: { totalRequests: adoptionRequests.length, pending: adoptionRequests.filter((r) => r.status === "PENDING").length },
-    data: adoptionRequests.map(({ requestId, status, pet }) => ({ requestId, status, pet: pet.name, createdAt: now() })),
+    summary: {
+      totalRequests: adoptionRequests.length,
+      approved: statusCounts.APPROVED ?? 0,
+      pending: statusCounts.PENDING ?? 0,
+      rejected: statusCounts.REJECTED ?? 0,
+      cancelled: (statusCounts.CANCELED ?? 0) + (statusCounts.CANCELLED ?? 0),
+      approvalRate: adoptionRequests.length ? `${Math.round(((statusCounts.APPROVED ?? 0) / adoptionRequests.length) * 100)}%` : "0%",
+    },
+    data: adoptionRequests.map(({ requestId, status, pet, requestDate, adopter }) => ({
+      adoptionId: requestId,
+      pet: pet.name,
+      species: pet.species,
+      breed: pet.breed,
+      adopter: `${adopter.firstName} ${adopter.lastName}`,
+      requestDate,
+      approvalDate: status === "APPROVED" ? requestDate : "",
+      status,
+      approvedBy: status === "APPROVED" ? "Mock Manager" : "",
+    })),
   };
 }
 
@@ -268,7 +489,7 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
 
   if (url.pathname === "/auth/login" && method === "POST") {
     const email = String(body.email ?? "adopter@petopia.test");
-    localStorage.setItem("petopia_mock_email", email);
+    sessionStorage.setItem("petopia_mock_email", email);
     currentProfile = mockProfile(email);
     return withDelay({
       accessToken: "mock-access-token",
@@ -303,6 +524,13 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
   }
   const userMatch = url.pathname.match(/^\/users\/([^/]+)$/);
   if (userMatch && method === "GET") return withDelay(users.find((user) => user.userId === userMatch[1]) as T);
+  const userAvatarMatch = url.pathname.match(/^\/users\/([^/]+)\/avatar$/);
+  if (userAvatarMatch && method === "POST") {
+    const avatarFile = init.body instanceof FormData ? init.body.get("file") : null;
+    const avatar = avatarFile instanceof File ? URL.createObjectURL(avatarFile) : null;
+    users = users.map((user) => user.userId === userAvatarMatch[1] ? { ...user, avatar, updatedAt: now() } : user);
+    return withDelay(users.find((user) => user.userId === userAvatarMatch[1]) as T);
+  }
   if (userMatch && method === "PATCH") {
     users = users.map((user) => {
       if (user.userId !== userMatch[1]) return user;
@@ -432,6 +660,56 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
     return withDelay({ success: true, message: "Deactivated from store in mock mode" } as T);
   }
   if (url.pathname === "/inventory/suppliers" && method === "GET") return withDelay(suppliers as T);
+
+  if (url.pathname === "/cart/me" && method === "GET") return withDelay(mockCartResponse() as T);
+  if (url.pathname === "/cart/items" && method === "POST") {
+    const productId = String(body.productId ?? "");
+    const quantity = Number(body.quantity ?? 1);
+    const supply = supplyForProduct(productId);
+    if (!supply) throw new Error("Product is out of stock.");
+    const existing = mockCartItems.find((item) => item.productId === productId);
+    if (existing) existing.quantity += quantity;
+    else mockCartItems = [...mockCartItems, { productId, quantity }];
+    return withDelay(mockCartResponse() as T);
+  }
+  const cartItemMatch = url.pathname.match(/^\/cart\/items\/([^/]+)$/);
+  if (cartItemMatch && method === "PATCH") {
+    const productId = cartItemMatch[1];
+    const quantity = Number(body.quantity ?? 1);
+    mockCartItems = mockCartItems.map((item) => item.productId === productId ? { ...item, quantity } : item);
+    return withDelay(mockCartResponse() as T);
+  }
+  if (cartItemMatch && method === "DELETE") {
+    mockCartItems = mockCartItems.filter((item) => item.productId !== cartItemMatch[1]);
+    return withDelay(mockCartResponse() as T);
+  }
+  if (url.pathname === "/cart/me" && method === "DELETE") {
+    mockCartItems = [];
+    return withDelay({ success: true, message: "Cart deleted successfully" } as T);
+  }
+
+  if (url.pathname === "/orders" && method === "GET") return withDelay(mockOrders as T);
+
+  if (url.pathname === "/checkout" && method === "POST") {
+    if (mockCartItems.length === 0) throw new Error("Cannot checkout with an empty cart");
+    const orderId = `mock-order-${Date.now()}`;
+    const order = mockOrderFromBody(orderId, body);
+    mockOrders = [order, ...mockOrders];
+    return withDelay(order as T);
+  }
+  const checkoutPayMatch = url.pathname.match(/^\/checkout\/([^/]+)\/pay$/);
+  if (checkoutPayMatch && method === "POST") {
+    const existing = mockOrders.find((order) => order.orderId === checkoutPayMatch[1]);
+    const paidOrder = {
+      ...(existing ?? mockOrderFromBody(checkoutPayMatch[1], {})),
+      orderStatus: "COMPLETED",
+      payments: mockOrderFromBody(checkoutPayMatch[1], existing ?? {}, "COMPLETED").payments,
+      updatedAt: now(),
+    };
+    mockOrders = mockOrders.map((order) => order.orderId === checkoutPayMatch[1] ? paidOrder : order);
+    mockCartItems = [];
+    return withDelay(paidOrder as T);
+  }
   if (url.pathname === "/inventory/suppliers" && method === "POST") {
     const next = { ...body, supplierId: `mock-supplier-${Date.now()}`, isActive: true, supplies: [] };
     suppliers.unshift(next as typeof suppliers[number]);
@@ -474,6 +752,57 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
   if (supplyMatch && method === "DELETE") {
     supplies = supplies.map((supply) => supply.supplyId === supplyMatch[1] ? { ...supply, isActive: false, storeListed: false, lastUpdated: now() } : supply);
     return withDelay({ success: true, message: "Deleted in mock mode" } as T);
+  }
+
+  if (url.pathname === "/departments" && method === "GET") {
+    const activeOnly = url.searchParams.get("active") === "true";
+    const rows = activeOnly ? departments.filter((department) => department.isActive !== false) : departments;
+    return withDelay(rows as T);
+  }
+  if (url.pathname === "/departments" && method === "POST") {
+    const departmentName = String(body.departmentName ?? "").trim();
+    if (!departmentName) throw new Error("Department name cannot be blank");
+    if (departments.some((department) => department.departmentName.trim().toLowerCase() === departmentName.toLowerCase())) {
+      throw new Error("Department name already exists");
+    }
+    const next = {
+      departmentId: `mock-department-${Date.now()}`,
+      departmentName,
+      description: typeof body.description === "string" ? body.description : null,
+      isActive: true,
+      createdAt: now(),
+      manager: null,
+      employees: [] as Array<Record<string, unknown>>,
+    };
+    departments = [next, ...departments];
+    return withDelay(next as T);
+  }
+  const departmentMatch = url.pathname.match(/^\/departments\/([^/]+)$/);
+  if (departmentMatch && method === "GET") {
+    const department = departments.find((item) => item.departmentId === departmentMatch[1]);
+    return withDelay(department as T);
+  }
+  if (departmentMatch && method === "PATCH") {
+    const departmentName = typeof body.departmentName === "string" ? body.departmentName.trim() : undefined;
+    if (departmentName !== undefined && !departmentName) throw new Error("Department name cannot be blank");
+    if (
+      departmentName &&
+      departments.some((department) => department.departmentId !== departmentMatch[1] && department.departmentName.trim().toLowerCase() === departmentName.toLowerCase())
+    ) {
+      throw new Error("Department name already exists");
+    }
+    departments = departments.map((department) => department.departmentId === departmentMatch[1] ? {
+      ...department,
+      ...body,
+      ...(departmentName === undefined ? {} : { departmentName }),
+    } : department);
+    return withDelay(departments.find((department) => department.departmentId === departmentMatch[1]) as T);
+  }
+  if (departmentMatch && method === "DELETE") {
+    const department = departments.find((item) => item.departmentId === departmentMatch[1]);
+    if (department && department.employees.length > 0) throw new Error("Move or remove department users before deleting the department");
+    departments = departments.map((item) => item.departmentId === departmentMatch[1] ? { ...item, isActive: false } : item);
+    return withDelay({ success: true, message: "Department deleted in mock mode" } as T);
   }
 
   if (url.pathname === "/adoption/requests" && method === "GET") return withDelay(adoptionRequests as T);
@@ -546,11 +875,11 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
   if (reportMatch && method === "GET") return withDelay(reportFor(reportMatch[1]) as T);
   if (url.pathname === "/dashboard/admin" && method === "GET") {
     return withDelay({
-      users: { total: users.length, admin: 1, manager: 1, employee: 1, vet: 1, adopter: 1, active: users.filter((user) => user.status === "active").length },
-      pets: { total: pets.length, available: pets.filter((pet) => pet.adoptionStatus === "AVAILABLE").length, adopted: 0, pendingAdoption: 0 },
-      adoptions: { totalRequests: adoptionRequests.length, pending: adoptionRequests.filter((request) => request.status === "PENDING").length, approved: adoptionRequests.filter((request) => request.status === "APPROVED").length },
+      users: { total: users.length, admin: 1, manager: 1, employee: 1, vet: 1, adopter: 1, active: users.filter((user) => user.status === "ACTIVE").length, inactive: users.filter((user) => user.status !== "ACTIVE").length },
+      pets: { total: pets.length, available: pets.filter((pet) => pet.adoptionStatus === "AVAILABLE").length, adopted: pets.filter((pet) => pet.adoptionStatus === "ADOPTED").length, pendingAdoption: pets.filter((pet) => pet.adoptionStatus === "PENDING").length, addedRecently: pets.length },
+      adoptions: { totalRequests: adoptionRequests.length, pending: adoptionRequests.filter((request) => request.status === "PENDING").length, approved: adoptionRequests.filter((request) => request.status === "APPROVED").length, rejectedOrCanceled: adoptionRequests.filter((request) => ["REJECTED", "CANCELED", "CANCELLED"].includes(request.status)).length },
       medical: { totalMedicalRecords: 1, totalVaccinations: vaccinations.length, petsNeedingMedicalAttention: 0 },
-      supplies: { totalSupplies: supplies.length, lowStockSupplies: supplies.filter((supply) => supply.quantity <= supply.lowStockLimit).length, totalSuppliers: suppliers.length },
+      supplies: { totalSupplies: supplies.length, availableSupplies: supplies.filter((supply) => supply.quantity > 0).length, lowStockSupplies: supplies.filter((supply) => supply.quantity <= supply.lowStockLimit).length, totalSuppliers: suppliers.length },
       activity: { recentActivityLogs: [{ logId: "log-1", action: "Mock dashboard loaded", entityType: "dashboard", createdAt: now(), user: null }] },
     } as T);
   }
@@ -558,10 +887,40 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
     return withDelay({
       users: { total: 3, employee: 1, vet: 1, adopter: 1 },
       pets: { total: pets.length, available: pets.filter((pet) => pet.adoptionStatus === "AVAILABLE").length, adopted: 0, pendingAdoption: 0 },
-      adoptions: { totalRequests: adoptionRequests.length, pending: adoptionRequests.filter((request) => request.status === "PENDING").length, approved: adoptionRequests.filter((request) => request.status === "APPROVED").length },
-      medical: { totalVaccinations: vaccinations.length },
+      adoptions: { totalRequests: adoptionRequests.length, pending: adoptionRequests.filter((request) => request.status === "PENDING").length, approved: adoptionRequests.filter((request) => request.status === "APPROVED").length, rejectedOrCanceled: adoptionRequests.filter((request) => ["REJECTED", "CANCELED", "CANCELLED"].includes(request.status)).length },
+      medical: { totalMedicalRecords: 1, totalVaccinations: vaccinations.length },
       supplies: { availableSupplies: supplies.filter((supply) => supply.quantity > 0).length, lowStockSupplies: supplies.filter((supply) => supply.quantity <= supply.lowStockLimit).length, totalSuppliers: suppliers.length },
       activity: { recentActivityLogs: [{ logId: "log-2", action: "Mock manager dashboard loaded", entityType: "dashboard", createdAt: now(), user: null }] },
+    } as T);
+  }
+  if (url.pathname === "/dashboard/user-activity" && method === "GET") {
+    return withDelay({
+      filters: { from: "2026-08-18T00:00:00.000Z", to: now(), limit: Number(url.searchParams.get("limit") ?? 10) },
+      summary: { totalActivities: 42, uniqueActiveUsers: 5, averageActivitiesPerActiveUser: 8.4 },
+      trend: [
+        { date: "2026-09-11", count: 4, uniqueUsers: 2 },
+        { date: "2026-09-12", count: 7, uniqueUsers: 3 },
+        { date: "2026-09-13", count: 5, uniqueUsers: 2 },
+        { date: "2026-09-14", count: 10, uniqueUsers: 4 },
+        { date: "2026-09-15", count: 16, uniqueUsers: 5 },
+      ],
+      actions: [
+        { name: "LOGIN", count: 18 },
+        { name: "PET_CREATED", count: 8 },
+        { name: "ADOPTION_REQUEST_APPROVED", count: 5 },
+      ],
+      entities: [
+        { name: "USER", count: 18 },
+        { name: "PET", count: 13 },
+        { name: "ADOPTION_REQUEST", count: 11 },
+      ],
+      topUsers: users.slice(0, 5).map((user, index) => ({
+        userId: user.userId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        activityCount: 10 - index,
+      })),
     } as T);
   }
 

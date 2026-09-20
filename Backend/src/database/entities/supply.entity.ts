@@ -1,4 +1,5 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { FileUpload } from './file-upload.entity';
 import { Supplier } from './supplier.entity';
 import { SupplyStatusEnum } from '@shared/enums/supply-status.enum';
 import { Product } from './product.entity';
@@ -51,6 +52,9 @@ export class Supply {
   @Column({ name: 'product_id', type: 'uuid' })
   productId!: string;
 
+  @Column({ name: 'image_file_id', type: 'uuid', nullable: true })
+  imageFileId?: string | null;
+
   @Column({type: 'enum', enum: SupplyStatusEnum, default: SupplyStatusEnum.AVAILABLE})
   status!: SupplyStatusEnum;
 
@@ -62,4 +66,8 @@ export class Supply {
   @ManyToOne(() => Product, (product) => product.supplies, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'product_id' })
   product!: Product;
+
+  @ManyToOne(() => FileUpload, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'image_file_id' })
+  imageFile?: FileUpload | null;
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { ShoppingCart, Star, ImageOff } from "lucide-react";
-import { Product } from "../data/products";
+import { ShoppingCart, Star } from "lucide-react";
+import { Product, defaultSupplyImage } from "../data/products";
 import { useCart } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
@@ -60,19 +60,13 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
         {!imgLoaded && !imgError && (
           <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 bg-[length:200%_100%]" />
         )}
-        {imgError ? (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-300">
-            <ImageOff size={36} />
-          </div>
-        ) : (
-          <img
-            src={product.image}
-            alt={product.name}
-            onLoad={() => setImgLoaded(true)}
-            onError={() => { setImgLoaded(true); setImgError(true); }}
-            className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
-          />
-        )}
+        <img
+          src={imgError ? defaultSupplyImage : product.image}
+          alt={product.name}
+          onLoad={() => setImgLoaded(true)}
+          onError={() => { setImgLoaded(true); setImgError(true); }}
+          className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+        />
 
         {/* Badge */}
         {product.badge && (
@@ -116,7 +110,7 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
               try {
                 await addToCart(product);
               } catch (err) {
-                setError(err instanceof Error ? err.message : "Unable to add item.");
+                setError(err instanceof Error ? err.message : t("product_add_error"));
               } finally {
                 setAdding(false);
               }
@@ -125,7 +119,7 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
             className={`w-full flex items-center justify-center gap-2 py-2.5 font-['Poppins',sans-serif] font-medium text-[13px] rounded-[11px] transition-all duration-200 ${inCart ? "bg-[#e0f2f0] text-[#089D97] border-2 border-[#089D97]" : "bg-[#089D97] text-white hover:bg-[#047975]"} disabled:opacity-40 disabled:cursor-not-allowed`}
           >
             <ShoppingCart size={14} />
-            {adding ? "Adding..." : inCart ? t("product_in_cart") : t("product_add_to_cart")}
+            {adding ? t("product_adding") : inCart ? t("product_in_cart") : t("product_add_to_cart")}
           </button>
         )}
         {error && <p className="font-['Poppins',sans-serif] text-[11px] text-red-600">{error}</p>}

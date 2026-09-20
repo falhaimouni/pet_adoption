@@ -32,7 +32,7 @@ export async function seedOrders(
       city: 'Zarqa',
       postalCode: null,
       deliveryNotes: null,
-      orderStatus: OrderStatusEnum.PENDING,
+      orderStatus: OrderStatusEnum.COMPLETED,
       totalPrice: '38.00',
     },
   ];

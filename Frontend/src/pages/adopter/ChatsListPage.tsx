@@ -36,7 +36,7 @@ export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
     setError("");
     apiFetch<Conversation[]>("/messages/conversations")
       .then(setItems)
-      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load conversations."))
+      .catch((err) => setError(err instanceof Error ? err.message : t("chats_unavailable")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -46,7 +46,7 @@ export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
   );
 
   return (
-    <DashboardLayout role="adopter" activePage="chats" onNavigate={onNavigate} pageTitle="Messages" breadcrumbs={["My Petopia", "Chats"]}>
+    <DashboardLayout role="adopter" activePage="chats" onNavigate={onNavigate} pageTitle={t("chats_title")} breadcrumbs={[t("adopter_dash_crumb"), t("chats_crumb")]}>
       <div className="max-w-2xl">
         <div className="bg-white rounded-[15px] shadow-md overflow-hidden">
           <div className="p-4 border-b border-gray-100">
@@ -64,7 +64,7 @@ export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
           {loading ? (
             <div className="p-4 space-y-2">{[1, 2, 3].map((n) => <div key={n} className="h-16 rounded-[12px] bg-[#f0f8f7] animate-pulse" />)}</div>
           ) : error ? (
-            <EmptyState icon={<MessageCircle size={28} />} title="Messages unavailable" description={error} />
+            <EmptyState icon={<MessageCircle size={28} />} title={t("chats_unavailable")} description={error} />
           ) : filtered.length === 0 ? (
             <EmptyState icon={<MessageCircle size={28} />} title={t("chats_no_conv")} description={t("chats_no_conv_desc")} />
           ) : (
@@ -79,10 +79,10 @@ export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-['Poppins',sans-serif] text-[14px] font-semibold text-black truncate">{participantName(conversation)}</p>
+                    <p className="font-['Poppins',sans-serif] text-[14px] font-semibold text-black truncate">{participantName(conversation) === "Petopia Support" ? t("chats_support") : participantName(conversation)}</p>
                     <span className="font-['Poppins',sans-serif] text-[11px] text-black/40 shrink-0">{new Date(conversation.updatedAt).toLocaleDateString()}</span>
                   </div>
-                  <p className="font-['Poppins',sans-serif] text-[12px] text-black/50 truncate">{conversation.lastMessage?.message ?? "No messages yet."}</p>
+                  <p className="font-['Poppins',sans-serif] text-[12px] text-black/50 truncate">{translateChatMessage(conversation.lastMessage?.message, t)}</p>
                 </div>
                 {conversation.unreadCount > 0 && <span className="shrink-0 min-w-5 h-5 px-1 bg-[#089D97] text-white text-[10px] font-bold rounded-full flex items-center justify-center">{conversation.unreadCount}</span>}
               </button>
@@ -92,4 +92,10 @@ export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
       </div>
     </DashboardLayout>
   );
+}
+
+function translateChatMessage(value: string | undefined, t: (key: string) => string) {
+  if (!value) return t("chats_no_messages_yet");
+  if (value === "Hello! How can we help with your adoption?") return t("chat_staff_greeting");
+  return value;
 }

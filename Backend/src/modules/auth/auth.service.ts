@@ -24,6 +24,8 @@ import { LoginDto, RefreshTokenDto, SignupDto } from '@shared/dto/auth.dto';
 import { PasswordResetToken } from '../../database/entities/password-reset-token.entity';
 import { Role } from '../../database/entities/role.entity';
 import { User } from '../../database/entities/user.entity';
+import { Adopter } from '../../database/entities/adopter.entity';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
 import { MailService } from '../mail/mail.service';
 
 type AuthTokenPayload = {
@@ -48,6 +50,9 @@ export class AuthService implements OnModuleInit {
 
     @InjectRepository(PasswordResetToken)
     private readonly passwordResetTokenRepo: Repository<PasswordResetToken>,
+
+    @InjectRepository(ActivityLog)
+    private readonly activityLogRepo: Repository<ActivityLog>,
 
     @InjectDataSource()
     private readonly dataSource: DataSource,
@@ -98,19 +103,37 @@ export class AuthService implements OnModuleInit {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    const user = this.userRepo.create({
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-      email: dto.email,
-      password: hashedPassword,
-      phone: dto.phone,
-      role: this.adopterRole,
-      status: 'active',
-      provider: 'LOCAL',
-    });
-
     try {
-      await this.userRepo.save(user);
+      await this.dataSource.transaction(async (manager) => {
+        const createdUser = await manager.getRepository(User).save(
+          manager.getRepository(User).create({
+            firstName: dto.firstName,
+            lastName: dto.lastName,
+            email: dto.email,
+            password: hashedPassword,
+            phone: dto.phone,
+            role: this.adopterRole,
+            status: 'active',
+            provider: 'LOCAL',
+          }),
+        );
+
+        await manager.getRepository(Adopter).save(
+          manager.getRepository(Adopter).create({
+            userId: createdUser.userId,
+            registrationDate: this.today(),
+          }),
+        );
+
+        await manager.getRepository(ActivityLog).save(
+          manager.getRepository(ActivityLog).create({
+            userId: createdUser.userId,
+            action: 'USER_CREATED',
+            entityType: 'USER',
+            entityId: createdUser.userId,
+          }),
+        );
+      });
     } catch (error) {
       if (error instanceof QueryFailedError && (error as any).code === '23505') {
         throw new ConflictException(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
@@ -156,6 +179,15 @@ export class AuthService implements OnModuleInit {
     }
 
     const tokens = this.issueTokens(user);
+
+    await this.activityLogRepo.save(
+      this.activityLogRepo.create({
+        userId: user.userId,
+        action: 'LOGIN',
+        entityType: 'USER',
+        entityId: user.userId,
+      }),
+    );
 
     return {
       ...tokens,
@@ -263,6 +295,15 @@ export class AuthService implements OnModuleInit {
     }
 
     await this.invalidateRefreshTokens(userId);
+
+    await this.activityLogRepo.save(
+      this.activityLogRepo.create({
+        userId,
+        action: 'LOGOUT',
+        entityType: 'USER',
+        entityId: userId,
+      }),
+    );
 
     return { message: 'Logged out successfully' };
   }
@@ -423,6 +464,10 @@ export class AuthService implements OnModuleInit {
 
   private hashResetToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  private today() {
+    return new Date().toISOString().slice(0, 10);
   }
 
 }
