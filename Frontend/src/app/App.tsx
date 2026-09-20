@@ -61,8 +61,8 @@ export type Role = UserRole;
 
 function RouteLoadingFallback() {
   return (
-    <div className="min-h-screen bg-[#f0f8f7] flex items-center justify-center" aria-busy="true">
-      <div className="h-10 w-10 rounded-full border-4 border-[#089D97]/20 border-t-[#089D97] animate-spin" />
+    <div className="min-h-screen bg-[#f0f8f7] flex items-center justify-center font-['Poppins',sans-serif] text-[#089D97]">
+      Loading...
     </div>
   );
 }
