@@ -480,12 +480,10 @@ export class UsersService {
       const lockedUser = await manager
         .getRepository(User)
         .createQueryBuilder('user')
-        //get the role with the user
-        .leftJoinAndSelect('user.role', 'role')
-        //lock this user row
+        // Role is required, and an inner join keeps FOR UPDATE valid on Postgres.
+        .innerJoinAndSelect('user.role', 'role')
         .setLock('pessimistic_write')
         .where('user.userId = :id', { id })
-        //run the query and get the result
         .getOne();
 
       if (!lockedUser) {
