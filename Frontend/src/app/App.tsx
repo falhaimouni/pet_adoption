@@ -4,23 +4,24 @@ import { AuthProvider, useAuth, UserRole } from "../context/AuthContext";
 import { ThemeProvider } from "../context/ThemeContext";
 import { LanguageProvider, useLanguage } from "../context/LanguageContext";
 
-const HomePage = lazy(() => import("../pages/HomePage"));
-const AboutPage = lazy(() => import("../pages/AboutPage"));
-const TermsPage = lazy(() => import("../pages/TermsPage"));
-const PrivacyPolicyPage = lazy(() => import("../pages/PrivacyPolicyPage"));
-const LoginPage = lazy(() => import("../pages/LoginPage"));
-const OAuthCallbackPage = lazy(() => import("../pages/OAuthCallbackPage"));
-const SignUpPage = lazy(() => import("../pages/SignUpPage"));
-const ForgotPasswordPage = lazy(() => import("../pages/ForgotPasswordPage"));
-const ResetPasswordPage = lazy(() => import("../pages/ResetPasswordPage"));
-const PetsListPage = lazy(() => import("../pages/PetsListPage"));
-const PetDetailPage = lazy(() => import("../pages/PetDetailPage"));
-const ShopPage = lazy(() => import("../pages/ShopPage"));
-const CartPage = lazy(() => import("../pages/CartPage"));
-const NotificationsPage = lazy(() => import("../pages/NotificationsPage"));
-const UserProfilePage = lazy(() => import("../pages/UserProfilePage"));
-const SettingsPage = lazy(() => import("../pages/SettingsPage"));
-const DashboardLayout = lazy(() => import("../components/DashboardLayout"));
+import SystemStatusPage from "../pages/SystemStatusPage";
+import HomePage from "../pages/HomePage";
+import AboutPage from "../pages/AboutPage";
+import TermsPage from "../pages/TermsPage";
+import PrivacyPolicyPage from "../pages/PrivacyPolicyPage";
+import LoginPage from "../pages/LoginPage";
+import OAuthCallbackPage from "../pages/OAuthCallbackPage";
+import SignUpPage from "../pages/SignUpPage";
+import ForgotPasswordPage from "../pages/ForgotPasswordPage";
+import ResetPasswordPage from "../pages/ResetPasswordPage";
+import PetsListPage from "../pages/PetsListPage";
+import PetDetailPage from "../pages/PetDetailPage";
+import ShopPage from "../pages/ShopPage";
+import CartPage from "../pages/CartPage";
+import NotificationsPage from "../pages/NotificationsPage";
+import UserProfilePage from "../pages/UserProfilePage";
+import SettingsPage from "../pages/SettingsPage";
+import DashboardLayout from "../components/DashboardLayout";
 
 const MyRequestsPage = lazy(() => import("../pages/adopter/MyRequestsPage"));
 const MyAdoptionsPage = lazy(() => import("../pages/adopter/MyAdoptionsPage"));
@@ -69,7 +70,7 @@ function RouteLoadingFallback() {
 
 // Pages anyone can view without logging in.
 const PUBLIC_PAGES = new Set<string>([
-  "home", "login", "signup", "about", "terms",
+  "home", "login", "signup", "status", "about", "terms",
   "privacy", "forgot-password", "reset-password", "pets", "pet-detail",
   "oauth-callback",
 ]);
@@ -270,7 +271,8 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "shop": return userRole === "adopter"
       ? <DashboardLayout role="adopter" activePage="shop" onNavigate={navigate}><ShopPage onNavigate={navigate} embedded /></DashboardLayout>
       : <ShopPage onNavigate={navigate} />;
-
+    case "status":
+      return <SystemStatusPage onNavigate={navigate} />;
     // Shared authenticated
     case "cart": return userRole === "adopter"
       ? <DashboardLayout role="adopter" activePage="shop" onNavigate={navigate}><CartPage onNavigate={navigate} embedded /></DashboardLayout>

@@ -6,42 +6,272 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
       POSTGRES_DB: ${POSTGRES_DB:-pet_adoption}
-    env_file:
-      - ${ENV_FILE:-.env.development}
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - private
+    restart: unless-stopped
 
   backend:
     container_name: pet_adoption_backend
     build:
       context: .
       dockerfile: Backend/Dockerfile
-    ports:
-      - "${PORT:-3000}:3000"
     env_file:
       - ${ENV_FILE:-.env.development}
     environment:
       - POSTGRES_HOST=postgres
-      - NODE_ENV=${NODE_ENV:-development}
+      - NODE_ENV=production
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", 
+        "fetch('http://127.0.0.1:3000/ready').then(async r => { const j = await r.json(); if (!r.ok || j.status !== 'ready' || !j.db?.ok) process.exit(1); }).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     volumes:
       - backend_uploads:/app/Backend/uploads
-
+    networks:
+      - public
+      - private
+    restart: unless-stopped
+  
   frontend:
     container_name: pet_adoption_frontend
     build:
       context: .
       dockerfile: Frontend/Dockerfile
     ports:
-      - "${FRONTEND_PORT:-5173}:5173"
-    env_file:
-      - ${ENV_FILE:-.env.development}
+      - "${FRONTEND_HTTPS_PORT:-8443}:443"
     stdin_open: true
     tty: true
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-check-certificate -q --spider https://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - public
+    restart: unless-stopped
 
+  db-backup:
+    build:
+      context: ./backup
+      dockerfile: Dockerfile
+    container_name: pet_adoption_db_backup
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      TZ: Asia/Amman
+      BACKUP_SCHEDULE: "0 2 * * *"
+      RETENTION_DAYS: "7"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -h postgres -p 5432 -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\" && test -s /etc/cron.d/db-backup"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backups:/backups
+      - backend_uploads:/uploads:ro
+    networks:
+      - private
+  
+  db-seed:
+    image: pet_adoption-backend
+    container_name: pet_adoption_db_seed
+    env_file:
+      - ${ENV_FILE:-.env.development}
+    environment:
+      - POSTGRES_HOST=postgres
+      - NODE_ENV=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    command:
+      - /bin/sh
+      - -c
+      - |
+        echo "Checking whether the database needs seeding..."
+
+        USERS_COUNT=$$(node -e '
+        const { Client } = require("pg");
+
+        (async () => {
+          const client = new Client({
+            host: process.env.POSTGRES_HOST,
+            port: process.env.POSTGRES_PORT,
+            database: process.env.POSTGRES_DB,
+            user: process.env.POSTGRES_USER,
+            password: process.env.POSTGRES_PASSWORD
+          });
+
+          await client.connect();
+          const result = await client.query("SELECT COUNT(*) FROM users");
+          console.log(result.rows[0].count);
+          await client.end();
+        })().catch(error => {
+          console.error(error);
+          process.exit(1);
+        });
+        ')
+
+        echo "Users in database: $$USERS_COUNT"
+
+        if [ "$$USERS_COUNT" = "0" ]; then
+          echo "Database is empty. Running full seed..."
+          node dist/Backend/src/database/seeding/main.seed.js
+          echo "Database seeding completed successfully."
+        else
+          echo "Database already contains users. Skipping seed."
+        fi
+    networks:
+      - private
+    restart: "no"
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: pet_adoption_prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    networks:
+      - private
+      - public
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:9090/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+  
+  grafana:
+    image: grafana/grafana:13.2.2
+    container_name: pet_adoption_grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SERVER_ROOT_URL: "https://localhost:8443/grafana/"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - public
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres-exporter:
+    image: ghcr.io/prometheus-community/postgres-exporter:v0.20.1
+    container_name: pet_adoption_postgres_exporter
+    environment:
+      DATA_SOURCE_URI: "postgres:5432/${POSTGRES_DB}?sslmode=disable"
+      DATA_SOURCE_USER: ${POSTGRES_USER}
+      DATA_SOURCE_PASS: ${POSTGRES_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:9187/metrics | grep -q '^pg_up 1' || exit 1"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - private
+    restart: unless-stopped
+  
+  cadvisor:
+    image: ghcr.io/google/cadvisor:0.55.1
+    container_name: pet_adoption_cadvisor
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /sys:/sys:ro
+      - /dev/disk:/dev/disk:ro
+      - ${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock:ro
+      - ${DOCKER_ROOT_DIR:-/var/lib/docker}:${DOCKER_ROOT_DIR:-/var/lib/docker}:ro
+      - ${DOCKER_CONTAINERD_SOCKET_PATH:-/run/containerd/containerd.sock}:/run/containerd/containerd.sock:ro
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - private
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:v0.34.1
+    container_name: pet_adoption_alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    secrets:
+      - alert_email_app_password
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:9093/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - public
+    restart: unless-stopped
 volumes:
   postgres_data:
   backend_uploads:
+  prometheus_data:
+  grafana_data:
+  alertmanager_data:
+networks:
+  public:
+  private:
+    internal: true
+secrets:
+  alert_email_app_password:
+    environment: ALERT_EMAIL_APP_PASSWORD

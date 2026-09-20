@@ -1,0 +1,33 @@
+groups:
+  - name: pet-adoption-availability
+    rules:
+
+      - alert: BackendDown
+        expr: up{job="pet-adoption-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "Pet Adoption backend is down"
+          description: "Prometheus has been unable to scrape the backend for more than 1 minute."
+
+      - alert: PostgresExporterDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database-monitoring
+        annotations:
+          summary: "PostgreSQL exporter is down"
+          description: "Prometheus has been unable to scrape PostgreSQL metrics for more than 1 minute."
+
+      - alert: CadvisorDown
+        expr: up{job="cadvisor"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          service: container-monitoring
+        annotations:
+          summary: "cAdvisor is down"
+          description: "Prometheus has been unable to scrape container metrics from cAdvisor for more than 1 minute."

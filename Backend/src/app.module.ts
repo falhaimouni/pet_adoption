@@ -24,7 +24,7 @@ import { PreventEmailChangeMiddleware } from './common/middleware/prevent-email-
 import { CheckoutModule } from './modules/checkout/checkout.module';
 import { OrderModule } from './modules/order/order.module';
 import { DepartmentsModule } from './modules/departments/departments.module';
-
+import { MetricsModule } from './monitoring/metrics.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -69,6 +69,7 @@ import { DepartmentsModule } from './modules/departments/departments.module';
     CheckoutModule,
     OrderModule,
     DepartmentsModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
