@@ -4,6 +4,7 @@ import {
   LogOut, Menu, X, Syringe, BarChart2, Package, Users,
   FileText, ClipboardList, Stethoscope, Tag, Building2,
   ChevronRight, Sun, Moon, Globe, MessageCircle, ShoppingCart,
+  UserRoundCheck,
 } from "lucide-react";
 import logoImg from "../imports/MyPetopia/be6bd1f12e9a602c8830a9c39abaf73ad65d4682.png";
 import profileImg from "../imports/MyPetopia/0ade9078bed97f834442fbb8c3bc4424aaf43269.png";
@@ -45,6 +46,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "staff-requests",   label: t("nav_adoption_requests"), icon: <ClipboardList size={16} /> },
         { id: "staff-adoptions",  label: t("nav_adoptions"),         icon: <Heart size={16} /> },
         { id: "staff-chats",      label: t("nav_chats"),             icon: <MessageCircle size={16} /> },
+        { id: "staff-friends",    label: t("nav_friends"),           icon: <UserRoundCheck size={16} /> },
         { id: "staff-orders",     label: t("nav_orders"),            icon: <ShoppingCart size={16} /> },
         { id: "staff-inventory",  label: t("nav_inventory"),         icon: <Package size={16} /> },
         { id: "staff-suppliers",  label: t("nav_suppliers"),         icon: <Tag size={16} /> },
@@ -57,6 +59,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "vet-pets",         label: t("dash_pets"),             icon: <Heart size={16} /> },
         { id: "vet-medical",      label: t("nav_medical_records"),   icon: <Stethoscope size={16} /> },
         { id: "vet-vaccinations", label: t("nav_vaccinations"),      icon: <Syringe size={16} /> },
+        { id: "vet-friends",      label: t("nav_friends"),           icon: <UserRoundCheck size={16} /> },
         { id: "vet-reports",      label: t("nav_reports"),           icon: <FileText size={16} /> },
         { id: "notifications",    label: t("nav_notifications"),     icon: <Bell size={16} /> },
         { id: "vet-profile",      label: t("nav_my_profile"),        icon: <User size={16} /> },
@@ -69,6 +72,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "manager-adoptions", label: t("nav_adoptions"),     icon: <Heart size={16} /> },
         { id: "manager-chats",     label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
         { id: "manager-users",     label: t("nav_users"),         icon: <Users size={16} /> },
+        { id: "manager-friends",   label: t("nav_friends"),       icon: <UserRoundCheck size={16} /> },
         { id: "manager-orders",    label: t("nav_orders"),        icon: <ShoppingCart size={16} /> },
         { id: "manager-inventory", label: t("nav_inventory"),     icon: <Package size={16} /> },
         { id: "manager-suppliers", label: t("nav_suppliers"),     icon: <Tag size={16} /> },
@@ -83,6 +87,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "admin-adoptions", label: t("nav_adoptions"),     icon: <Heart size={16} /> },
         { id: "admin-chats",     label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
         { id: "admin-users",     label: t("nav_users"),         icon: <Users size={16} /> },
+        { id: "admin-friends",   label: t("nav_friends"),       icon: <UserRoundCheck size={16} /> },
         { id: "admin-departments", label: t("nav_departments"), icon: <Building2 size={16} /> },
         { id: "admin-orders",    label: t("nav_orders"),        icon: <ShoppingCart size={16} /> },
         { id: "admin-inventory", label: t("nav_inventory"),     icon: <Package size={16} /> },

@@ -9,10 +9,9 @@ export interface Conversation {
   conversationId: string;
   status: string;
   updatedAt: string;
-  adopter: { firstName: string; lastName: string };
   assignedEmployee?: { firstName: string; lastName: string } | null;
-  lastMessage?: { message: string; createdAt: string } | null;
-  unreadCount: number;
+  lastMessage?: { messageText?: string | null; createdAt: string } | null;
+  unreadCount?: number;
 }
 
 interface ChatsListPageProps {
@@ -20,8 +19,10 @@ interface ChatsListPageProps {
 }
 
 function participantName(conversation: Conversation) {
-  const other = conversation.assignedEmployee ?? conversation.adopter;
-  return `${other.firstName} ${other.lastName}`.trim() || "Petopia Support";
+  const employee = conversation.assignedEmployee;
+  return employee
+    ? `${employee.firstName} ${employee.lastName}`.trim()
+    : "Petopia Support";
 }
 
 export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
@@ -29,12 +30,13 @@ export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
   const [search, setSearch] = useState("");
   const [items, setItems] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [starting, setStarting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     setLoading(true);
     setError("");
-    apiFetch<Conversation[]>("/messages/conversations")
+    apiFetch<Conversation[]>("/conversations/my")
       .then(setItems)
       .catch((err) => setError(err instanceof Error ? err.message : t("chats_unavailable")))
       .finally(() => setLoading(false));
@@ -42,8 +44,23 @@ export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
 
   const filtered = items.filter((c) =>
     participantName(c).toLowerCase().includes(search.toLowerCase()) ||
-    (c.lastMessage?.message ?? "").toLowerCase().includes(search.toLowerCase())
+    (c.lastMessage?.messageText ?? "").toLowerCase().includes(search.toLowerCase())
   );
+
+  async function startConversation() {
+    setStarting(true);
+    setError("");
+    try {
+      const conversation = await apiFetch<Conversation>("/conversations", {
+        method: "POST",
+      });
+      onNavigate("chat-detail", { conversationId: conversation.conversationId });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("chat_load_error"));
+    } finally {
+      setStarting(false);
+    }
+  }
 
   return (
     <DashboardLayout role="adopter" activePage="chats" onNavigate={onNavigate} pageTitle={t("chats_title")} breadcrumbs={[t("adopter_dash_crumb"), t("chats_crumb")]}>
@@ -66,7 +83,7 @@ export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
           ) : error ? (
             <EmptyState icon={<MessageCircle size={28} />} title={t("chats_unavailable")} description={error} />
           ) : filtered.length === 0 ? (
-            <EmptyState icon={<MessageCircle size={28} />} title={t("chats_no_conv")} description={t("chats_no_conv_desc")} />
+            <EmptyState icon={<MessageCircle size={28} />} title={t("chats_no_conv")} description={t("chats_no_conv_desc")} actionLabel={starting ? t("common_loading") : t("chat_start_conversation")} onAction={startConversation} />
           ) : (
             filtered.map((conversation) => (
               <button
@@ -82,9 +99,9 @@ export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
                     <p className="font-['Poppins',sans-serif] text-[14px] font-semibold text-black truncate">{participantName(conversation) === "Petopia Support" ? t("chats_support") : participantName(conversation)}</p>
                     <span className="font-['Poppins',sans-serif] text-[11px] text-black/40 shrink-0">{new Date(conversation.updatedAt).toLocaleDateString()}</span>
                   </div>
-                  <p className="font-['Poppins',sans-serif] text-[12px] text-black/50 truncate">{translateChatMessage(conversation.lastMessage?.message, t)}</p>
+                  <p className="font-['Poppins',sans-serif] text-[12px] text-black/50 truncate">{translateChatMessage(conversation.lastMessage?.messageText ?? undefined, t)}</p>
                 </div>
-                {conversation.unreadCount > 0 && <span className="shrink-0 min-w-5 h-5 px-1 bg-[#089D97] text-white text-[10px] font-bold rounded-full flex items-center justify-center">{conversation.unreadCount}</span>}
+                {(conversation.unreadCount ?? 0) > 0 && <span className="shrink-0 min-w-5 h-5 px-1 bg-[#089D97] text-white text-[10px] font-bold rounded-full flex items-center justify-center">{conversation.unreadCount}</span>}
               </button>
             ))
           )}

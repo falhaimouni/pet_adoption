@@ -1,16 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, MessageCircle, Send } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import EmptyState from "../../components/EmptyState";
 import { apiFetch } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { useConversationSocket } from "../../hooks/useConversationSocket";
 
 interface Message {
   messageId: string;
   senderId: string;
-  message: string;
-  isRead: boolean;
+  messageText?: string | null;
+  isRead?: boolean;
   createdAt: string;
 }
 
@@ -35,6 +36,18 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
   const [error, setError] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
+  const receiveMessage = useCallback((message: Message) => {
+    setConversation((current) => {
+      if (!current || current.messages.some((item) => item.messageId === message.messageId)) return current;
+      return { ...current, messages: [...current.messages, message] };
+    });
+    if (conversationId && message.senderId !== user?.id) {
+      void apiFetch(`/conversations/${conversationId}/messages/read`, { method: "PATCH" }).catch(() => undefined);
+    }
+  }, [conversationId, user?.id]);
+
+  const realtimeStatus = useConversationSocket(conversationId, receiveMessage);
+
   useEffect(() => {
     if (!conversationId) {
       setError(t("chat_missing_conversation"));
@@ -43,10 +56,10 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
     }
     setLoading(true);
     setError("");
-    apiFetch<ConversationDetail>(`/messages/conversations/${conversationId}`)
+    apiFetch<ConversationDetail>(`/conversations/${conversationId}`)
       .then((detail) => {
         setConversation(detail);
-        void apiFetch(`/messages/conversations/${conversationId}/read`, { method: "PATCH" }).catch(() => undefined);
+        void apiFetch(`/conversations/${conversationId}/messages/read`, { method: "PATCH" }).catch(() => undefined);
       })
       .catch((err) => setError(err instanceof Error ? err.message : t("chat_load_error")))
       .finally(() => setLoading(false));
@@ -61,11 +74,11 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
     setSending(true);
     setError("");
     try {
-      const sent = await apiFetch<Message>("/messages/send", {
+      const sent = await apiFetch<Message>(`/conversations/${conversationId}/messages`, {
         method: "POST",
-        body: JSON.stringify({ conversationId, message: input.trim() }),
+        body: JSON.stringify({ messageText: input.trim(), type: "TEXT" }),
       });
-      setConversation((prev) => prev ? { ...prev, messages: [...prev.messages, sent] } : prev);
+      receiveMessage(sent);
       setInput("");
     } catch (err) {
       setError(err instanceof Error ? err.message : t("chat_send_error"));
@@ -74,7 +87,7 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
     }
   }
 
-  const closed = conversation?.status === "closed" || conversation?.status === "archived";
+  const closed = conversation?.status === "CLOSED";
 
   return (
     <DashboardLayout role="adopter" activePage="chats" onNavigate={onNavigate}>
@@ -84,7 +97,15 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
             <ArrowLeft size={20} />
           </button>
           <MessageCircle size={20} className="text-[#089D97]" />
-          <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black">{t("chat_conversation")}</p>
+          <div className="min-w-0 flex-1">
+            <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black">{t("chat_conversation")}</p>
+            {realtimeStatus !== "disabled" && (
+              <p className={`flex items-center gap-1.5 font-['Poppins',sans-serif] text-[10px] ${realtimeStatus === "connected" ? "text-emerald-600" : "text-black/45"}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${realtimeStatus === "connected" ? "bg-emerald-500" : "bg-black/30"}`} />
+                {t(realtimeStatus === "connected" ? "chat_realtime_connected" : "chat_realtime_connecting")}
+              </p>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -100,7 +121,7 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
                 return (
                   <div key={m.messageId} className={`flex ${fromMe ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[88%] sm:max-w-[75%] rounded-[16px] px-4 py-2.5 ${fromMe ? "bg-[#089D97] text-white rounded-tr-[4px]" : "bg-white text-black shadow-sm rounded-tl-[4px]"}`}>
-                      <p className="font-['Poppins',sans-serif] text-[13px] leading-relaxed whitespace-pre-wrap break-words">{m.message}</p>
+                      <p className="font-['Poppins',sans-serif] text-[13px] leading-relaxed whitespace-pre-wrap break-words">{m.messageText}</p>
                       <span className={`block text-right font-['Poppins',sans-serif] text-[10px] mt-1 ${fromMe ? "text-white/70" : "text-black/40"}`}>{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                     </div>
                   </div>

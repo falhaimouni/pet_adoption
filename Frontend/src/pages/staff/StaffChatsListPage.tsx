@@ -10,9 +10,9 @@ interface Conversation {
   conversationId: string;
   status: string;
   updatedAt: string;
-  adopter: { firstName: string; lastName: string };
-  lastMessage?: { message: string; createdAt: string } | null;
-  unreadCount: number;
+  adopter: { user: { firstName: string; lastName: string } };
+  lastMessage?: { messageText?: string | null; createdAt: string } | null;
+  unreadCount?: number;
 }
 
 interface StaffChatsListPageProps {
@@ -33,14 +33,14 @@ export default function StaffChatsListPage({ onNavigate, role = "employee", acti
   useEffect(() => {
     setLoading(true);
     setError("");
-    apiFetch<Conversation[]>("/messages/conversations")
+    apiFetch<Conversation[]>("/conversations/inbox")
       .then(setItems)
       .catch((err) => setError(err instanceof Error ? err.message : t("chat_load_conversations_error")))
       .finally(() => setLoading(false));
   }, []);
 
   const filtered = items.filter((c) => {
-    const adopter = `${c.adopter.firstName} ${c.adopter.lastName}`.toLowerCase();
+    const adopter = `${c.adopter.user.firstName} ${c.adopter.user.lastName}`.toLowerCase();
     return adopter.includes(search.toLowerCase()) || c.status.toLowerCase().includes(search.toLowerCase());
   });
 
@@ -70,13 +70,13 @@ export default function StaffChatsListPage({ onNavigate, role = "employee", acti
               <div className="w-[44px] h-[44px] bg-[#e0f2f0] rounded-full flex items-center justify-center shrink-0"><MessageCircle size={18} className="text-[#089D97]" /></div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="font-['Poppins',sans-serif] text-[13px] font-semibold text-black truncate">{c.adopter.firstName} {c.adopter.lastName}</p>
+                  <p className="font-['Poppins',sans-serif] text-[13px] font-semibold text-black truncate">{c.adopter.user.firstName} {c.adopter.user.lastName}</p>
                   <span className="font-['Poppins',sans-serif] text-[11px] text-black/40">{new Date(c.updatedAt).toLocaleDateString()}</span>
                 </div>
                 <p className="font-['Poppins',sans-serif] text-[11px] text-[#089D97] capitalize">{t(`status_${c.status.toLowerCase().replace(/\s+/g, "_")}`)}</p>
-                <p className="font-['Poppins',sans-serif] text-[12px] text-black/50 truncate">{c.lastMessage?.message ?? t("chats_no_messages_yet")}</p>
+                <p className="font-['Poppins',sans-serif] text-[12px] text-black/50 truncate">{c.lastMessage?.messageText ?? t("chats_no_messages_yet")}</p>
               </div>
-              {c.unreadCount > 0 && <span className="shrink-0 min-w-5 h-5 px-1 bg-[#089D97] text-white text-[10px] font-bold rounded-full flex items-center justify-center">{c.unreadCount}</span>}
+              {(c.unreadCount ?? 0) > 0 && <span className="shrink-0 min-w-5 h-5 px-1 bg-[#089D97] text-white text-[10px] font-bold rounded-full flex items-center justify-center">{c.unreadCount}</span>}
             </button>
           ))
         )}

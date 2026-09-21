@@ -93,6 +93,40 @@ export class UsersController {
     );
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE', 'VET')
+  @Get('friends')
+  getFriends(@Req() req: RequestWithUser) {
+    return this.usersService.getFriends(req.user);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE', 'VET')
+  @Get('friends/candidates')
+  getFriendCandidates(@Req() req: RequestWithUser) {
+    return this.usersService.getFriendCandidates(req.user);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('EMPLOYEE', 'VET')
+  @Post('friends/:friendId')
+  addFriend(
+    @Req() req: RequestWithUser,
+    @Param('friendId') friendId: string,
+  ) {
+    return this.usersService.addFriend(req.user, friendId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('EMPLOYEE', 'VET')
+  @Delete('friends/:friendId')
+  removeFriend(
+    @Req() req: RequestWithUser,
+    @Param('friendId') friendId: string,
+  ) {
+    return this.usersService.removeFriend(req.user, friendId);
+  }
+
   //ADMIN/MANAGER ONLY
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'MANAGER')

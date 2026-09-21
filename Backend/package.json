@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "nest build",
+    "test": "node --test -r ts-node/register -r tsconfig-paths/register test/**/*.test.ts",
     "start": "node dist/Backend/src/main.js",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/Backend/src/main.js",

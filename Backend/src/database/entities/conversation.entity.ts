@@ -11,6 +11,7 @@ import {
 import { Adopter } from './adopter.entity';
 import { Message } from './message.entity';
 import { User } from './user.entity';
+import { ConversationStatusEnum } from '@shared/enums/conversation-status.enum';
 
 @Entity('conversations')
 export class Conversation {
@@ -23,8 +24,8 @@ export class Conversation {
   @Column({ name: 'assigned_employee_id', type: 'uuid', nullable: true })
   assignedEmployeeId?: string | null;
 
-  @Column({ type: 'varchar', length: 40, default: 'open' })
-  status!: string;
+  @Column({ type: 'enum', enum: ConversationStatusEnum, default: ConversationStatusEnum.OPEN })
+  status!: ConversationStatusEnum;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt!: Date;

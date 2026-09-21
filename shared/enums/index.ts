@@ -8,6 +8,7 @@ export * from './oauth-provider.enum';
 export * from './notification-status.enum';
 export * from './vaccine-status.enum';
 export * from './conversation-status.enum';
+export * from './message-type.enum';
 export * from './order-status.enum';
 export * from './payment-method.enum';
 export * from './payment-status.enum';

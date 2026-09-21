@@ -1,6 +1,6 @@
 import { IsIn, IsOptional, IsUUID } from 'class-validator';
 
-const CONVERSATION_STATUSES = ['ACTIVE', 'CLOSED', 'PENDING', 'ARCHIVED'] as const;
+const CONVERSATION_STATUSES = ['OPEN', 'CLOSED'] as const;
 
 export class CreateConversationDto {
   @IsOptional()
