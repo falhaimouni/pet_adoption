@@ -225,10 +225,10 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
 
       <Modal title={editTarget ? t("vet_edit_vaccination") : t("vet_add_vaccination")} open={addOpen} onClose={() => { setAddOpen(false); setEditTarget(null); }} onConfirm={saveVaccine} confirmLabel={saving ? t("common_saving") : editTarget ? t("action_save_changes") : t("action_add")} size="md">
         <div className="grid grid-cols-2 gap-4">
-          {formError && <p className="col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
+          {formError && <p role="alert" className="whitespace-pre-line col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
           <div className="col-span-2">
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("vaccination_vaccine_name")}</label>
-            <input value={form.vaccineName} onChange={(e) => setForm((f) => ({ ...f, vaccineName: e.target.value }))} placeholder={t("vaccination_vaccine_name_ph")} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+            <input maxLength={160} value={form.vaccineName} onChange={(e) => setForm((f) => ({ ...f, vaccineName: e.target.value }))} placeholder={t("vaccination_vaccine_name_ph")} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
           </div>
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_date_given")}</label>
@@ -236,11 +236,11 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
           </div>
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_next_due")}</label>
-            <input type="date" value={form.nextDueDate} onChange={(e) => setForm((f) => ({ ...f, nextDueDate: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+            <input type="date" min={form.vaccinationDate || undefined} value={form.nextDueDate} onChange={(e) => setForm((f) => ({ ...f, nextDueDate: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
           </div>
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_batch")}</label>
-            <input value={form.batch} onChange={(e) => setForm((f) => ({ ...f, batch: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+            <input maxLength={120} value={form.batch} onChange={(e) => setForm((f) => ({ ...f, batch: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
           </div>
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_status")}</label>
@@ -250,7 +250,7 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
           </div>
           <div className="col-span-2">
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_notes")}</label>
-            <textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} rows={3} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />
+            <textarea maxLength={5000} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} rows={3} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />
           </div>
         </div>
       </Modal>

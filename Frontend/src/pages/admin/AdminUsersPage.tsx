@@ -1,3 +1,4 @@
+import { formSchemas, validateFields, validationMessage } from "../../lib/formValidation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Edit, Eye, RefreshCw, UserPlus, Camera, UserX } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -333,6 +334,8 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
 
   async function saveUser() {
     if (!editUser) return;
+    const fieldErrors = validateFields({ ...formSchemas.profile, salary: formSchemas.employee.salary, hireDate: { ...formSchemas.employee.hireDate, required: !!editUser.employeeProfile } }, editForm, t);
+    if (Object.keys(fieldErrors).length) { setFormError(validationMessage(fieldErrors, t)); return; }
     if (!canManageUser(role, editUser.role?.roleName)) {
       setFormError(t("error_lower_role_only"));
       return;
@@ -411,6 +414,9 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
   }
 
   async function createEmployee() {
+    const fieldErrors = validateFields(formSchemas.employee, { ...employeeForm, password: generateStrongPassword() }, t, { mockIds: true });
+    if (Object.keys(fieldErrors).length) { setFormError(validationMessage(fieldErrors, t)); return; }
+
     if (!canCreateEmployee) return;
     const required = [employeeForm.firstName, employeeForm.lastName, employeeForm.email, employeeForm.roleId, employeeForm.departmentId, employeeForm.hireDate];
     if (required.some((value) => !String(value ?? "").trim())) {
@@ -577,7 +583,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
       <Modal title={t("edit_user")} open={!!editUser} onClose={() => { setEditUser(null); setEditAvatarPreview(""); setEditAvatarFile(null); }} onConfirm={saveUser} confirmLabel={saving ? t("common_saving") : t("action_save_changes")} size="md">
         {editUser && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {formError && <p className="sm:col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
+            {formError && <p role="alert" className="whitespace-pre-line sm:col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
             <div className="sm:col-span-2 flex items-center gap-4">
               <div className="w-16 h-16 rounded-full bg-[rgba(8,157,151,0.15)] overflow-hidden shrink-0 flex items-center justify-center">
                 <AuthenticatedImage src={editAvatarPreview || profileImg} fallback={profileImg} alt={t("profile_avatar_alt")} className="w-full h-full object-cover" />
@@ -596,7 +602,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
               <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("field_email")}</label>
               <p className="w-full rounded-[10px] bg-gray-50 px-3 py-2 font-['Poppins',sans-serif] text-[13px] text-black/60 min-h-[38px]">{editUser.email}</p>
             </div>
-            <Field label={t("field_phone")} value={editForm.phone} onChange={(value) => setEditForm((form) => ({ ...form, phone: value }))} />
+            <Field label={t("field_phone")} type="tel" maxLength={30} value={editForm.phone} onChange={(value) => setEditForm((form) => ({ ...form, phone: value }))} />
             {role === "admin" ? (
               <div>
                 <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("field_role")}</label>
@@ -632,7 +638,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
                 <Field label={t("field_salary")} type="number" value={editForm.salary} onChange={(value) => setEditForm((form) => ({ ...form, salary: value }))} />
                 <div className="sm:col-span-2">
                   <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("field_address")}</label>
-                  <textarea value={editForm.address} onChange={(e) => setEditForm((form) => ({ ...form, address: e.target.value }))} rows={2} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />
+                  <textarea maxLength={1000} value={editForm.address} onChange={(e) => setEditForm((form) => ({ ...form, address: e.target.value }))} rows={2} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />
                 </div>
               </>
             )}
@@ -642,11 +648,11 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
 
       <Modal title={t("action_add_employee")} open={employeeOpen} onClose={() => setEmployeeOpen(false)} onConfirm={createEmployee} confirmLabel={saving ? t("common_creating") : t("action_generate_password")} size="md">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {formError && <p className="sm:col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
+          {formError && <p role="alert" className="whitespace-pre-line sm:col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
           {lookupsLoading && <p className="sm:col-span-2 text-[13px] text-black/50 bg-gray-50 rounded-[10px] px-3 py-2">{t("loading_roles_departments")}</p>}
           <Field label={t("field_first_name")} value={employeeForm.firstName} onChange={(value) => setEmployeeForm((form) => ({ ...form, firstName: value }))} />
           <Field label={t("field_last_name")} value={employeeForm.lastName} onChange={(value) => setEmployeeForm((form) => ({ ...form, lastName: value }))} />
-          <Field label={t("field_email")} type="email" value={employeeForm.email} onChange={(value) => setEmployeeForm((form) => ({ ...form, email: value }))} />
+          <Field label={t("field_email")} type="email" maxLength={254} value={employeeForm.email} onChange={(value) => setEmployeeForm((form) => ({ ...form, email: value }))} />
           <p className="sm:col-span-2 font-['Poppins',sans-serif] text-[12px] text-black/50 bg-[#f0f8f7] rounded-[10px] px-3 py-2">
             {t("employee_password_hint")}
           </p>
@@ -668,7 +674,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
             )}
           </div>
           <Field label={t("field_hire_date")} type="date" value={employeeForm.hireDate} onChange={(value) => setEmployeeForm((form) => ({ ...form, hireDate: value }))} />
-          <Field label={t("field_phone")} value={employeeForm.phone} onChange={(value) => setEmployeeForm((form) => ({ ...form, phone: value }))} />
+          <Field label={t("field_phone")} type="tel" maxLength={30} value={employeeForm.phone} onChange={(value) => setEmployeeForm((form) => ({ ...form, phone: value }))} />
           <Field label={t("field_salary")} type="number" value={employeeForm.salary} onChange={(value) => setEmployeeForm((form) => ({ ...form, salary: value }))} />
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("field_status")}</label>
@@ -679,14 +685,14 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
           </div>
           <div className="sm:col-span-2">
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("field_address")}</label>
-            <textarea value={employeeForm.address} onChange={(e) => setEmployeeForm((form) => ({ ...form, address: e.target.value }))} rows={2} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />
+            <textarea maxLength={1000} value={employeeForm.address} onChange={(e) => setEmployeeForm((form) => ({ ...form, address: e.target.value }))} rows={2} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />
           </div>
         </div>
       </Modal>
 
       <Modal title={t("deactivate_user")} open={!!deleteUser} onClose={() => setDeleteUser(null)} onConfirm={deactivateUser} confirmLabel={saving ? t("common_deactivating") : t("action_deactivate")} confirmDestructive confirmDisabled={saving || Boolean(deleteUser && deleteUser.status === "inactive")} size="sm">
         <div className="space-y-3">
-          {formError && <p className="text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
+          {formError && <p role="alert" className="whitespace-pre-line text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
           <p className="font-['Poppins',sans-serif] text-[14px] text-black">
             {t("confirm_deactivate_user").replace("{name}", `${deleteUser?.firstName ?? ""} ${deleteUser?.lastName ?? ""}`.trim())}
           </p>
@@ -699,11 +705,11 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
   );
 }
 
-function Field({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (value: string) => void; type?: string }) {
+function Field({ label, value, onChange, type = "text", maxLength = 80 }: { label: string; value: string; onChange: (value: string) => void; type?: string; maxLength?: number }) {
   return (
     <div>
       <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{label}</label>
-      <input type={type} min={type === "number" ? 0 : undefined} value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+      <input aria-label={label} maxLength={maxLength} step={type === "number" ? "0.01" : undefined} type={type} min={type === "number" ? 0 : undefined} value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
     </div>
   );
 }

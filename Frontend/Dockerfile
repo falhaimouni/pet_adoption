@@ -12,6 +12,7 @@ COPY shared/package.json ./shared/package.json
 RUN npm ci --workspace=pet-adoption-frontend
 
 COPY Frontend ./Frontend
+COPY shared ./shared
 ARG VITE_USE_MOCKS=false
 ARG VITE_API_BASE_URL=/api
 

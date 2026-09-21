@@ -3,6 +3,8 @@ import { Camera, Edit2, Save, X, Stethoscope, Award, Phone, Mail, MapPin, FileTe
 import DashboardLayout from "../../components/DashboardLayout";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
+import { formSchemas, validateFields, validationMessage } from "../../lib/formValidation";
+import { validateImageFile } from "../../lib/validation";
 
 const VET_DEFAULT = {
   name: "Dr. Khaled Al-Rashid",
@@ -10,7 +12,7 @@ const VET_DEFAULT = {
   phone: "+962 799 281 091",
   specialization: "Small Animal Medicine & Surgery",
   licenseNumber: "VET-JO-2019-0472",
-  experience: "7 years",
+  experience: "7",
   clinic: "Petopia Veterinary Center",
   clinicAddress: "123 Paw Street, Amman, Jordan",
   bio: "Specializing in small animal internal medicine and preventive care. Passionate about improving the quality of life for shelter animals.",
@@ -30,17 +32,24 @@ export default function VetProfilePage({ onNavigate }: VetProfilePageProps) {
   });
   const [avatar, setAvatar] = useState<string>("");
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    const invalid = validateImageFile(file, t);
+    if (invalid) { setError(invalid); e.target.value = ""; return; }
+    setError("");
     const reader = new FileReader();
     reader.onload = (ev) => setAvatar(ev.target?.result as string);
     reader.readAsDataURL(file);
   }
 
   function handleSave() {
+    const errors = validateFields(formSchemas.vetProfile, form, t);
+    if (Object.keys(errors).length) { setError(validationMessage(errors, t)); return; }
+    setError("");
     setIsEditing(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -58,6 +67,7 @@ export default function VetProfilePage({ onNavigate }: VetProfilePageProps) {
 
   return (
     <DashboardLayout role="vet" activePage="vet-profile" onNavigate={onNavigate} pageTitle={t("nav_my_profile")} breadcrumbs={["Vet", t("nav_my_profile")]}>
+      {error && <p role="alert" className="mb-4 whitespace-pre-line rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       {saved && (
         <div className="mb-4 flex items-center gap-2 bg-green-50 border border-green-200 rounded-[12px] px-4 py-3">
           <Save size={16} className="text-green-500" />
@@ -83,7 +93,7 @@ export default function VetProfilePage({ onNavigate }: VetProfilePageProps) {
                 <Camera size={12} />
               </button>
             )}
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
           </div>
           <div className="flex-1">
             <h2 className="font-['Prata',serif] text-[22px] text-[#1a2e2d]">{form.name}</h2>
@@ -121,32 +131,32 @@ export default function VetProfilePage({ onNavigate }: VetProfilePageProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>{t("profile_full_name")}</label>
-              {isEditing ? <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className={inputClass} /> : <p className={readClass}>{form.name}</p>}
+              {isEditing ? <input maxLength={161} value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className={inputClass} /> : <p className={readClass}>{form.name}</p>}
             </div>
             <div>
               <label className={labelClass}>{t("profile_email")}</label>
-              {isEditing ? <input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} className={inputClass} /> : <p className={readClass}>{form.email}</p>}
+              {isEditing ? <input maxLength={254} type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} className={inputClass} /> : <p className={readClass}>{form.email}</p>}
             </div>
             <div>
               <label className={labelClass}>{t("profile_phone")}</label>
-              {isEditing ? <input type="tel" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} className={inputClass} /> : <p className={readClass}>{form.phone}</p>}
+              {isEditing ? <input maxLength={30} type="tel" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} className={inputClass} /> : <p className={readClass}>{form.phone}</p>}
             </div>
             <div>
               <label className={labelClass}>{t("vet_specialization")}</label>
-              {isEditing ? <input value={form.specialization} onChange={(e) => setForm((f) => ({ ...f, specialization: e.target.value }))} className={inputClass} /> : <p className={readClass}>{form.specialization}</p>}
+              {isEditing ? <input maxLength={160} value={form.specialization} onChange={(e) => setForm((f) => ({ ...f, specialization: e.target.value }))} className={inputClass} /> : <p className={readClass}>{form.specialization}</p>}
             </div>
             <div>
               <label className={labelClass}>{t("vet_license")}</label>
-              {isEditing ? <input value={form.licenseNumber} onChange={(e) => setForm((f) => ({ ...f, licenseNumber: e.target.value }))} className={inputClass} /> : <p className={readClass}>{form.licenseNumber}</p>}
+              {isEditing ? <input maxLength={120} value={form.licenseNumber} onChange={(e) => setForm((f) => ({ ...f, licenseNumber: e.target.value }))} className={inputClass} /> : <p className={readClass}>{form.licenseNumber}</p>}
             </div>
             <div>
               <label className={labelClass}>{t("profile_experience") || "Years of Experience"}</label>
-              {isEditing ? <input value={form.experience} onChange={(e) => setForm((f) => ({ ...f, experience: e.target.value }))} className={inputClass} /> : <p className={readClass}>{form.experience}</p>}
+              {isEditing ? <input type="number" min={0} step={1} required value={form.experience} onChange={(e) => setForm((f) => ({ ...f, experience: e.target.value }))} className={inputClass} /> : <p className={readClass}>{form.experience}</p>}
             </div>
             <div className="sm:col-span-2">
               <label className={labelClass}>{t("profile_bio")}</label>
               {isEditing
-                ? <textarea value={form.bio} onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))} rows={3} className={`${inputClass} resize-none`} />
+                ? <textarea maxLength={1000} value={form.bio} onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))} rows={3} className={`${inputClass} resize-none`} />
                 : <p className={`${readClass} leading-relaxed`}>{form.bio}</p>}
             </div>
           </div>
@@ -155,11 +165,11 @@ export default function VetProfilePage({ onNavigate }: VetProfilePageProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>{t("vet_clinic_name") || "Clinic Name"}</label>
-              {isEditing ? <input value={form.clinic} onChange={(e) => setForm((f) => ({ ...f, clinic: e.target.value }))} className={inputClass} /> : <p className={readClass}>{form.clinic}</p>}
+              {isEditing ? <input maxLength={160} value={form.clinic} onChange={(e) => setForm((f) => ({ ...f, clinic: e.target.value }))} className={inputClass} /> : <p className={readClass}>{form.clinic}</p>}
             </div>
             <div>
               <label className={labelClass}>{t("vet_clinic_address") || "Clinic Address"}</label>
-              {isEditing ? <input value={form.clinicAddress} onChange={(e) => setForm((f) => ({ ...f, clinicAddress: e.target.value }))} className={inputClass} /> : <p className={readClass}>{form.clinicAddress}</p>}
+              {isEditing ? <input maxLength={1000} value={form.clinicAddress} onChange={(e) => setForm((f) => ({ ...f, clinicAddress: e.target.value }))} className={inputClass} /> : <p className={readClass}>{form.clinicAddress}</p>}
             </div>
           </div>
         </div>

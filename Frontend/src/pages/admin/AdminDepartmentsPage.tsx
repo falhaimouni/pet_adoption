@@ -299,7 +299,7 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
 
       <Modal title={editItem ? t("edit_department") : t("action_add_department")} open={addOpen || !!editItem} onClose={closeForm} onConfirm={saveDepartment} confirmLabel={saving ? t("common_saving") : t("action_save")} size="md">
         <div className="space-y-4">
-          {formError && <p className="text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
+          {formError && <p role="alert" className="whitespace-pre-line text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("field_department_name")}</label>
             <input

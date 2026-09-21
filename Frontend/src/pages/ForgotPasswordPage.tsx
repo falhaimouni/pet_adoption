@@ -57,7 +57,7 @@ export default function ForgotPasswordPage({ onNavigate }: ForgotPasswordPagePro
           ) : (
             <form onSubmit={submit} className="flex flex-col gap-4">
               <InputField label={t("login_email")} placeholder="you@example.com" type="email" icon={<Mail size={18} />} value={email} onChange={setEmail} />
-              {error && <p className="font-['Poppins',sans-serif] text-[13px] text-red-600 bg-red-50 rounded-[12px] px-4 py-3">{error}</p>}
+              {error && <p role="alert" className="whitespace-pre-line font-['Poppins',sans-serif] text-[13px] text-red-600 bg-red-50 rounded-[12px] px-4 py-3">{error}</p>}
               <button disabled={loading} className="w-full bg-[#089D97] text-white font-['Poppins',sans-serif] font-semibold text-[15px] py-3 rounded-[14px] hover:bg-[#047975] transition-colors disabled:opacity-60">
                 {loading ? t("forgot_sending") : t("forgot_send")}
               </button>
