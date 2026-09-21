@@ -4,11 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import helmet from 'helmet';
 import { resolveUploadRoot } from './modules/uploads/upload-path.util';
-//check if file or folder exists
-// import { existsSync } from 'fs';
-// import { join } from 'path';
+import helmet from 'helmet';
 
 
 async function bootstrap() {
@@ -18,8 +15,11 @@ async function bootstrap() {
   //helps application shut down cleanly when the process is stopped. (for docker and DB connections)
   app.enableShutdownHooks();
   //middleware that adds security headers to each response
-  app.use(helmet());
-  //serve uploaded files from the uploads folder
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }));
+
+  // Serve uploaded files from the uploads folder
   app.useStaticAssets(resolveUploadRoot(), {
     prefix: '/uploads/',
   });
@@ -35,8 +35,17 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   // Allow the frontend to call this backend from a different port during development
+  const frontendOrigins = (
+    configService.get<string>('FRONTEND_URLS') ??
+    configService.get<string>('FRONTEND_URL') ??
+    'http://localhost:5173'
+  )
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   app.enableCors({
-    origin: configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5173',
+    origin: frontendOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });

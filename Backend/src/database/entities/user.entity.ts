@@ -15,6 +15,7 @@ import { AdoptionRequest } from './adoption-request.entity';
 import { Adopter } from './adopter.entity';
 import { Cart } from './cart.entity';
 import { Conversation } from './conversation.entity';
+import { Friendship } from './friendship.entity';
 import { Department } from './department.entity';
 import { Employee } from './employee.entity';
 import { FileUpload } from './file-upload.entity';
@@ -43,8 +44,8 @@ export class User {
   @Column({ type: 'varchar', length: 255, unique: true })
   email!: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  password!: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  password!: string | null;
 
   @Column({ type: 'text', nullable: true })
   avatar?: string | null;
@@ -62,14 +63,14 @@ export class User {
   @Column({ type: 'varchar', length: 30, nullable: true })
   phone?: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  address?: string | null;
+
   @Column({ type: 'varchar', length: 40, default: 'active' })
   status!: string;
 
   @Column({ name: 'refresh_token_version', type: 'integer', default: 0 })
   refreshTokenVersion!: number;
-
-  @Column({ name: 'oauth_provider', type: 'varchar', length: 80, nullable: true })
-  oauthProvider?: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt!: Date;
@@ -128,4 +129,10 @@ export class User {
 
   @OneToMany(() => FileUpload, (file) => file.uploadedByUser)
   uploadedFiles!: FileUpload[];
+  
+  @OneToMany(() => Friendship, (friendship) => friendship.user1)
+  friendshipsAsUser1!: Friendship[];
+
+  @OneToMany(() => Friendship, (friendship) => friendship.user2)
+  friendshipsAsUser2!: Friendship[];
 }

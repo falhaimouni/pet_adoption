@@ -1,3 +1,4 @@
+//Store the Google provider identity associated with a Google-only user account.
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { User } from './user.entity';
 

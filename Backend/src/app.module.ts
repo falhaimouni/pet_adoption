@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
 import { resolve } from 'path';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -7,6 +7,7 @@ import { appConfig, dbConfig } from './config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
+import { OAuthModule } from './modules/oauth/oauth.module';
 import { CartModule } from './modules/cart/cart.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { UsersModule } from './modules/users/users.module';
@@ -17,7 +18,14 @@ import { AdoptionsModule } from './modules/adoptions/adoptions.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { StoreModule } from './modules/store/store.module';
-
+import { ReportsModule } from './modules/reports/reports.module';
+import { ChatModule } from './modules/chat/chat.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { PreventEmailChangeMiddleware } from './common/middleware/prevent-email-change.middleware';
+import { CheckoutModule } from './modules/checkout/checkout.module';
+import { OrderModule } from './modules/order/order.module';
+import { DepartmentsModule } from './modules/departments/departments.module';
+import { MetricsModule } from './monitoring/metrics.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -46,6 +54,7 @@ import { StoreModule } from './modules/store/store.module';
 
     DatabaseModule,
     AuthModule,
+    OAuthModule,
     UsersModule,
     CartModule,
     DashboardModule,
@@ -56,9 +65,24 @@ import { StoreModule } from './modules/store/store.module';
     InventoryModule,
     UploadsModule,
     StoreModule,
+    ReportsModule,
+    NotificationsModule,
+    CheckoutModule,
+    OrderModule,
+    DepartmentsModule,
+    MetricsModule,
+    ChatModule
   ],
-
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(PreventEmailChangeMiddleware)
+      .forRoutes(
+        { path: 'users/profile', method: RequestMethod.PATCH },
+        { path: 'users/:id', method: RequestMethod.PATCH },
+      );
+  }
+}

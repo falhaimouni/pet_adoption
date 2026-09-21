@@ -5,20 +5,27 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { DataSource, EntityManager, QueryFailedError, Repository, In} from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { Department } from '../../database/entities/department.entity';
 import { Employee } from '../../database/entities/employee.entity';
 import { Role } from '../../database/entities/role.entity';
 import { User } from '../../database/entities/user.entity';
+import { Friendship } from '../../database/entities/friendship.entity';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
 import { UploadsService } from '../uploads/uploads.service';
 import {
   CreateEmployeeUserDto,
   UpdateProfileDto,
   UpdateUserDto,
 } from '@shared/dto/user.dto';
+import {
+  FRIEND_AUTO_ROLES,
+  FRIEND_MANUAL_ROLES,
+  FRIEND_SYSTEM_ROLES,
+} from '@shared/constants/chat.constants';
 import { RequestWithUser } from '@shared/types/auth.types';
 import { FileUploadCategory } from '@shared/enums';
 
@@ -48,7 +55,6 @@ const EMPLOYEE_PROFILE_FIELDS: Array<keyof UpdateUserDto> = [
 const BASIC_PROFILE_FIELDS: Array<keyof UpdateUserDto> = [
   'firstName',
   'lastName',
-  'email',
   'phone',
   'avatar',
 ];
@@ -77,8 +83,13 @@ export class UsersService {
     @InjectRepository(Department)
     private departmentRepo: Repository<Department>,
 
+    @InjectRepository(Friendship)
+    private friendshipRepo: Repository<Friendship>,
+  
     private readonly uploadsService: UploadsService,
     private dataSource: DataSource,
+    @InjectRepository(ActivityLog)
+    private activityLogRepo: Repository<ActivityLog>,
   ) {}
 
   async findAll(
@@ -160,7 +171,7 @@ export class UsersService {
     return this.findOne(id);
   }
 
-  async createEmployeeUser(dto: CreateEmployeeUserDto) {
+  async createEmployeeUser(dto: CreateEmployeeUserDto, actorUserId: string) {
     if (dto.status !== undefined) {
       this.ensureValidUserStatus(dto.status);
     }
@@ -199,8 +210,11 @@ export class UsersService {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    const savedUser = await this.dataSource.transaction(
-      async (manager) => {
+    let savedUser: User;
+    try {
+      //all inside {} is one transaction
+      savedUser = await this.dataSource.transaction(
+        async (manager) => {
         const user = manager.create(User, {
           firstName: dto.firstName,
           lastName: dto.lastName,
@@ -226,39 +240,116 @@ export class UsersService {
 
         await manager.save(employee);
 
-        return createdUser;
-      },
-    );
+        await manager.getRepository(ActivityLog).save(
+          manager.getRepository(ActivityLog).create({
+            userId: actorUserId,
+            action: 'USER_CREATED',
+            entityType: 'USER',
+            entityId: createdUser.userId,
+          }),
+        );
 
+        return createdUser;
+        },
+      );
+    } catch (error) {
+      if (error instanceof QueryFailedError && (error as any).code === '23505') {
+        throw new ConflictException('Email already exists');
+      }
+      throw error;
+    }
+
+    await this.syncStaffFriendshipsForUser(savedUser.userId);
     return this.findOne(savedUser.userId);
   }
 
   async uploadAvatar(userId: string, file: Express.Multer.File) {
+    const currentUser = await this.userRepo.findOneBy({ userId });
+    const previousAvatar = currentUser?.avatar;
     const uploadedFile = await this.uploadsService.createFileRecord(
       file,
       FileUploadCategory.AVATAR,
       userId,
     );
 
-    return this.updateProfile(userId, {
-      avatar: uploadedFile.fileUrl,
-    });
+    try {
+      const profile = await this.updateProfile(userId, {
+        avatar: uploadedFile.fileUrl,
+      });
+      await this.deletePreviousAvatar(previousAvatar, uploadedFile.fileId);
+      return profile;
+    } catch (error) {
+      await this.userRepo.update(userId, { avatar: previousAvatar ?? null });
+      await this.uploadsService.rollbackFileUpload(file.path, uploadedFile.fileId);
+      throw error;
+    }
+  }
+
+  async uploadManagedUserAvatar(
+    id: string,
+    currentUser: RequestWithUser['user'],
+    file: Express.Multer.File,
+  ) {
+    const targetUser = await this.getUserForAuthorization(id);
+    await this.authorizeUpdate(
+      this.toRoleName(currentUser.role),
+      this.toRoleName(targetUser.role.roleName),
+      currentUser.userId === id,
+      { avatar: '' },
+    );
+
+    const uploadedFile = await this.uploadsService.createFileRecord(
+      file,
+      FileUploadCategory.AVATAR,
+      currentUser.userId,
+    );
+
+    const previousAvatar = targetUser.avatar;
+
+    try {
+      const updatedUser = await this.updateUser(
+        id,
+        { avatar: uploadedFile.fileUrl },
+        currentUser,
+      );
+      await this.deletePreviousAvatar(previousAvatar, uploadedFile.fileId);
+      return updatedUser;
+    } catch (error) {
+      await this.userRepo.update(id, { avatar: previousAvatar ?? null });
+      await this.uploadsService.rollbackFileUpload(file.path, uploadedFile.fileId);
+      throw error;
+    }
+  }
+
+  private async deletePreviousAvatar(
+    avatarUrl: string | null | undefined,
+    replacementFileId: string,
+  ): Promise<void> {
+    if (!avatarUrl || avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
+      return;
+    }
+
+    const previousFile = await this.uploadsService.findFileByUrl(avatarUrl);
+
+    if (previousFile && previousFile.fileId !== replacementFileId) {
+      await this.uploadsService.deleteReplacementFile(previousFile.fileId);
+    }
   }
 
   async updateProfile(id: string, data: UpdateProfileDto) {
+    if ('email' in data) {
+      throw new ForbiddenException('Email cannot be changed');
+    }
+
     const updateData: Partial<
-      Pick<User, 'firstName' | 'lastName' | 'email' | 'phone' | 'avatar'>
+      Pick<User, 'firstName' | 'lastName' | 'phone' | 'address' | 'avatar'>
     > = {};
 
     if (data.firstName !== undefined) updateData.firstName = data.firstName;
     if (data.lastName !== undefined) updateData.lastName = data.lastName;
-    if (data.email !== undefined) updateData.email = data.email;
     if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.address !== undefined) updateData.address = data.address;
     if (data.avatar !== undefined) updateData.avatar = data.avatar;
-
-    if (updateData.email) {
-      await this.ensureEmailAvailable(updateData.email, id);
-    }
 
     if (Object.keys(updateData).length > 0) {
       await this.userRepo.update(id, updateData);
@@ -272,6 +363,10 @@ export class UsersService {
     data: UpdateUserDto,
     currentUser: RequestWithUser['user'],
   ) {
+    if ('email' in data) {
+      throw new ForbiddenException('Email cannot be changed');
+    }
+
     const targetUser = await this.getUserForAuthorization(id);
     const currentRole = this.toRoleName(currentUser.role);
     const targetRole = this.toRoleName(targetUser.role.roleName);
@@ -294,36 +389,27 @@ export class UsersService {
         throw new NotFoundException('Role not found');
       }
 
+      this.authorizeRoleAssignment(
+        currentRole,
+        this.toRoleName(requestedRole.roleName),
+        isSelf,
+      );
+
       nextRole = requestedRole;
 
-      if (
-        isSelf &&
-        targetRole === 'ADMIN' &&
-        nextRole.roleName !== 'ADMIN'
-      ) {
-        await this.ensureNotLastActiveAdmin();
-      }
     }
 
-    if (
+    const removesActiveAdmin =
       isSelf &&
-      currentRole === 'ADMIN' &&
+      targetRole === 'ADMIN' &&
       targetUser.status === USER_STATUS.ACTIVE &&
-      data.status &&
-      data.status !== USER_STATUS.ACTIVE
-    ) {
-      await this.ensureNotLastActiveAdmin();
-    }
-
-    if (data.email) {
-      await this.ensureEmailAvailable(data.email, id);
-    }
+      ((data.roleId && nextRole.roleName !== 'ADMIN') ||
+        (data.status !== undefined && data.status !== USER_STATUS.ACTIVE));
 
     const userData: Partial<User> = {};
 
     if (data.firstName !== undefined) userData.firstName = data.firstName;
     if (data.lastName !== undefined) userData.lastName = data.lastName;
-    if (data.email !== undefined) userData.email = data.email;
     if (data.phone !== undefined) userData.phone = data.phone;
     if (data.avatar !== undefined) userData.avatar = data.avatar;
     if (data.status !== undefined) userData.status = data.status;
@@ -332,6 +418,10 @@ export class UsersService {
     }
 
     await this.dataSource.transaction(async (manager) => {
+      if (removesActiveAdmin) {
+        await this.ensureNotLastActiveAdmin(manager);
+      }
+
       if (Object.keys(userData).length > 0) {
         await manager.update(User, id, userData);
       }
@@ -369,6 +459,8 @@ export class UsersService {
       }
     });
 
+    await this.syncStaffFriendshipsForUser(id);
+
     return this.findProfile(id);
   }
 
@@ -390,27 +482,239 @@ export class UsersService {
       throw new ForbiddenException('Only admins can deactivate users');
     }
 
-    if (isSelf) {
-      if (
-        user.status === USER_STATUS.ACTIVE &&
-        targetRole === 'ADMIN'
-      ) {
-        await this.ensureNotLastActiveAdmin();
-      }
-    } else if (!this.isLowerRole(currentRole, targetRole)) {
+    if (!isSelf && !this.isLowerRole(currentRole, targetRole)) {
       throw new ForbiddenException(
         'You can only deactivate lower-role users',
       );
     }
 
-    if (user.status !== USER_STATUS.INACTIVE) {
-      await this.userRepo.update(id, {
-        status: USER_STATUS.INACTIVE,
-      });
-    }
+    await this.dataSource.transaction(async (manager) => {
+      const lockedUser = await manager
+        .getRepository(User)
+        .createQueryBuilder('user')
+        // Role is required, and an inner join keeps FOR UPDATE valid on Postgres.
+        .innerJoinAndSelect('user.role', 'role')
+        .setLock('pessimistic_write')
+        .where('user.userId = :id', { id })
+        .getOne();
+
+      if (!lockedUser) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (
+        isSelf &&
+        lockedUser.status === USER_STATUS.ACTIVE &&
+        targetRole === 'ADMIN'
+      ) {
+        await this.ensureNotLastActiveAdmin(manager);
+      }
+
+      if (lockedUser.status !== USER_STATUS.INACTIVE) {
+        await manager.update(User, id, {
+          status: USER_STATUS.INACTIVE,
+        });
+
+        await manager.getRepository(ActivityLog).save(
+          manager.getRepository(ActivityLog).create({
+            userId: currentUser.userId,
+            action: 'USER_DEACTIVATED',
+            entityType: 'USER',
+            entityId: id,
+          }),
+        );
+      }
+    });
 
     return {
       message: 'User deactivated successfully',
+    };
+  }
+
+  async getFriends(currentUser: RequestWithUser['user']) {
+    const currentRole = this.toRoleName(currentUser.role);
+    this.ensureFriendSystemRole(currentRole);
+
+    const friendships = await this.friendshipRepo.find({
+      where: [
+        { user1Id: currentUser.userId },
+        { user2Id: currentUser.userId },
+      ],
+      relations: [
+        'user1',
+        'user1.role',
+        'user1.employeeProfile',
+        'user1.employeeProfile.department',
+        'user2',
+        'user2.role',
+        'user2.employeeProfile',
+        'user2.employeeProfile.department',
+      ],
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return friendships.map((friendship) => ({
+      friendshipId: friendship.friendshipId,
+      isSystemGenerated: friendship.isSystemGenerated,
+      createdAt: friendship.createdAt,
+      updatedAt: friendship.updatedAt,
+      friend: this.stripPassword(
+        friendship.user1Id === currentUser.userId
+          ? friendship.user2
+          : friendship.user1,
+      ),
+    }));
+  }
+
+  async getFriendCandidates(currentUser: RequestWithUser['user']) {
+    const currentRole = this.toRoleName(currentUser.role);
+    this.ensureFriendSystemRole(currentRole);
+
+    if (!this.canManageFriendsManually(currentRole)) {
+      return [];
+    }
+
+    const friendships = await this.friendshipRepo.find({
+      where: [
+        { user1Id: currentUser.userId },
+        { user2Id: currentUser.userId },
+      ],
+      select: {
+        user1Id: true,
+        user2Id: true,
+      },
+    });
+
+    const friendIds = new Set<string>([currentUser.userId]);
+    for (const friendship of friendships) {
+      friendIds.add(
+        friendship.user1Id === currentUser.userId
+          ? friendship.user2Id
+          : friendship.user1Id,
+      );
+    }
+
+    const candidates = await this.userRepo.find({
+      where: {
+        status: USER_STATUS.ACTIVE,
+        role: {
+          roleName: In(FRIEND_MANUAL_ROLES as unknown as string[]),
+        },
+      },
+      relations: ['role', 'employeeProfile', 'employeeProfile.department'],
+      order: {
+        firstName: 'ASC',
+        lastName: 'ASC',
+      },
+    });
+
+    return candidates
+      .filter((user) => !friendIds.has(user.userId))
+      .map((user) => this.stripPassword(user));
+  }
+
+  async addFriend(
+    currentUser: RequestWithUser['user'],
+    friendUserId: string,
+  ) {
+    const currentRole = this.toRoleName(currentUser.role);
+    const friendUser = await this.getUserForAuthorization(friendUserId);
+    const friendRole = this.toRoleName(friendUser.role.roleName);
+
+    this.ensureFriendSystemRole(currentRole);
+    this.ensureFriendSystemRole(friendRole);
+
+    if (currentUser.userId === friendUserId) {
+      throw new BadRequestException('You cannot add yourself as a friend');
+    }
+
+    if (
+      !this.canManageFriendsManually(currentRole) ||
+      !this.canManageFriendsManually(friendRole)
+    ) {
+      throw new ForbiddenException(
+        'Only employees and vets can manage manual friendships',
+      );
+    }
+
+    const existing = await this.getFriendshipByPair(
+      currentUser.userId,
+      friendUserId,
+    );
+
+    if (existing) {
+      if (existing.isSystemGenerated) {
+        throw new ConflictException('You are already connected');
+      }
+
+      throw new ConflictException('Friendship already exists');
+    }
+
+    const pair = this.normalizeFriendPair(
+      currentUser.userId,
+      friendUserId,
+    );
+
+    const friendship = await this.friendshipRepo.save(
+      this.friendshipRepo.create({
+        user1Id: pair.user1Id,
+        user2Id: pair.user2Id,
+        createdByUserId: currentUser.userId,
+        isSystemGenerated: false,
+      }),
+    );
+
+    return {
+      message: 'Friend added successfully',
+      friendship: await this.buildFriendshipResponse(
+        friendship.friendshipId,
+        currentUser.userId,
+      ),
+    };
+  }
+
+  async removeFriend(
+    currentUser: RequestWithUser['user'],
+    friendUserId: string,
+  ) {
+    const currentRole = this.toRoleName(currentUser.role);
+    const friendRole = await this.getTargetRoleName(friendUserId);
+
+    this.ensureFriendSystemRole(currentRole);
+    this.ensureFriendSystemRole(friendRole);
+
+    if (currentUser.userId === friendUserId) {
+      throw new BadRequestException('You cannot remove yourself');
+    }
+
+    if (
+      !this.canManageFriendsManually(currentRole) ||
+      !this.canManageFriendsManually(friendRole)
+    ) {
+      throw new ForbiddenException(
+        'Only employees and vets can manage manual friendships',
+      );
+    }
+
+    const friendship = await this.getFriendshipByPair(
+      currentUser.userId,
+      friendUserId,
+    );
+
+    if (!friendship) {
+      throw new NotFoundException('Friendship not found');
+    }
+
+    if (friendship.isSystemGenerated) {
+      throw new ForbiddenException('System friendships cannot be removed');
+    }
+
+    await this.friendshipRepo.delete(friendship.friendshipId);
+
+    return {
+      message: 'Friend removed successfully',
     };
   }
 
@@ -425,6 +729,163 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  private async getTargetRoleName(userId: string) {
+    const user = await this.getUserForAuthorization(userId);
+    return this.toRoleName(user.role.roleName);
+  }
+
+  private async getFriendshipByPair(userId1: string, userId2: string) {
+    const pair = this.normalizeFriendPair(userId1, userId2);
+
+    return this.friendshipRepo.findOne({
+      where: {
+        user1Id: pair.user1Id,
+        user2Id: pair.user2Id,
+      },
+    });
+  }
+
+  private async buildFriendshipResponse(
+    friendshipId: string,
+    currentUserId: string,
+  ) {
+    const friendship = await this.friendshipRepo.findOne({
+      where: { friendshipId },
+      relations: [
+        'user1',
+        'user1.role',
+        'user1.employeeProfile',
+        'user1.employeeProfile.department',
+        'user2',
+        'user2.role',
+        'user2.employeeProfile',
+        'user2.employeeProfile.department',
+      ],
+    });
+
+    if (!friendship) {
+      return null;
+    }
+
+    return {
+      friendshipId: friendship.friendshipId,
+      isSystemGenerated: friendship.isSystemGenerated,
+      createdAt: friendship.createdAt,
+      updatedAt: friendship.updatedAt,
+      friend: this.stripPassword(
+        friendship.user1Id === currentUserId ? friendship.user2 : friendship.user1,
+      ),
+    };
+  }
+
+  private async syncStaffFriendshipsForUser(userId: string) {
+    const user = await this.userRepo.findOne({
+      where: { userId },
+      relations: ['role'],
+    });
+
+    if (!user || !user.role) {
+      return;
+    }
+
+    const roleName = this.toRoleName(user.role.roleName);
+
+    if (!this.isFriendSystemRole(roleName)) {
+      await this.friendshipRepo
+        .createQueryBuilder()
+        .delete()
+        .from(Friendship)
+        .where('user1_id = :userId OR user2_id = :userId', { userId })
+        .execute();
+      return;
+    }
+
+    const targetUsers = await this.userRepo.find({
+      where: {
+        status: USER_STATUS.ACTIVE,
+        role: {
+          roleName: In(this.getAutoFriendTargetRoles(roleName) as string[]),
+        },
+      },
+      relations: ['role'],
+    });
+
+    for (const targetUser of targetUsers) {
+      if (targetUser.userId === userId) {
+        continue;
+      }
+
+      await this.upsertFriendship(userId, targetUser.userId, true);
+    }
+  }
+
+  private async upsertFriendship(
+    userId1: string,
+    userId2: string,
+    isSystemGenerated: boolean,
+    createdByUserId?: string | null,
+  ) {
+    const pair = this.normalizeFriendPair(userId1, userId2);
+    const existing = await this.friendshipRepo.findOne({
+      where: {
+        user1Id: pair.user1Id,
+        user2Id: pair.user2Id,
+      },
+    });
+
+    if (existing) {
+      if (isSystemGenerated && !existing.isSystemGenerated) {
+        existing.isSystemGenerated = true;
+        existing.createdByUserId = null;
+        await this.friendshipRepo.save(existing);
+      }
+
+      return existing;
+    }
+
+    return this.friendshipRepo.save(
+      this.friendshipRepo.create({
+        user1Id: pair.user1Id,
+        user2Id: pair.user2Id,
+        createdByUserId: createdByUserId ?? null,
+        isSystemGenerated,
+      }),
+    );
+  }
+
+  private normalizeFriendPair(userId1: string, userId2: string) {
+    return userId1 < userId2
+      ? { user1Id: userId1, user2Id: userId2 }
+      : { user1Id: userId2, user2Id: userId1 };
+  }
+
+  private stripPassword<T extends User>(user: T) {
+    const { password: _, ...rest } = user;
+    return rest;
+  }
+
+  private ensureFriendSystemRole(role: RoleName) {
+    if (!this.isFriendSystemRole(role)) {
+      throw new ForbiddenException('Adopters do not use the friend system');
+    }
+  }
+
+  private isFriendSystemRole(role: RoleName) {
+    return (FRIEND_SYSTEM_ROLES as readonly string[]).includes(role);
+  }
+
+  private canManageFriendsManually(role: RoleName) {
+    return (FRIEND_MANUAL_ROLES as readonly string[]).includes(role);
+  }
+
+  private getAutoFriendTargetRoles(role: RoleName) {
+    if ((FRIEND_AUTO_ROLES as readonly string[]).includes(role)) {
+      return FRIEND_SYSTEM_ROLES.filter((candidate) => candidate !== role);
+    }
+
+    return FRIEND_AUTO_ROLES;
   }
 
   private hasEmployeeProfileUpdates(data: UpdateUserDto) {
@@ -462,6 +923,26 @@ export class UsersService {
 
     if (currentRole !== 'ADMIN') {
       throw new ForbiddenException('You cannot manage other users');
+    }
+  }
+
+  private authorizeRoleAssignment(
+    currentRole: RoleName,
+    requestedRole: RoleName,
+    isSelf: boolean,
+  ) {
+    if (currentRole !== 'ADMIN') {
+      throw new ForbiddenException('Only admins can assign user roles');
+    }
+
+    if (isSelf && requestedRole !== 'ADMIN') {
+      return;
+    }
+
+    if (!isSelf && !this.isLowerRole(currentRole, requestedRole)) {
+      throw new ForbiddenException(
+        'You can only assign lower-level roles',
+      );
     }
   }
 
@@ -517,16 +998,22 @@ export class UsersService {
     );
   }
 
-  private async ensureNotLastActiveAdmin() {
-    const activeAdminCount = await this.userRepo.count({
-      where: {
-        status: USER_STATUS.ACTIVE,
-        role: {
-          roleName: 'ADMIN',
-        },
-      },
-      relations: ['role'],
-    });
+  //the manager is the transaction manager, we want it all inside the transaction to ensure that we don't have a race condition
+  private async ensureNotLastActiveAdmin(manager: EntityManager) {
+    const activeAdmins = await manager
+      .getRepository(User)
+      .createQueryBuilder('user')
+      //join with the role entity
+      .innerJoin('user.role', 'role')
+      //lock the rows for update to prevent race
+      .setLock('pessimistic_write')
+      //filter for active admins
+      .where('user.status = :status', { status: USER_STATUS.ACTIVE })
+      .andWhere('role.roleName = :roleName', { roleName: 'ADMIN' })
+      //run the query and get the results
+      .getMany();
+
+    const activeAdminCount = activeAdmins.length;
 
     if (activeAdminCount <= 1) {
       throw new ForbiddenException(

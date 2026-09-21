@@ -1,11 +1,13 @@
-import { IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
+import { MessageType } from '../enums/message-type.enum';
 
 export class SendMessageDto {
-  @IsUUID()
-  conversationId!: string;
-
   @IsString()
+  @IsNotEmpty()
   @MinLength(1)
   @MaxLength(5000)
-  message!: string;
+  messageText!: string;
+
+  @IsEnum(MessageType)
+  type!: MessageType;
 }

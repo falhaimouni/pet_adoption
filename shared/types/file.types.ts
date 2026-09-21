@@ -1,8 +1,13 @@
+import { FileUploadCategory } from '../enums';
+
 export interface FileUpload {
-  id: string;
-  uploadedBy: string;
+  fileId: string;
+  uploadedBy: string | null;
   fileName: string;
   fileUrl: string;
-  fileType: string;
+  mimeType: string | null;
+  fileSize: number;
+  category: FileUploadCategory;
+  medicalRecordId: string | null;
   uploadedAt: string;
 }

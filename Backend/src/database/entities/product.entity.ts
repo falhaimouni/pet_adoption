@@ -1,6 +1,7 @@
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { CartItem } from './cart-item.entity';
 import { OrderItem } from './order-item.entity';
+import { Supply } from './supply.entity';
 
 @Entity('products')
 export class Product {
@@ -27,4 +28,7 @@ export class Product {
 
   @OneToMany(() => OrderItem, (orderItem) => orderItem.product)
   orderItems!: OrderItem[];
+
+  @OneToMany(() => Supply, (supply) => supply.product)
+  supplies!: Supply[];
 }

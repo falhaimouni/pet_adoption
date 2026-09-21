@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
   MaxLength,
+  Max,
   Min,
   Validate,
   ValidationArguments,
@@ -14,6 +15,17 @@ import {
 
 import { PET_SPECIES } from '../constants/pet-species.constants';
 import { PET_STATUS } from '../constants/pet-status.constants';
+
+export const PET_SORT_FIELDS = [
+  'createdAt',
+  'name',
+  'species',
+  'breed',
+  'age',
+  'status',
+] as const;
+
+export const SORT_ORDERS = ['ASC', 'DESC'] as const;
 
 @ValidatorConstraint({ name: 'isValidAgeRange', async: false })
 export class IsValidAgeRangeConstraint
@@ -72,4 +84,28 @@ export class FindPetsQueryDto {
   @Min(0)
   @Validate(IsValidAgeRangeConstraint)
   maxAge?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number = 1;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number = 12;
+
+  @IsOptional()
+  @IsIn(PET_SORT_FIELDS)
+  sortBy?: (typeof PET_SORT_FIELDS)[number] = 'createdAt';
+
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toUpperCase() : value,
+  )
+  @IsIn(SORT_ORDERS)
+  order?: (typeof SORT_ORDERS)[number] = 'DESC';
 }

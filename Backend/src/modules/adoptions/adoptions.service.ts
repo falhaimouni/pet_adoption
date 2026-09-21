@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { CreateAdoptionRequestDto } from '@shared/dto/adoption-request.dto';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, QueryFailedError, Repository } from 'typeorm';
 
 import { ActivityLog } from '../../database/entities/activity-log.entity';
 import { AdoptionRequest } from '../../database/entities/adoption-request.entity';
@@ -15,6 +15,7 @@ import { Adoption } from '../../database/entities/adoption.entity';
 import { Adopter } from '../../database/entities/adopter.entity';
 import { Pet } from '../../database/entities/pet.entity';
 import { User } from '../../database/entities/user.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const ADOPTION_REQUEST_STATUS = {
   PENDING: 'PENDING',
@@ -135,6 +136,8 @@ export class AdoptionsService {
 
     @InjectRepository(Pet)
     private readonly petRepo: Repository<Pet>,
+
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async findRequests(user: RequestUser): Promise<AdoptionRequestResponse[]> {
@@ -188,19 +191,11 @@ export class AdoptionsService {
     dto: CreateAdoptionRequestDto,
   ): Promise<AdoptionRequestResponse> {
     return this.dataSource.transaction(async (manager) => {
-      const adopterRepo = manager.getRepository(Adopter);
       const petRepo = manager.getRepository(Pet);
       const requestRepo = manager.getRepository(AdoptionRequest);
       const logRepo = manager.getRepository(ActivityLog);
 
-      const adopter = await adopterRepo.findOne({
-        where: { userId },
-        relations: ['user'],
-      });
-
-      if (!adopter) {
-        throw new NotFoundException('Adopter profile not found');
-      }
+      const adopter = await this.findOrCreateAdopterProfile(manager, userId);
 
       const pet = await petRepo
         .createQueryBuilder('pet')
@@ -297,6 +292,25 @@ export class AdoptionsService {
       const petRepo = manager.getRepository(Pet);
       const logRepo = manager.getRepository(ActivityLog);
 
+      const requestIdentity = await requestRepo.findOne({
+        where: { requestId },
+        select: { requestId: true, petId: true },
+      });
+
+      if (!requestIdentity) {
+        throw new NotFoundException('Adoption request not found');
+      }
+
+      const pet = await petRepo
+        .createQueryBuilder('pet')
+        .setLock('pessimistic_write')
+        .where('pet.petId = :petId', { petId: requestIdentity.petId })
+        .getOne();
+
+      if (!pet) {
+        throw new NotFoundException('Pet not found');
+      }
+
       const request = await requestRepo
         .createQueryBuilder('request')
         .setLock('pessimistic_write')
@@ -309,16 +323,6 @@ export class AdoptionsService {
 
       if (!this.isStatus(request.status, ADOPTION_REQUEST_STATUS.PENDING)) {
         throw new BadRequestException('Only pending requests can be approved');
-      }
-
-      const pet = await petRepo
-        .createQueryBuilder('pet')
-        .setLock('pessimistic_write')
-        .where('pet.petId = :petId', { petId: request.petId })
-        .getOne();
-
-      if (!pet) {
-        throw new NotFoundException('Pet not found');
       }
 
       if (this.isStatus(pet.adoptionStatus, PET_ADOPTION_STATUS.ADOPTED)) {
@@ -400,11 +404,19 @@ export class AdoptionsService {
       );
     });
 
-    return this.findRequest(requestId, {
+    const updatedRequest = await this.findRequest(requestId, {
       userId: reviewer.userId,
       email: reviewer.email,
       role: reviewer.role,
     });
+
+    await this.notifyAdoptionUpdate(
+      updatedRequest,
+      'Adoption request approved',
+      `Your adoption request for ${updatedRequest.pet.name} was approved.`,
+    );
+
+    return updatedRequest;
   }
 
   async cancelRequest(
@@ -416,6 +428,25 @@ export class AdoptionsService {
       const adopterRepo = manager.getRepository(Adopter);
       const petRepo = manager.getRepository(Pet);
       const logRepo = manager.getRepository(ActivityLog);
+
+      const requestIdentity = await requestRepo.findOne({
+        where: { requestId },
+        select: { requestId: true, petId: true },
+      });
+
+      if (!requestIdentity) {
+        throw new NotFoundException('Adoption request not found');
+      }
+
+      const pet = await petRepo
+        .createQueryBuilder('pet')
+        .setLock('pessimistic_write')
+        .where('pet.petId = :petId', { petId: requestIdentity.petId })
+        .getOne();
+
+      if (!pet) {
+        throw new NotFoundException('Pet not found');
+      }
 
       const request = await requestRepo
         .createQueryBuilder('request')
@@ -447,16 +478,6 @@ export class AdoptionsService {
         throw new BadRequestException('Only pending requests can be cancelled');
       }
 
-      const pet = await petRepo
-        .createQueryBuilder('pet')
-        .setLock('pessimistic_write')
-        .where('pet.petId = :petId', { petId: request.petId })
-        .getOne();
-
-      if (!pet) {
-        throw new NotFoundException('Pet not found');
-      }
-
       request.status = ADOPTION_REQUEST_STATUS.CANCELLED;
       await requestRepo.save(request);
       await this.updatePetAvailabilityIfNoPendingRequests(
@@ -474,11 +495,19 @@ export class AdoptionsService {
       );
     });
 
-    return this.findRequest(requestId, {
+    const updatedRequest = await this.findRequest(requestId, {
       userId,
       email: '',
       role: 'ADOPTER',
     });
+
+    await this.notifyAdoptionUpdate(
+      updatedRequest,
+      'Adoption request cancelled',
+      `Your adoption request for ${updatedRequest.pet.name} was cancelled.`,
+    );
+
+    return updatedRequest;
   }
 
   async rejectRequest(
@@ -534,11 +563,19 @@ export class AdoptionsService {
       );
     });
 
-    return this.findRequest(requestId, {
+    const updatedRequest = await this.findRequest(requestId, {
       userId: reviewer.userId,
       email: reviewer.email,
       role: reviewer.role,
     });
+
+    await this.notifyAdoptionUpdate(
+      updatedRequest,
+      'Adoption request rejected',
+      `Your adoption request for ${updatedRequest.pet.name} was rejected.`,
+    );
+
+    return updatedRequest;
   }
 
   private async getRequestEntity(requestId: string): Promise<AdoptionRequest> {
@@ -629,6 +666,18 @@ export class AdoptionsService {
     };
   }
 
+  private async notifyAdoptionUpdate(
+    request: AdoptionRequestResponse,
+    title: string,
+    message: string,
+  ): Promise<void> {
+    await this.notificationsService.createAdoptionUpdate(
+      request.adopter.userId,
+      title,
+      message,
+    );
+  }
+
   private assertCanAccessRequest(
     request: AdoptionRequest,
     user: RequestUser,
@@ -695,5 +744,57 @@ export class AdoptionsService {
 
   private today(): string {
     return new Date().toISOString().split('T')[0];
+  }
+
+  private async findOrCreateAdopterProfile(
+    manager: EntityManager,
+    userId: string,
+  ): Promise<Adopter> {
+    const adopterRepo = manager.getRepository(Adopter);
+    const existingAdopter = await adopterRepo.findOne({
+      where: { userId },
+      relations: ['user'],
+    });
+
+    if (existingAdopter) {
+      return existingAdopter;
+    }
+
+    const user = await manager.getRepository(User).findOne({
+      where: { userId, status: 'active' },
+      relations: ['role'],
+    });
+
+    if (
+      !user ||
+      !user.role ||
+      user.role.roleName !== 'ADOPTER' ||
+      user.role.isActive === false
+    ) {
+      throw new NotFoundException('Adopter profile not found');
+    }
+
+    try {
+      return await adopterRepo.save(
+        adopterRepo.create({
+          userId,
+          user,
+          registrationDate: this.today(),
+        }),
+      );
+    } catch (error) {
+      if (error instanceof QueryFailedError && (error as any).code === '23505') {
+        const adopter = await adopterRepo.findOne({
+          where: { userId },
+          relations: ['user'],
+        });
+
+        if (adopter) {
+          return adopter;
+        }
+      }
+
+      throw error;
+    }
   }
 }

@@ -29,13 +29,29 @@ export const API_ENDPOINTS = {
     SUPPLIES: "/inventory/supplies",
     SUPPLIERS: "/inventory/suppliers",
   },
+  DEPARTMENTS: {
+    LIST: "/departments",
+    CREATE: "/departments",
+    GET: "/departments/:id",
+    UPDATE: "/departments/:id",
+    DELETE: "/departments/:id",
+    ASSIGN_USERS: "/departments/:id/users",
+  },
   MESSAGES: {
     CONVERSATIONS: "/messages/conversations",
     SEND: "/messages/send",
     LIST: "/messages/conversations/:id",
   },
+  FRIENDS: {
+    LIST: "/users/friends",
+    CANDIDATES: "/users/friends/candidates",
+    ADD: "/users/friends/:friendId",
+    REMOVE: "/users/friends/:friendId",
+  },
   NOTIFICATIONS: {
     LIST: "/notifications",
+    UNREAD_COUNT: "/notifications/unread-count",
     MARK_READ: "/notifications/:id/read",
+    MARK_ALL_READ: "/notifications/read-all",
   },
 };

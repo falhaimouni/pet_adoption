@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 import { CreatePetDto, UpdatePetDto } from '@shared/dto/pet.dto';
 import { FindPetsQueryDto } from '@shared/dto/find-pets-query.dto';
@@ -12,7 +12,8 @@ import { Vaccination } from '../../database/entities/vaccination.entity';
 import { Adoption } from '../../database/entities/adoption.entity';
 import { FileUpload } from '../../database/entities/file-upload.entity';
 import { FileUploadCategory } from '@shared/enums';
-import { UploadsService } from '../uploads/uploads.service';
+import { StoredFileBackup, UploadsService } from '../uploads/uploads.service';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
 
 interface PetImageResponse {
   imageId: string;
@@ -35,6 +36,13 @@ interface PetResponse {
   adoptionStatus: string;
   arrivalDate?: string | null;
   images: PetImageResponse[];
+}
+
+interface PaginatedPetsResponse {
+  data: PetResponse[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 interface PetFullResponse extends PetResponse {
@@ -71,7 +79,12 @@ export class PetsService {
     @InjectRepository(Adoption)
     private readonly adoptionRepo: Repository<Adoption>,
 
+    private readonly dataSource: DataSource,
+
     private readonly uploadsService: UploadsService,
+
+    @InjectRepository(ActivityLog)
+    private readonly activityLogRepo: Repository<ActivityLog>,
   ) {}
 
   async create(dto: CreatePetDto, createdBy?: string): Promise<PetResponse> {
@@ -89,15 +102,36 @@ export class PetsService {
 
     const savedPet = await this.petRepo.save(pet);
 
+    await this.activityLogRepo.save(
+      this.activityLogRepo.create({
+        userId: createdBy ?? null,
+        action: 'PET_CREATED',
+        entityType: 'PET',
+        entityId: savedPet.petId,
+      }),
+    );
+
     return this.findOne(savedPet.petId);
   }
 
-  async findAll(query: FindPetsQueryDto): Promise<PetResponse[]> {
+  async findAll(query: FindPetsQueryDto): Promise<PaginatedPetsResponse> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 12;
+    const sortBy = query.sortBy ?? 'createdAt';
+    const order = query.order ?? 'DESC';
+    const sortableColumns: Record<NonNullable<FindPetsQueryDto['sortBy']>, string> = {
+      createdAt: 'pet.createdAt',
+      name: 'pet.petName',
+      species: 'pet.species',
+      breed: 'pet.breed',
+      age: 'pet.age',
+      status: 'pet.adoptionStatus',
+    };
+
     const qb = this.petRepo
       .createQueryBuilder('pet')
       .leftJoinAndSelect('pet.images', 'images')
-      .leftJoinAndSelect('images.file', 'imageFile')
-      .orderBy('pet.createdAt', 'DESC');
+      .leftJoinAndSelect('images.file', 'imageFile');
 
     if (query.search) {
       qb.andWhere(
@@ -132,8 +166,19 @@ export class PetsService {
       qb.andWhere('pet.age <= :maxAge', { maxAge: query.maxAge });
     }
 
-    const pets = await qb.getMany();
-    return pets.map((pet) => this.mapPetResponse(pet));
+    qb
+      .orderBy(sortableColumns[sortBy], order)
+      .addOrderBy('pet.petId', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [pets, total] = await qb.getManyAndCount();
+    return {
+      data: pets.map((pet) => this.mapPetResponse(pet)),
+      total,
+      page,
+      limit,
+    };
   }
 
   async findOne(id: string): Promise<PetResponse> {
@@ -173,20 +218,32 @@ export class PetsService {
   }
 
   async update(id: string, dto: UpdatePetDto): Promise<PetResponse> {
-    const pet = await this.getPetEntity(id);
+    await this.dataSource.transaction(async (manager) => {
+      const pet = await manager
+        .getRepository(Pet)
+        .createQueryBuilder('pet')
+        .setLock('pessimistic_write')
+        .where('pet.petId = :id', { id })
+        .getOne();
 
-    if (dto.name !== undefined) pet.petName = dto.name;
-    if (dto.species !== undefined) pet.species = dto.species;
-    if (dto.breed !== undefined) pet.breed = dto.breed;
-    if (dto.age !== undefined) pet.age = dto.age;
-    if (dto.gender !== undefined) pet.gender = dto.gender;
-    if (dto.color !== undefined) pet.color = dto.color;
-    if (dto.weight !== undefined) pet.weight = String(dto.weight);
-    if (dto.description !== undefined) pet.description = dto.description;
-    if (dto.adoptionStatus !== undefined) pet.adoptionStatus = dto.adoptionStatus;
-    if (dto.healthStatus !== undefined) pet.healthStatus = dto.healthStatus;
+      if (!pet) {
+        throw new NotFoundException('Pet not found');
+      }
 
-    await this.petRepo.save(pet);
+      if (dto.name !== undefined) pet.petName = dto.name;
+      if (dto.species !== undefined) pet.species = dto.species;
+      if (dto.breed !== undefined) pet.breed = dto.breed;
+      if (dto.age !== undefined) pet.age = dto.age;
+      if (dto.gender !== undefined) pet.gender = dto.gender;
+      if (dto.color !== undefined) pet.color = dto.color;
+      if (dto.weight !== undefined) pet.weight = String(dto.weight);
+      if (dto.description !== undefined) pet.description = dto.description;
+      if (dto.adoptionStatus !== undefined) pet.adoptionStatus = dto.adoptionStatus;
+      if (dto.healthStatus !== undefined) pet.healthStatus = dto.healthStatus;
+
+      await manager.getRepository(Pet).save(pet);
+    });
+
     return this.findOne(id);
   }
 
@@ -224,35 +281,84 @@ export class PetsService {
     }
   }
 
-  async remove(id: string): Promise<{ message: string }> {
-    await this.getPetEntity(id);
+  async remove(id: string, actorUserId: string): Promise<{ message: string }> {
+    const removedImageFiles: StoredFileBackup[] = [];
 
-    const completedAdoption = await this.adoptionRepo
-      .createQueryBuilder('adoption')
-      .innerJoin('adoption.request', 'request')
-      .where('request.petId = :petId', { petId: id })
-      .getExists();
+    try {
+      await this.dataSource.transaction(async (manager) => {
+      const petRepo = manager.getRepository(Pet);
+      const pet = await petRepo
+        .createQueryBuilder('pet')
+        .setLock('pessimistic_write')
+        .where('pet.petId = :id', { id })
+        .getOne();
 
-    if (completedAdoption) {
-      throw new BadRequestException(
-        'Cannot archive a pet that has completed adoptions',
+      if (!pet) {
+        throw new NotFoundException('Pet not found');
+      }
+
+      const completedAdoption = await manager
+        .getRepository(Adoption)
+        .createQueryBuilder('adoption')
+        .innerJoin('adoption.request', 'request')
+        .where('request.petId = :petId', { petId: id })
+        .getExists();
+
+      if (completedAdoption) {
+        throw new BadRequestException(
+          'Cannot archive a pet that has completed adoptions',
+        );
+      }
+
+      const medicalRecord = await manager.getRepository(MedicalRecord).findOne({
+        where: { petId: id },
+        select: { recordId: true },
+      });
+
+      if (medicalRecord) {
+        await manager
+          .getRepository(MedicalEntry)
+          .softDelete({ recordId: medicalRecord.recordId });
+      }
+
+      await manager.getRepository(Vaccination).softDelete({ petId: id });
+
+      const petImages = await manager.getRepository(PetImage).find({
+        where: { petId: id },
+        relations: ['file'],
+      });
+
+      for (const image of petImages) {
+        if (!image.file) {
+          throw new NotFoundException('Pet image file not found');
+        }
+        removedImageFiles.push(
+          await this.uploadsService.removePhysicalFile(image.file),
+        );
+      }
+
+      await manager.getRepository(PetImage).delete({ petId: id });
+      for (const image of petImages) {
+        await manager.getRepository(FileUpload).delete(image.fileId);
+      }
+
+      await petRepo.softDelete(id);
+
+      await manager.getRepository(ActivityLog).save(
+        manager.getRepository(ActivityLog).create({
+          userId: actorUserId,
+          action: 'PET_ARCHIVED',
+          entityType: 'PET',
+          entityId: id,
+        }),
       );
+      });
+    } catch (error) {
+      for (const backup of removedImageFiles.reverse()) {
+        await this.uploadsService.restorePhysicalFile(backup);
+      }
+      throw error;
     }
-
-    const medicalRecord = await this.medicalRecordRepo.findOne({
-      where: { petId: id },
-      select: {
-        recordId: true,
-      },
-    });
-
-    if (medicalRecord) {
-      await this.medicalEntryRepo.softDelete({ recordId: medicalRecord.recordId });
-    }
-
-    await this.vaccinationRepo.softDelete({ petId: id });
-    await this.petImageRepo.delete({ petId: id });
-    await this.petRepo.softDelete(id);
 
     return {
       message: 'Pet archived successfully',
@@ -311,7 +417,7 @@ export class PetsService {
     return {
       imageId: image.imageId,
       fileId: image.fileId,
-      imageUrl: image.file.fileUrl,
+      imageUrl: this.uploadsService.getFileReference(image.file),
       uploadedAt: image.uploadedAt,
     };
   }

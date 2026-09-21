@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, NotFoundException} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Supplier, Supply } from "src/database/entities";
-import { Repository } from "typeorm";
+import { QueryFailedError, Repository } from "typeorm";
 import { InventoryQueryDto } from "../../../../../shared/dto/inventory-query.dto";
 import { SupplyStatusEnum } from "@shared/enums";
 import { CreateSupplierDto, UpdateSupplierDto } from "@shared/dto/supplier.dto";
@@ -61,7 +61,14 @@ export class SupplierService{
         }
       }
       const supplier = this.supplierRepo.create(createSupplierDto);
-      return await this.supplierRepo.save(supplier);
+      try {
+        return await this.supplierRepo.save(supplier);
+      } catch (error) {
+        if (error instanceof QueryFailedError && (error as any).code === '23505') {
+          throw new ConflictException('Supplier already exists');
+        }
+        throw error;
+      }
     }
 
     async updateSupplier(id: string, updateSupplierDto: UpdateSupplierDto)

@@ -26,7 +26,23 @@ export class InitSchema1785401056761 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "supplies" ADD "purchase_price" numeric(10,2) NOT NULL DEFAULT '0'`);
         await queryRunner.query(`ALTER TABLE "supplies" ADD "delivery_time_days" integer`);
         await queryRunner.query(`ALTER TABLE "supplies" ADD "minimum_order_quantity" integer NOT NULL DEFAULT '1'`);
-        await queryRunner.query(`ALTER TABLE "supplies" ADD "supplier_id" uuid NOT NULL`);
+        await queryRunner.query(`ALTER TABLE "supplies" ADD "supplier_id" uuid`);
+        await queryRunner.query(`
+            INSERT INTO "suppliers" ("supplier_id", "supplier_name", "is_active")
+            SELECT uuid_generate_v4(), 'Legacy Supplier', true
+            WHERE NOT EXISTS (
+                SELECT 1 FROM "suppliers" WHERE "supplier_name" = 'Legacy Supplier'
+            )
+        `);
+        await queryRunner.query(`
+            UPDATE "supplies"
+            SET "supplier_id" = (
+                SELECT "supplier_id" FROM "suppliers"
+                WHERE "supplier_name" = 'Legacy Supplier'
+            )
+            WHERE "supplier_id" IS NULL
+        `);
+        await queryRunner.query(`ALTER TABLE "supplies" ALTER COLUMN "supplier_id" SET NOT NULL`);
         await queryRunner.query(`CREATE TYPE "public"."supplies_status_enum" AS ENUM('AVAILABLE', 'EXPIRED', 'DAMAGED', 'DISCONTINUED', 'OUT_OF_STOCK')`);
         await queryRunner.query(`ALTER TABLE "supplies" ADD "status" "public"."supplies_status_enum" NOT NULL DEFAULT 'AVAILABLE'`);
         await queryRunner.query(`ALTER TABLE "suppliers" ADD CONSTRAINT "UQ_d14c0485eed1edb11c54f246e34" UNIQUE ("supplier_name")`);

@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { Supplier } from '../../entities/supplier.entity';
 import { Supply } from '../../entities/supply.entity';
+import { Product } from '../../entities/product.entity';
 import { SupplyStatusEnum } from '@shared/enums';
 
 export async function seedSupplies(
@@ -8,6 +9,7 @@ export async function seedSupplies(
 ): Promise<void> {
   const supplyRepo = dataSource.getRepository(Supply);
   const supplierRepo = dataSource.getRepository(Supplier);
+  const productRepo = dataSource.getRepository(Product);
 
   const suppliers = {
     royalCanin: await supplierRepo.findOneByOrFail({
@@ -203,6 +205,26 @@ export async function seedSupplies(
   ];
 
   for (const supply of supplies) {
+    let product = await productRepo.findOne({
+      where: {
+        productName: supply.supplyName,
+        unitPrice: supply.sellingPrice,
+        isActive:
+          supply.status === SupplyStatusEnum.AVAILABLE && supply.quantity > 0,
+      },
+    });
+
+    if (!product) {
+      product = await productRepo.save(
+        productRepo.create({
+          productName: supply.supplyName,
+          unitPrice: supply.sellingPrice,
+          isActive:
+            supply.status === SupplyStatusEnum.AVAILABLE && supply.quantity > 0,
+        }),
+      );
+    }
+
     const exists = await supplyRepo.findOneBy({
       supplyName: supply.supplyName,
       supplierId: supply.supplierId,
@@ -211,11 +233,13 @@ export async function seedSupplies(
 
     if (exists) {
       supplyRepo.merge(exists, supply);
+      exists.productId = product.productId;
       await supplyRepo.save(exists);
     } else {
       await supplyRepo.save(
         supplyRepo.create({
           ...supply,
+          productId: product.productId,
           isActive: true,
         }),
       );

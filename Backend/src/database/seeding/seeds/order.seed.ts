@@ -1,6 +1,5 @@
 import { DataSource } from 'typeorm';
 
-import { DeliveryStatusEnum } from '@shared/enums/delivery-status.enum';
 import { OrderStatusEnum } from '@shared/enums/order-status.enum';
 import { Order } from '../../entities/order.entity';
 import { User } from '../../entities/user.entity';
@@ -21,7 +20,6 @@ export async function seedOrders(
       city: 'Amman',
       postalCode: '11118',
       deliveryNotes: 'Leave at the front desk',
-      deliveryStatus: DeliveryStatusEnum.DELIVERED,
       orderStatus: OrderStatusEnum.COMPLETED,
       totalPrice: '32.00',
     },
@@ -34,8 +32,7 @@ export async function seedOrders(
       city: 'Zarqa',
       postalCode: null,
       deliveryNotes: null,
-      deliveryStatus: DeliveryStatusEnum.PENDING,
-      orderStatus: OrderStatusEnum.PENDING,
+      orderStatus: OrderStatusEnum.COMPLETED,
       totalPrice: '38.00',
     },
   ];
@@ -61,7 +58,6 @@ export async function seedOrders(
       city: order.city,
       postalCode: order.postalCode,
       deliveryNotes: order.deliveryNotes,
-      deliveryStatus: order.deliveryStatus,
       totalPrice: order.totalPrice,
       orderStatus: order.orderStatus,
     };

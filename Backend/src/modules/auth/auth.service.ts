@@ -10,11 +10,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { randomBytes, createHash } from 'crypto';
 import * as bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
+import { DataSource, QueryFailedError, Repository } from 'typeorm';
 
 import { ERROR_MESSAGES } from '@shared/constants/error-messages.constants';
 import { ChangePasswordDto } from '@shared/dto/change-password.dto';
@@ -24,6 +24,8 @@ import { LoginDto, RefreshTokenDto, SignupDto } from '@shared/dto/auth.dto';
 import { PasswordResetToken } from '../../database/entities/password-reset-token.entity';
 import { Role } from '../../database/entities/role.entity';
 import { User } from '../../database/entities/user.entity';
+import { Adopter } from '../../database/entities/adopter.entity';
+import { ActivityLog } from '../../database/entities/activity-log.entity';
 import { MailService } from '../mail/mail.service';
 
 type AuthTokenPayload = {
@@ -48,6 +50,12 @@ export class AuthService implements OnModuleInit {
 
     @InjectRepository(PasswordResetToken)
     private readonly passwordResetTokenRepo: Repository<PasswordResetToken>,
+
+    @InjectRepository(ActivityLog)
+    private readonly activityLogRepo: Repository<ActivityLog>,
+
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
 
     private readonly jwtService: JwtService,
 
@@ -84,23 +92,54 @@ export class AuthService implements OnModuleInit {
     });
 
     if (existing) {
+      if (existing.provider === 'GOOGLE') {
+        throw new ConflictException(
+          'An account with this email already exists. Please sign in with Google.',
+        );
+      }
+
       throw new ConflictException(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    const user = this.userRepo.create({
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-      email: dto.email,
-      password: hashedPassword,
-      phone: dto.phone,
-      role: this.adopterRole,
-      status: 'active',
-      provider: 'LOCAL',
-    });
+    try {
+      await this.dataSource.transaction(async (manager) => {
+        const createdUser = await manager.getRepository(User).save(
+          manager.getRepository(User).create({
+            firstName: dto.firstName,
+            lastName: dto.lastName,
+            email: dto.email,
+            password: hashedPassword,
+            phone: dto.phone,
+            role: this.adopterRole,
+            status: 'active',
+            provider: 'LOCAL',
+          }),
+        );
 
-    await this.userRepo.save(user);
+        await manager.getRepository(Adopter).save(
+          manager.getRepository(Adopter).create({
+            userId: createdUser.userId,
+            registrationDate: this.today(),
+          }),
+        );
+
+        await manager.getRepository(ActivityLog).save(
+          manager.getRepository(ActivityLog).create({
+            userId: createdUser.userId,
+            action: 'USER_CREATED',
+            entityType: 'USER',
+            entityId: createdUser.userId,
+          }),
+        );
+      });
+    } catch (error) {
+      if (error instanceof QueryFailedError && (error as any).code === '23505') {
+        throw new ConflictException(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
+      }
+      throw error;
+    }
 
     return { message: 'User created successfully' };
   }
@@ -112,6 +151,16 @@ export class AuthService implements OnModuleInit {
     });
 
     if (!user || !user.role || user.role.isActive === false) {
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+    }
+
+    if (user.provider === 'GOOGLE') {
+      throw new UnauthorizedException(
+        'An account with this email already exists. Please sign in with Google.',
+      );
+    }
+
+    if (!user.password) {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
@@ -130,6 +179,15 @@ export class AuthService implements OnModuleInit {
     }
 
     const tokens = this.issueTokens(user);
+
+    await this.activityLogRepo.save(
+      this.activityLogRepo.create({
+        userId: user.userId,
+        action: 'LOGIN',
+        entityType: 'USER',
+        entityId: user.userId,
+      }),
+    );
 
     return {
       ...tokens,
@@ -200,7 +258,11 @@ export class AuthService implements OnModuleInit {
       throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
     }
 
-    this.assertPasswordActionsAllowed(user.provider);
+    if (!user.password) {
+      throw new ForbiddenException(
+        'This account does not have a local password',
+      );
+    }
 
     if (dto.newPassword !== dto.confirmPassword) {
       throw new ConflictException('Passwords do not match');
@@ -234,6 +296,15 @@ export class AuthService implements OnModuleInit {
 
     await this.invalidateRefreshTokens(userId);
 
+    await this.activityLogRepo.save(
+      this.activityLogRepo.create({
+        userId,
+        action: 'LOGOUT',
+        entityType: 'USER',
+        entityId: userId,
+      }),
+    );
+
     return { message: 'Logged out successfully' };
   }
 
@@ -250,8 +321,8 @@ export class AuthService implements OnModuleInit {
       return genericResponse;
     }
 
-    //do not allow password actions for non-local providers — but don't reveal this
-    if (user.provider === 'GOOGLE') {
+    //do not issue reset tokens for accounts without a local password
+    if (!user.password) {
       return genericResponse;
     }
 
@@ -273,7 +344,7 @@ export class AuthService implements OnModuleInit {
     await this.passwordResetTokenRepo.save(tokenEntity);
 
     const frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5175';
+      this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5173';
     const resetLink = `${frontendUrl}/#/reset-password?token=${rawToken}`;
 
     await this.mailService.sendPasswordResetEmail(user.email, resetLink);
@@ -290,41 +361,66 @@ export class AuthService implements OnModuleInit {
 
     const tokenHash = this.hashResetToken(token);
 
-    const tokenRecord = await this.passwordResetTokenRepo.findOne({
-      where: { tokenHash },
-      relations: ['user'],
-    });
-
-    if (!tokenRecord) {
-      throw new BadRequestException('Invalid or expired token');
-    }
-
-    if (tokenRecord.usedAt) {
-      throw new BadRequestException('Token already used');
-    }
-
-    if (tokenRecord.expiresAt.getTime() < Date.now()) {
-      throw new BadRequestException('Token expired');
-    }
-
-    const user = tokenRecord.user;
-    if (!user) {
-      throw new BadRequestException('Invalid token');
-    }
-
-    //ensure provider allows password actions
-    this.assertPasswordActionsAllowed(user.provider);
-
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await this.userRepo.update(user.userId, { password: hashedPassword });
-    await this.invalidateRefreshTokens(user.userId);
+    await this.dataSource.transaction(async (manager) => {
+      const tokenRecord = await manager
+        .getRepository(PasswordResetToken)
+        .createQueryBuilder('token')
+        .innerJoinAndSelect('token.user', 'user')
+        .setLock('pessimistic_write')
+        .where('token.tokenHash = :tokenHash', { tokenHash })
+        .getOne();
 
-    await this.passwordResetTokenRepo.update(tokenRecord.tokenId, {
-      usedAt: new Date(),
+      if (!tokenRecord) throw new BadRequestException('Invalid or expired token');
+      if (tokenRecord.usedAt) throw new BadRequestException('Token already used');
+      if (tokenRecord.expiresAt.getTime() < Date.now()) throw new BadRequestException('Token expired');
+
+      const user = tokenRecord.user;
+      if (!user) throw new BadRequestException('Invalid token');
+      if (!user.password) {
+        throw new ForbiddenException('This account does not have a local password');
+      }
+
+      await manager.getRepository(User).update(user.userId, {
+        password: hashedPassword,
+      });
+      await manager
+        .getRepository(User)
+        .increment({ userId: user.userId }, 'refreshTokenVersion', 1);
+      await manager.getRepository(PasswordResetToken).update(tokenRecord.tokenId, {
+        usedAt: new Date(),
+      });
     });
 
     return { message: 'Password has been reset successfully' };
+  }
+
+  async createAuthTokens(userId: string) {
+    const user = await this.userRepo.findOne({
+      where: { userId },
+      relations: ['role'],
+    });
+
+    if (
+      !user ||
+      user.status !== 'active' ||
+      !user.role ||
+      user.role.isActive === false
+    ) {
+      throw new UnauthorizedException('Invalid user');
+    }
+
+    return {
+      ...this.issueTokens(user),
+      user: {
+        id: user.userId,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roleName: user.role.roleName,
+      },
+    };
   }
 
   private issueTokens(user: User) {
@@ -366,16 +462,12 @@ export class AuthService implements OnModuleInit {
     await this.userRepo.increment({ userId }, 'refreshTokenVersion', 1);
   }
 
-  private assertPasswordActionsAllowed(provider?: string | null) {
-    if (provider === 'GOOGLE') {
-      throw new ForbiddenException(
-        'Google accounts cannot use password-based actions',
-      );
-    }
-  }
-
   private hashResetToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  private today() {
+    return new Date().toISOString().slice(0, 10);
   }
 
 }

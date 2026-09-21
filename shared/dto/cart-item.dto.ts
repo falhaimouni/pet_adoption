@@ -7,6 +7,7 @@ export interface CartItemDto {
   quantity: number;
   unitPrice: string;
   subtotal: string;
+  imageUrl?: string | null;
 }
 
 export class AddCartItemDto {

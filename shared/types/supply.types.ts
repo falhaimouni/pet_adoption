@@ -10,5 +10,7 @@ export interface Supply {
   lastUpdated: Date;
   supplierId: string;
   isActive: boolean;
+  storeListed: boolean;
   status: SupplyStatusEnum;
+  imageUrl?: string | null;
 }

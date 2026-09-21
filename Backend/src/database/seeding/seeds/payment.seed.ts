@@ -16,9 +16,8 @@ export async function seedPayments(
       paymentId: '550e8400-e29b-41d4-a716-446655442200',
       orderId: '550e8400-e29b-41d4-a716-446655442100',
       amount: '32.00',
-      paymentMethod: PaymentMethodEnum.CARD,
+      paymentMethod: PaymentMethodEnum.CASH,
       paymentStatus: PaymentStatusEnum.PAID,
-      transactionId: 'txn_seed_0001',
       paidAt: new Date('2026-01-15T10:00:00.000Z'),
     },
     {
@@ -26,9 +25,8 @@ export async function seedPayments(
       orderId: '550e8400-e29b-41d4-a716-446655442101',
       amount: '38.00',
       paymentMethod: PaymentMethodEnum.CASH,
-      paymentStatus: PaymentStatusEnum.PENDING,
-      transactionId: null,
-      paidAt: null,
+      paymentStatus: PaymentStatusEnum.PAID,
+      paidAt: new Date('2026-01-16T10:00:00.000Z'),
     },
   ];
 
@@ -50,7 +48,6 @@ export async function seedPayments(
       amount: payment.amount,
       paymentMethod: payment.paymentMethod,
       paymentStatus: payment.paymentStatus,
-      transactionId: payment.transactionId,
       paidAt: payment.paidAt,
     };
 

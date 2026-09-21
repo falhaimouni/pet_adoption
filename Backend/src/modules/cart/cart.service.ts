@@ -10,6 +10,13 @@ import { AddCartItemDto } from './cart.dto';
 
 @Injectable()
 export class CartService {
+  private readonly cartRelations = [
+    'cartItems',
+    'cartItems.product',
+    'cartItems.product.supplies',
+    'cartItems.product.supplies.imageFile',
+  ];
+
   constructor(
     @InjectRepository(Cart)
     private readonly cartRepo: Repository<Cart>,
@@ -26,21 +33,24 @@ export class CartService {
   async getMyCart(userId: string) {
     const cart = await this.cartRepo.findOne({
       where: { userId },
-      relations: ['cartItems', 'cartItems.product'],
+      relations: this.cartRelations,
     });
 
     if (!cart) {
       return this.createEmptyCart(userId);
     }
 
-    return cart;
+    return this.withSupplyImages(cart);
   }
 
   async addItem(userId: string, dto: AddCartItemDto) {
     return this.dataSource.transaction(async (manager) => {
-      const user = await manager.getRepository(User).findOne({
-        where: { userId },
-      });
+      const user = await manager
+        .getRepository(User)
+        .createQueryBuilder('user')
+        .setLock('pessimistic_write')
+        .where('user.userId = :userId', { userId })
+        .getOne();
 
       if (!user) {
         throw new NotFoundException('User not found');
@@ -57,21 +67,25 @@ export class CartService {
       const cartRepo = manager.getRepository(Cart);
       const cartItemRepo = manager.getRepository(CartItem);
 
-      let cart = await cartRepo.findOne({
-        where: { userId },
-      });
+      let cart = await cartRepo
+        .createQueryBuilder('cart')
+        .setLock('pessimistic_write')
+        .where('cart.userId = :userId', { userId })
+        .getOne();
 
       if (!cart) {
         cart = cartRepo.create({ userId });
         cart = await cartRepo.save(cart);
       }
 
-      const existingItem = await cartItemRepo.findOne({
-        where: {
-          cartId: cart.cartId,
+      const existingItem = await cartItemRepo
+        .createQueryBuilder('cartItem')
+        .setLock('pessimistic_write')
+        .where('cartItem.cartId = :cartId', { cartId: cart.cartId })
+        .andWhere('cartItem.productId = :productId', {
           productId: product.productId,
-        },
-      });
+        })
+        .getOne();
 
       const unitPrice = Number(product.unitPrice);
       const quantityToAdd = dto.quantity;
@@ -94,59 +108,154 @@ export class CartService {
         await cartItemRepo.save(cartItem);
       }
 
-      return cartRepo.findOne({
+      const savedCart = await cartRepo.findOne({
         where: { cartId: cart.cartId },
-        relations: ['cartItems', 'cartItems.product'],
+        relations: this.cartRelations,
       });
+      return this.withSupplyImages(savedCart);
     });
   }
 
   private async createEmptyCart(userId: string) {
-    const user = await this.userRepo.findOne({ where: { userId } });
+    return this.dataSource.transaction(async (manager) => {
+      const user = await manager
+        .getRepository(User)
+        .createQueryBuilder('user')
+        .setLock('pessimistic_write')
+        .where('user.userId = :userId', { userId })
+        .getOne();
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
 
-    const cart = await this.cartRepo.save(this.cartRepo.create({ userId }));
+      const cartRepo = manager.getRepository(Cart);
+      let cart = await cartRepo.findOne({ where: { userId } });
+      if (!cart) {
+        cart = await cartRepo.save(cartRepo.create({ userId }));
+      }
 
-    return this.cartRepo.findOne({
-      where: { cartId: cart.cartId },
-      relations: ['cartItems', 'cartItems.product'],
+      const savedCart = await cartRepo.findOne({
+        where: { cartId: cart.cartId },
+        relations: this.cartRelations,
+      });
+      return this.withSupplyImages(savedCart);
     });
   }
 
   async removeItem(userId: string, productId: string) {
-    const cart = await this.cartRepo.findOne({ where: { userId } });
+    await this.dataSource.transaction(async (manager) => {
+      const user = await manager.getRepository(User)
+        .createQueryBuilder('user')
+        .setLock('pessimistic_write')
+        .where('user.userId = :userId', { userId })
+        .getOne();
+      if (!user) throw new NotFoundException('User not found');
 
-    if (!cart) {
-      throw new NotFoundException('Cart not found');
-    }
+      const cart = await manager.getRepository(Cart)
+        .createQueryBuilder('cart')
+        .setLock('pessimistic_write')
+        .where('cart.userId = :userId', { userId })
+        .getOne();
+      if (!cart) throw new NotFoundException('Cart not found');
 
-    const result = await this.cartItemRepo.delete({
-      cartId: cart.cartId,
-      productId,
+      const result = await manager.getRepository(CartItem).delete({
+        cartId: cart.cartId,
+        productId,
+      });
+      if (!result.affected) throw new NotFoundException('Cart item not found');
     });
-
-    if (!result.affected) {
-      throw new NotFoundException('Cart item not found');
-    }
 
     return this.getMyCart(userId);
   }
 
+  async updateItemQuantity(
+    userId: string,
+    productId: string,
+    quantity: number,
+  ) {
+    return this.dataSource.transaction(async (manager) => {
+      const user = await manager.getRepository(User)
+        .createQueryBuilder('user')
+        .setLock('pessimistic_write')
+        .where('user.userId = :userId', { userId })
+        .getOne();
+      if (!user) throw new NotFoundException('User not found');
+
+      const cart = await manager.getRepository(Cart)
+        .createQueryBuilder('cart')
+        .setLock('pessimistic_write')
+        .where('cart.userId = :userId', { userId })
+        .getOne();
+      if (!cart) throw new NotFoundException('Cart not found');
+
+      const cartItemRepo = manager.getRepository(CartItem);
+      const cartItem = await cartItemRepo
+        .createQueryBuilder('cartItem')
+        .setLock('pessimistic_write')
+        .innerJoinAndSelect('cartItem.product', 'product')
+        .where('cartItem.cartId = :cartId', { cartId: cart.cartId })
+        .andWhere('cartItem.productId = :productId', { productId })
+        .getOne();
+      if (!cartItem) throw new NotFoundException('Cart item not found');
+
+      const unitPrice = Number(cartItem.product?.unitPrice ?? cartItem.unitPrice);
+      cartItem.quantity = quantity;
+      cartItem.unitPrice = unitPrice.toFixed(2);
+      cartItem.subtotal = (unitPrice * quantity).toFixed(2);
+      await cartItemRepo.save(cartItem);
+
+      const savedCart = await manager.getRepository(Cart).findOne({
+        where: { cartId: cart.cartId },
+        relations: this.cartRelations,
+      });
+      return this.withSupplyImages(savedCart);
+    });
+  }
+
   async clearCart(userId: string) {
-    const cart = await this.cartRepo.findOne({ where: { userId } });
-
-    if (!cart) {
-      throw new NotFoundException('Cart not found');
-    }
-
     await this.dataSource.transaction(async (manager) => {
+      const user = await manager
+        .getRepository(User)
+        .createQueryBuilder('user')
+        .setLock('pessimistic_write')
+        .where('user.userId = :userId', { userId })
+        .getOne();
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const cart = await manager
+        .getRepository(Cart)
+        .createQueryBuilder('cart')
+        .setLock('pessimistic_write')
+        .where('cart.userId = :userId', { userId })
+        .getOne();
+
+      if (!cart) {
+        throw new NotFoundException('Cart not found');
+      }
+
       await manager.getRepository(CartItem).delete({ cartId: cart.cartId });
       await manager.getRepository(Cart).delete({ cartId: cart.cartId });
     });
 
     return { success: true, message: 'Cart deleted successfully' };
+  }
+
+  private withSupplyImages(cart: Cart | null): Cart | null {
+    if (!cart) return cart;
+
+    for (const item of cart.cartItems ?? []) {
+      const imageFile = item.product?.supplies?.[0]?.imageFile;
+      item.imageUrl = imageFile
+        ? /^https?:\/\//i.test(imageFile.fileUrl)
+          ? imageFile.fileUrl
+          : `/files/${imageFile.fileId}`
+        : null;
+    }
+
+    return cart;
   }
 }

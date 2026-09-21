@@ -2,16 +2,23 @@ import { Module } from "@nestjs/common"
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import {
+ Product,
  Supply,
+ Supplier,
+ ActivityLog,
 } from '../../database/entities';
 
 import {StoreService} from './store.service'
 import {StoreController} from './store.controller'
+import { SupplyService } from '../inventory/services/supply.service';
+import { SupplierService } from '../inventory/services/supplier.service';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { UploadsModule } from '../uploads/uploads.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Supply])],
+  imports: [TypeOrmModule.forFeature([Supply, Supplier, Product, ActivityLog]), NotificationsModule, UploadsModule],
   controllers: [StoreController],
-  providers: [StoreService]
+  providers: [StoreService, SupplyService, SupplierService]
 })
 
 export class StoreModule {}

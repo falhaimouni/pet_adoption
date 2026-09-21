@@ -41,6 +41,6 @@ export class InventoryQueryDto{
   sortBy?: string;
 
   @IsOptional()
-  @IsIn(['Asc', 'DESC'])
+  @IsIn(['ASC', 'DESC'])
   order?: 'ASC' | 'DESC';
 }

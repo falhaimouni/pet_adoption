@@ -16,6 +16,15 @@ export class CreateVaccinationDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(120)
+  batch?: string;
+
+  @IsOptional()
+  @IsEnum(VaccineStatusEnum)
+  status?: VaccineStatusEnum;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(5000)
   notes?: string;
 }
@@ -34,6 +43,11 @@ export class UpdateVaccinationDto {
   @IsOptional()
   @IsDateString()
   nextDueDate?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  batch?: string;
 
   @IsOptional()
   @IsEnum(VaccineStatusEnum)

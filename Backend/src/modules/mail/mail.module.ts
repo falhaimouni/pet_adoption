@@ -20,7 +20,7 @@ import { MailService } from './mail.service';
           },
         },
         defaults: {
-          from: `"Pet Adoption System" <${config.get<string>('MAIL_USER')}>`,
+          from: `"Petopia" <${config.get<string>('MAIL_USER')}>`,
         },
       }),
     }),
