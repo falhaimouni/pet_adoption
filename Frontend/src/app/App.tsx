@@ -24,6 +24,7 @@ import SettingsPage from "../pages/SettingsPage";
 import DashboardLayout from "../components/DashboardLayout";
 
 const MyRequestsPage = lazy(() => import("../pages/adopter/MyRequestsPage"));
+const OrdersPage = lazy(() => import("../pages/adopter/OrdersPage"));
 const MyAdoptionsPage = lazy(() => import("../pages/adopter/MyAdoptionsPage"));
 const ChatsListPage = lazy(() => import("../pages/adopter/ChatsListPage"));
 const ChatDetailPage = lazy(() => import("../pages/adopter/ChatDetailPage"));
@@ -277,7 +278,7 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "cart": return userRole === "adopter"
       ? <DashboardLayout role="adopter" activePage="shop" onNavigate={navigate}><CartPage onNavigate={navigate} embedded /></DashboardLayout>
       : <CartPage onNavigate={navigate} />;
-    case "orders": return <CartPage onNavigate={navigate} />;
+    case "orders": return <OrdersPage onNavigate={navigate} orderId={params.orderId as string | undefined} />;
     case "user-profile": return userRole === "adopter"
       ? <DashboardLayout role="adopter" activePage="user-profile" onNavigate={navigate}><UserProfilePage onNavigate={navigate} embedded /></DashboardLayout>
       : <UserProfilePage onNavigate={navigate} />;

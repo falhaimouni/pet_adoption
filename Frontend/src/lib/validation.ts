@@ -4,7 +4,7 @@ export const MAX_DOCUMENT_SIZE_BYTES = 10 * 1024 * 1024;
 export const ALLOWED_DOCUMENT_TYPES = ["application/pdf"];
 
 export function isEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  return value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 export function isStrongPassword(value: string) {

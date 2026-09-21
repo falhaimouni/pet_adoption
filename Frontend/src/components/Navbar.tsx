@@ -168,10 +168,10 @@ const LEGAL_LINKS = [
           <button
             onClick={() => setLang(nextLang[lang])}
             aria-label={t("common_toggle_language")}
-            className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-[10px] text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all font-['Poppins',sans-serif] text-[13px] font-medium"
+            className="flex w-9 h-9 sm:w-auto items-center justify-center gap-1.5 sm:px-2.5 rounded-[10px] text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all font-['Poppins',sans-serif] text-[13px] font-medium"
           >
             <Globe size={15} />
-            <span>{langLabel[lang]}</span>
+            <span className="hidden sm:inline">{langLabel[lang]}</span>
           </button>
 
           {/* Dark / Light toggle */}
@@ -187,7 +187,7 @@ const LEGAL_LINKS = [
             <button
               onClick={() => nav("cart")}
               aria-label={t("cart_title")}
-              className="relative hidden sm:flex w-9 h-9 rounded-[10px] items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
+              className="relative flex w-9 h-9 rounded-[10px] items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
             >
               <ShoppingCart size={17} />
               {count > 0 && <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-[#089D97] text-white text-[10px] font-bold flex items-center justify-center">{count}</span>}

@@ -132,6 +132,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateQuantity = useCallback(async (productId: string | number, qty: number) => {
     if (!canUseCart) return;
+    if (!Number.isSafeInteger(qty) || qty < 0) throw new Error("Quantity must be a non-negative whole number.");
     const normalizedProductId = String(productId);
     const existing = items.find((item) => String(item.product.id) === normalizedProductId);
     if (!existing) return;

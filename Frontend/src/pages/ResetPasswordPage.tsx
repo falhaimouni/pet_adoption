@@ -66,7 +66,7 @@ export default function ResetPasswordPage({ onNavigate, token }: ResetPasswordPa
             <InputField label={t("security_new_pw_ph")} placeholder={t("security_new_pw_ph")} type="password" icon={<Lock size={18} />} value={newPassword} onChange={setNewPassword} />
             <InputField label={t("signup_confirm_password")} placeholder={t("security_confirm_pw_ph")} type="password" icon={<Lock size={18} />} value={confirmPassword} onChange={setConfirmPassword} />
             {message && <p className="font-['Poppins',sans-serif] text-[13px] text-emerald-700 bg-emerald-50 rounded-[12px] px-4 py-3">{message}</p>}
-            {error && <p className="font-['Poppins',sans-serif] text-[13px] text-red-600 bg-red-50 rounded-[12px] px-4 py-3">{error}</p>}
+            {error && <p role="alert" className="whitespace-pre-line font-['Poppins',sans-serif] text-[13px] text-red-600 bg-red-50 rounded-[12px] px-4 py-3">{error}</p>}
             <button disabled={loading || Boolean(message)} className="w-full bg-[#089D97] text-white font-['Poppins',sans-serif] font-semibold text-[15px] py-3 rounded-[14px] hover:bg-[#047975] transition-colors disabled:opacity-60">
               {loading ? t("reset_loading") : t("reset_button")}
             </button>

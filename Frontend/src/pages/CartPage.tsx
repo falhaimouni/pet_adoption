@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { ArrowLeft, CheckCircle2, Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import type { OrderDto } from "@shared/dto/order.dto";
 import Navbar from "../components/Navbar";
 import EmptyState from "../components/EmptyState";
@@ -8,19 +8,11 @@ import { defaultSupplyImage } from "../data/products";
 import { useLanguage } from "../context/LanguageContext";
 import { apiFetch } from "../lib/api";
 import AuthenticatedImage from "../components/AuthenticatedImage";
+import { checkoutLimits, validateCheckout, type CheckoutForm, type CheckoutErrors } from "../lib/checkoutValidation";
 
 interface CartPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
   embedded?: boolean;
-}
-
-interface CheckoutForm {
-  recipientName: string;
-  phoneNumber: string;
-  addressLine: string;
-  city: string;
-  postalCode: string;
-  deliveryNotes: string;
 }
 
 const initialCheckoutForm: CheckoutForm = {
@@ -40,7 +32,8 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
   const [checkoutForm, setCheckoutForm] = useState<CheckoutForm>(initialCheckoutForm);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
-  const [completedOrderId, setCompletedOrderId] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<CheckoutErrors>({});
+  const checkoutInFlight = useRef(false);
   const shipping = 0;
   const grandTotal = total + shipping;
 
@@ -52,7 +45,6 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
     setSavingProductId(productId);
     setMutationError("");
     setCheckoutError("");
-    setCompletedOrderId("");
     try {
       await action();
     } catch (err) {
@@ -66,7 +58,6 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
     setSavingProductId("cart");
     setMutationError("");
     setCheckoutError("");
-    setCompletedOrderId("");
     try {
       await clearCart();
     } catch (err) {
@@ -77,7 +68,9 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
   }
 
   function updateCheckoutField(field: keyof CheckoutForm, value: string) {
-    setCheckoutForm((form) => ({ ...form, [field]: value }));
+    const next = { ...checkoutForm, [field]: value };
+    setCheckoutForm(next);
+    if (fieldErrors[field]) setFieldErrors((errors) => ({ ...errors, [field]: validateCheckout(next, t)[field] }));
     setCheckoutError("");
   }
 
@@ -93,29 +86,35 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
   }
 
   async function submitCheckout() {
-    const payload = buildCheckoutPayload();
-    if (!payload.recipientName || !payload.phoneNumber || !payload.addressLine || !payload.city) {
-      setCheckoutError(t("cart_checkout_required"));
+    if (checkoutInFlight.current || loading || savingProductId || !items.length) return;
+    const errors = validateCheckout(checkoutForm, t);
+    setFieldErrors(errors);
+    const firstInvalid = Object.keys(errors)[0];
+    if (firstInvalid) {
+      document.getElementById(`checkout-${firstInvalid}`)?.focus();
       return;
     }
+    if (items.some(({ quantity, product }) => !Number.isSafeInteger(quantity) || quantity < 1 || !product.inStock)) {
+      setCheckoutError(t("checkout_cart_invalid"));
+      return;
+    }
+    const payload = buildCheckoutPayload();
+    checkoutInFlight.current = true;
 
     setCheckoutLoading(true);
     setCheckoutError("");
     setMutationError("");
-    setCompletedOrderId("");
 
     try {
       const order = await apiFetch<OrderDto>("/checkout", {
         method: "POST",
         body: JSON.stringify(payload),
       });
-      const paidOrder = await apiFetch<OrderDto>(`/checkout/${order.orderId}/pay`, { method: "POST" });
-      setCompletedOrderId(paidOrder.orderId);
-      setCheckoutForm(initialCheckoutForm);
-      await refreshCart();
+      onNavigate("orders", { orderId: order.orderId });
     } catch (err) {
       setCheckoutError(err instanceof Error ? err.message : t("cart_checkout_error"));
     } finally {
+      checkoutInFlight.current = false;
       setCheckoutLoading(false);
     }
   }
@@ -136,14 +135,6 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
           </div>
         ) : cartError && items.length === 0 ? (
           <EmptyState icon={<ShoppingCart size={36} />} title={t("cart_load_error")} description={cartError} actionLabel={t("common_try_again")} onAction={refreshCart} />
-        ) : completedOrderId ? (
-          <EmptyState
-            icon={<CheckCircle2 size={36} />}
-            title={t("cart_order_placed")}
-            description={`${t("cart_order_desc")} ${t("cart_order_reference")}: ${completedOrderId}`}
-            actionLabel={t("cart_browse_shop")}
-            onAction={() => onNavigate("shop")}
-          />
         ) : items.length === 0 ? (
           <EmptyState
             icon={<ShoppingCart size={36} />}
@@ -176,7 +167,7 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
                       <div className="flex items-center gap-2 mt-3">
                         <button
                           onClick={() => mutate(String(product.id), () => updateQuantity(product.id, quantity - 1))}
-                          disabled={checkoutLoading || savingProductId === String(product.id)}
+                          disabled={checkoutLoading || savingProductId !== ""}
                           className="w-8 h-8 rounded-[9px] bg-[#f0f8f7] text-[#047975] flex items-center justify-center hover:bg-[#e0f2f0] disabled:opacity-50"
                           aria-label={`Decrease ${product.name}`}
                         >
@@ -185,7 +176,7 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
                         <span className="w-8 text-center font-['Poppins',sans-serif] text-[13px] font-semibold">{quantity}</span>
                         <button
                           onClick={() => mutate(String(product.id), () => updateQuantity(product.id, quantity + 1))}
-                          disabled={checkoutLoading || savingProductId === String(product.id)}
+                          disabled={checkoutLoading || savingProductId !== ""}
                           className="w-8 h-8 rounded-[9px] bg-[#f0f8f7] text-[#047975] flex items-center justify-center hover:bg-[#e0f2f0] disabled:opacity-50"
                           aria-label={`Increase ${product.name}`}
                         >
@@ -195,7 +186,7 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
                     </div>
                     <button
                       onClick={() => mutate(String(product.id), () => removeFromCart(product.id))}
-                      disabled={checkoutLoading || savingProductId === String(product.id)}
+                      disabled={checkoutLoading || savingProductId !== ""}
                       aria-label={t("cart_remove_item")}
                       className="w-9 h-9 rounded-[10px] text-rose-500 hover:bg-rose-50 flex items-center justify-center shrink-0 disabled:opacity-50"
                     >
@@ -205,27 +196,46 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
                 ))}
               </div>
 
-              <div className="mt-6 border-t border-[#f0f8f7] pt-5">
+              <form id="checkout-delivery-form" noValidate onSubmit={(event) => { event.preventDefault(); void submitCheckout(); }} className="mt-6 border-t border-[#f0f8f7] pt-5">
                 <h2 className="font-['Poppins',sans-serif] font-semibold text-[18px] text-[#1a2e2d]">{t("cart_delivery_title")}</h2>
                 <p className="mt-1 font-['Poppins',sans-serif] text-[12px] text-[#5a8a87]">{t("cart_delivery_desc")}</p>
                 {checkoutError && <p className="mt-4 rounded-[10px] bg-red-50 border border-red-100 px-3 py-2 font-['Poppins',sans-serif] text-[12px] text-red-700">{checkoutError}</p>}
-                <div className="mt-4 grid sm:grid-cols-2 gap-4">
-                  <CheckoutField label={t("cart_recipient_name")} value={checkoutForm.recipientName} onChange={(value) => updateCheckoutField("recipientName", value)} required />
-                  <CheckoutField label={t("cart_phone_number")} value={checkoutForm.phoneNumber} onChange={(value) => updateCheckoutField("phoneNumber", value)} required />
-                  <CheckoutField label={t("cart_address_line")} value={checkoutForm.addressLine} onChange={(value) => updateCheckoutField("addressLine", value)} required className="sm:col-span-2" />
-                  <CheckoutField label={t("cart_city")} value={checkoutForm.city} onChange={(value) => updateCheckoutField("city", value)} required />
-                  <CheckoutField label={t("cart_postal_code")} value={checkoutForm.postalCode} onChange={(value) => updateCheckoutField("postalCode", value)} />
-                  <label className="sm:col-span-2">
+                <fieldset disabled={checkoutLoading} className="mt-4 grid sm:grid-cols-2 gap-4">
+                  {(["recipientName", "phoneNumber", "addressLine", "city", "postalCode"] as const).map((field) => (
+                    <CheckoutField
+                      key={field}
+                      id={`checkout-${field}`}
+                      label={t({ recipientName: "cart_recipient_name", phoneNumber: "cart_phone_number", addressLine: "cart_address_line", city: "cart_city", postalCode: "cart_postal_code" }[field])}
+                      value={checkoutForm[field]}
+                      onChange={(value) => updateCheckoutField(field, value)}
+                      onBlur={() => setFieldErrors((errors) => ({ ...errors, [field]: validateCheckout(checkoutForm, t)[field] }))}
+                      required={field !== "postalCode"}
+                      maxLength={checkoutLimits[field]}
+                      error={fieldErrors[field]}
+                      type={field === "phoneNumber" ? "tel" : "text"}
+                      autoComplete={{ recipientName: "name", phoneNumber: "tel", addressLine: "street-address", city: "address-level2", postalCode: "postal-code" }[field]}
+                      className={field === "addressLine" ? "sm:col-span-2" : ""}
+                    />
+                  ))}
+                  <label className="sm:col-span-2" htmlFor="checkout-deliveryNotes">
                     <span className="font-['Poppins',sans-serif] text-[12px] font-medium text-[#1a2e2d]">{t("cart_delivery_notes")}</span>
                     <textarea
+                      id="checkout-deliveryNotes"
+                      name="deliveryNotes"
                       value={checkoutForm.deliveryNotes}
                       onChange={(event) => updateCheckoutField("deliveryNotes", event.target.value)}
+                      onBlur={() => setFieldErrors((errors) => ({ ...errors, deliveryNotes: validateCheckout(checkoutForm, t).deliveryNotes }))}
+                      maxLength={checkoutLimits.deliveryNotes}
+                      aria-invalid={!!fieldErrors.deliveryNotes}
+                      aria-describedby={fieldErrors.deliveryNotes ? "checkout-deliveryNotes-error" : undefined}
                       rows={3}
                       className="mt-1 w-full resize-none rounded-[10px] border border-[#d8e9e7] px-3 py-2 font-['Poppins',sans-serif] text-[13px] text-[#1a2e2d] outline-none transition-colors focus:border-[#089D97]"
                     />
+                    <span className="text-xs text-[#5a8a87]">{checkoutForm.deliveryNotes.length}/{checkoutLimits.deliveryNotes}</span>
+                    {fieldErrors.deliveryNotes && <p id="checkout-deliveryNotes-error" className="text-xs text-red-700" role="alert">{fieldErrors.deliveryNotes}</p>}
                   </label>
-                </div>
-              </div>
+                </fieldset>
+              </form>
             </section>
 
             <aside className="bg-white rounded-[18px] shadow-sm p-5 h-fit lg:sticky lg:top-24">
@@ -244,10 +254,10 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
                 <p className="mt-1 font-['Poppins',sans-serif] text-[11px] text-[#5a8a87]">{t("cart_cash_desc")}</p>
               </div>
 
-              <button onClick={submitCheckout} disabled={checkoutLoading || loading || savingProductId !== ""} className="mt-5 w-full py-3 rounded-[12px] bg-[#089D97] text-white font-['Poppins',sans-serif] font-semibold text-[14px] hover:bg-[#047975] transition-colors disabled:opacity-60">
-                {checkoutLoading ? t("cart_checkout_processing") : t("cart_place_cash_order")}
+              <button type="submit" form="checkout-delivery-form" disabled={checkoutLoading || loading || savingProductId !== ""} className="mt-5 w-full py-3 rounded-[12px] bg-[#089D97] text-white font-['Poppins',sans-serif] font-semibold text-[14px] hover:bg-[#047975] transition-colors disabled:opacity-60">
+                {checkoutLoading ? t("cart_checkout_processing") : t("order_review")}
               </button>
-              <button onClick={clear} disabled={checkoutLoading || savingProductId === "cart"} className="mt-3 w-full py-3 rounded-[12px] border border-[#089D97] text-[#089D97] font-['Poppins',sans-serif] font-semibold text-[14px] hover:bg-[#e0f2f0] transition-colors disabled:opacity-60">
+              <button onClick={clear} disabled={checkoutLoading || savingProductId !== ""} className="mt-3 w-full py-3 rounded-[12px] border border-[#089D97] text-[#089D97] font-['Poppins',sans-serif] font-semibold text-[14px] hover:bg-[#e0f2f0] transition-colors disabled:opacity-60">
                 {t("cart_clear")}
               </button>
             </aside>
@@ -258,17 +268,28 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
   );
 }
 
-function CheckoutField({ label, value, onChange, required = false, className = "" }: { label: string; value: string; onChange: (value: string) => void; required?: boolean; className?: string }) {
+function CheckoutField({ id, label, value, onChange, onBlur, required = false, className = "", maxLength, error, type, autoComplete }: {
+  id: string; label: string; value: string; onChange: (value: string) => void; onBlur: () => void;
+  required?: boolean; className?: string; maxLength: number; error?: string; type: string; autoComplete: string;
+}) {
   return (
-    <label className={className}>
-      <span className="font-['Poppins',sans-serif] text-[12px] font-medium text-[#1a2e2d]">
-        {label}{required ? " *" : ""}
-      </span>
+    <label className={className} htmlFor={id}>
+      <span className="font-['Poppins',sans-serif] text-[12px] font-medium text-[#1a2e2d]">{label}{required ? " *" : ""}</span>
       <input
+        id={id}
+        name={id.replace("checkout-", "")}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1 w-full rounded-[10px] border border-[#d8e9e7] px-3 py-2 font-['Poppins',sans-serif] text-[13px] text-[#1a2e2d] outline-none transition-colors focus:border-[#089D97]"
+        onBlur={onBlur}
+        required={required}
+        maxLength={maxLength}
+        type={type}
+        autoComplete={autoComplete}
+        aria-invalid={!!error}
+        aria-describedby={error ? `${id}-error` : undefined}
+        className={`mt-1 w-full rounded-[10px] border ${error ? "border-red-500" : "border-[#d8e9e7]"} px-3 py-2 font-['Poppins',sans-serif] text-[13px] text-[#1a2e2d] outline-none transition-colors focus:border-[#089D97]`}
       />
+      {error && <p id={`${id}-error`} role="alert" className="mt-1 text-xs text-red-700">{error}</p>}
     </label>
   );
 }

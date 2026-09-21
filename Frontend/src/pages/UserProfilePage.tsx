@@ -229,19 +229,19 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-white rounded-[20px] shadow-sm p-6">
             <h2 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-[#1a2e2d] mb-5">{t("profile_personal_info")}</h2>
-            {error && <p className="font-['Poppins',sans-serif] text-[13px] text-red-600 bg-red-50 rounded-[12px] px-4 py-3 mb-4">{error}</p>}
+            {error && <p role="alert" className="whitespace-pre-line font-['Poppins',sans-serif] text-[13px] text-red-600 bg-red-50 rounded-[12px] px-4 py-3 mb-4">{error}</p>}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label={t("adopter_first_name")} icon={User}>
-                {isEditing ? <input value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} className={fieldClass} /> : <p className={readClass}>{form.firstName || "—"}</p>}
+                {isEditing ? <input maxLength={80} value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} className={fieldClass} /> : <p className={readClass}>{form.firstName || "—"}</p>}
               </Field>
               <Field label={t("adopter_last_name")} icon={User}>
-                {isEditing ? <input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} className={fieldClass} /> : <p className={readClass}>{form.lastName || "—"}</p>}
+                {isEditing ? <input maxLength={80} value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} className={fieldClass} /> : <p className={readClass}>{form.lastName || "—"}</p>}
               </Field>
               <Field label={t("profile_email")} icon={Mail}>
                 <p className={`${readClass} text-black/60`}>{form.email || "—"}</p>
               </Field>
               <Field label={t("profile_phone")} icon={Phone}>
-                {isEditing ? <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={fieldClass} /> : <p className={readClass}>{form.phone || "—"}</p>}
+                {isEditing ? <input maxLength={30} type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={fieldClass} /> : <p className={readClass}>{form.phone || "—"}</p>}
               </Field>
               <Field label={t("profile_address")} icon={MapPin}>
                 {isEditing ? <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} rows={3} maxLength={1000} className={`${fieldClass} resize-none sm:col-span-2`} /> : <p className={readClass}>{form.address || "—"}</p>}

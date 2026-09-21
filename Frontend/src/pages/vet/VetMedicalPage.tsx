@@ -321,7 +321,7 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
 
       <Modal title={editTarget ? t("vet_edit_entry") : t("medical_add_entry")} open={addOpen} onClose={() => { setAddOpen(false); setEditTarget(null); }} onConfirm={saveEntry} confirmLabel={saving ? t("common_saving") : editTarget ? t("action_save_changes") : t("vet_add_entry")} size="md">
         <div className="space-y-4">
-          {formError && <p className="text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
+          {formError && <p role="alert" className="whitespace-pre-line text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_medical_date")}</label>
             <input type="date" value={form.medicalDate} disabled={!!editTarget} onChange={(e) => setForm((f) => ({ ...f, medicalDate: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors disabled:bg-gray-50 disabled:text-black/50" />
@@ -334,15 +334,15 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
           </div>
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_diagnosis")}</label>
-            <textarea value={form.diagnosis} onChange={(e) => setForm((f) => ({ ...f, diagnosis: e.target.value }))} rows={3} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />
+            <textarea maxLength={5000} value={form.diagnosis} onChange={(e) => setForm((f) => ({ ...f, diagnosis: e.target.value }))} rows={3} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />
           </div>
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_treatment")}</label>
-            <textarea value={form.treatment} onChange={(e) => setForm((f) => ({ ...f, treatment: e.target.value }))} rows={3} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />
+            <textarea maxLength={5000} value={form.treatment} onChange={(e) => setForm((f) => ({ ...f, treatment: e.target.value }))} rows={3} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />
           </div>
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_notes")}</label>
-            <textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} rows={3} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />
+            <textarea maxLength={5000} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} rows={3} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] resize-none transition-colors" />
           </div>
         </div>
       </Modal>

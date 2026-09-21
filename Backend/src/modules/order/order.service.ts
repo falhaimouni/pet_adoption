@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -10,6 +10,23 @@ export class OrderService {
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
   ) {}
+
+  async findMine(userId: string) {
+    return this.orderRepository.find({
+      where: { userId },
+      relations: ['orderItems', 'orderItems.product', 'payments'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findMyOrder(userId: string, orderId: string) {
+    const order = await this.orderRepository.findOne({
+      where: { userId, orderId },
+      relations: ['orderItems', 'orderItems.product', 'payments'],
+    });
+    if (!order) throw new NotFoundException('Order not found');
+    return order;
+  }
 
   //bring all orders with their associated user, order items, and payments
   async findAll() {

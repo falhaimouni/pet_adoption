@@ -1,3 +1,4 @@
+import { formSchemas, validateFields, validationMessage } from "../../lib/formValidation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Edit, Eye, ImagePlus, PawPrint, Plus, Search, Trash2 } from "lucide-react";
 import DashboardLayout, { Role } from "../../components/DashboardLayout";
@@ -22,7 +23,7 @@ interface StaffPetsPageProps {
   activePage?: string;
 }
 
-const blank = { name: "", species: PET_SPECIES_OPTIONS[0], breed: "", age: "", gender: "", color: "", weight: "", description: "", adoptionStatus: PET_STATUS_OPTIONS[0], healthStatus: "" };
+const blank: Record<"name" | "species" | "breed" | "age" | "gender" | "color" | "weight" | "description" | "adoptionStatus" | "healthStatus", string> = { name: "", species: PET_SPECIES_OPTIONS[0], breed: "", age: "", gender: "", color: "", weight: "", description: "", adoptionStatus: PET_STATUS_OPTIONS[0], healthStatus: "" };
 
 export default function StaffPetsPage({ onNavigate, role = "employee", activePage = "staff-pets" }: StaffPetsPageProps) {
   const { t } = useLanguage();
@@ -97,6 +98,9 @@ export default function StaffPetsPage({ onNavigate, role = "employee", activePag
   }
 
   async function savePet() {
+    const fieldErrors = validateFields(formSchemas.pet, form, t, { mockIds: true });
+    if (Object.keys(fieldErrors).length) { setError(validationMessage(fieldErrors, t)); return; }
+
     const body = dto();
     if (!body.name || body.name.length > 120) {
       setError(t("pet_name_required"));
@@ -227,7 +231,7 @@ export default function StaffPetsPage({ onNavigate, role = "employee", activePag
 
       <Modal title={editing ? t("pet_edit") : t("pet_add_new")} open={addOpen} onClose={closeForm} onConfirm={savePet} confirmLabel={saving ? t("common_saving") : t("pet_save")} size="md">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {error && <p className="sm:col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{error}</p>}
+          {error && <p role="alert" className="whitespace-pre-line sm:col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{error}</p>}
           {[
             [t("pet_field_name"), "name"], [t("pet_field_age"), "age"], [t("pet_field_weight"), "weight"],
           ].map(([label, field]) => <Field key={field} label={label} value={form[field as keyof typeof form]} onChange={(value) => setForm((p) => ({ ...p, [field]: value }))} type={field === "age" || field === "weight" ? "number" : "text"} />)}
@@ -272,7 +276,7 @@ function Field({ label, value, onChange, type = "text" }: { label: string; value
   return (
     <div>
       <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{label}</label>
-      <input type={type} min={type === "number" ? 0 : undefined} value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97]" />
+      <input aria-label={label} maxLength={120} step={type === "number" ? "any" : undefined} type={type} min={type === "number" ? 0 : undefined} value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97]" />
     </div>
   );
 }
@@ -281,7 +285,7 @@ function SelectField({ label, value, options, placeholder, onChange, translateOp
   return (
     <div>
       <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{label}</label>
-      <select value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97]">
+      <select aria-label={label} value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97]">
         {options.map((option) => <option key={option || "blank"} value={option}>{option ? translateOption?.(option) ?? option : placeholder}</option>)}
       </select>
     </div>
@@ -292,7 +296,7 @@ function DatalistField({ id, label, value, options, onChange }: { id: string; la
   return (
     <div>
       <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{label}</label>
-      <input list={id} value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97]" />
+      <input aria-label={label} maxLength={id === "pet-colors" ? 80 : 120} list={id} value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97]" />
       <datalist id={id}>
         {options.map((option) => <option key={option} value={option} />)}
       </datalist>

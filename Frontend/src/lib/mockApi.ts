@@ -689,26 +689,38 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
   }
 
   if (url.pathname === "/orders" && method === "GET") return withDelay(mockOrders as T);
+  if (url.pathname === "/orders/me" && method === "GET") return withDelay(mockOrders.filter(order => order.userId === currentProfile.userId) as T);
+  const ownOrderMatch = url.pathname.match(/^\/orders\/me\/([^/]+)$/);
+  if (ownOrderMatch && method === "GET") {
+    const order = mockOrders.find(order => order.orderId === ownOrderMatch[1] && order.userId === currentProfile.userId);
+    if (!order) throw new Error("Order not found");
+    return withDelay(order as T);
+  }
 
   if (url.pathname === "/checkout" && method === "POST") {
     if (mockCartItems.length === 0) throw new Error("Cannot checkout with an empty cart");
-    const orderId = `mock-order-${Date.now()}`;
-    const order = mockOrderFromBody(orderId, body);
+    const order = mockOrderFromBody(crypto.randomUUID(), body);
     mockOrders = [order, ...mockOrders];
     return withDelay(order as T);
   }
-  const checkoutPayMatch = url.pathname.match(/^\/checkout\/([^/]+)\/pay$/);
-  if (checkoutPayMatch && method === "POST") {
-    const existing = mockOrders.find((order) => order.orderId === checkoutPayMatch[1]);
-    const paidOrder = {
-      ...(existing ?? mockOrderFromBody(checkoutPayMatch[1], {})),
-      orderStatus: "COMPLETED",
-      payments: mockOrderFromBody(checkoutPayMatch[1], existing ?? {}, "COMPLETED").payments,
+  const checkoutActionMatch = url.pathname.match(/^\/checkout\/([^/]+)\/(pay|cancel)$/);
+  if (checkoutActionMatch && method === "POST") {
+    const existing = mockOrders.find(order => order.orderId === checkoutActionMatch[1] && order.userId === currentProfile.userId);
+    if (!existing) throw new Error("Order not found");
+    if (existing.orderStatus !== "PENDING") throw new Error("Only pending orders can be paid or canceled");
+    const paid = checkoutActionMatch[2] === "pay";
+    const updated = {
+      ...existing,
+      orderStatus: paid ? "COMPLETED" : "CANCELED",
+      payments: paid ? [{
+        paymentId: crypto.randomUUID(), orderId: existing.orderId, amount: existing.totalPrice,
+        paymentMethod: "CASH", paymentStatus: "PAID", paidAt: now(), createdAt: now(), updatedAt: now(),
+      }] : existing.payments,
       updatedAt: now(),
     };
-    mockOrders = mockOrders.map((order) => order.orderId === checkoutPayMatch[1] ? paidOrder : order);
-    mockCartItems = [];
-    return withDelay(paidOrder as T);
+    mockOrders = mockOrders.map(order => order.orderId === existing.orderId ? updated : order);
+    if (paid) mockCartItems = [];
+    return withDelay(updated as T);
   }
   if (url.pathname === "/inventory/suppliers" && method === "POST") {
     const next = { ...body, supplierId: `mock-supplier-${Date.now()}`, isActive: true, supplies: [] };
