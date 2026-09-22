@@ -71,7 +71,7 @@ import { MetricsModule } from './monitoring/metrics.module';
     OrderModule,
     DepartmentsModule,
     MetricsModule,
-    ChatModule
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

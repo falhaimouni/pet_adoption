@@ -36,6 +36,7 @@ const StaffRequestsPage = lazy(() => import("../pages/staff/StaffRequestsPage"))
 const StaffAdoptionsPage = lazy(() => import("../pages/staff/StaffAdoptionsPage"));
 const StaffChatsListPage = lazy(() => import("../pages/staff/StaffChatsListPage"));
 const StaffChatDetailPage = lazy(() => import("../pages/staff/StaffChatDetailPage"));
+const FriendsPage = lazy(() => import("../pages/FriendsPage"));
 
 const VetDashboardPage = lazy(() => import("../pages/vet/VetDashboardPage"));
 const VetPetsPage = lazy(() => import("../pages/vet/VetPetsPage"));
@@ -103,12 +104,14 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   "staff-inventory": ["employee"],
   "staff-suppliers": ["employee"],
   "staff-reports": ["employee"],
+  "staff-friends": ["employee"],
   "vet-dashboard": ["vet"],
   "vet-pets": ["vet"],
   "vet-medical": ["vet"],
   "vet-vaccinations": ["vet"],
   "vet-reports": ["vet"],
   "vet-profile": ["vet"],
+  "vet-friends": ["vet"],
   "manager-dashboard": ["manager"],
   "manager-pets": ["manager"],
   "manager-requests": ["manager"],
@@ -121,6 +124,7 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   "manager-inventory": ["manager"],
   "manager-suppliers": ["manager"],
   "manager-reports": ["manager"],
+  "manager-friends": ["manager"],
   "admin-dashboard": ["admin"],
   "admin-pets": ["admin"],
   "admin-requests": ["admin"],
@@ -137,6 +141,7 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   "admin-roles": ["admin"],
   "admin-files": ["admin"],
   "admin-activity": ["admin"],
+  "admin-friends": ["admin"],
 };
 
 function homePageForRole(role: UserRole): string {
@@ -307,6 +312,7 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "staff-inventory": return <AdminInventoryPage onNavigate={navigate} role="employee" activePage="staff-inventory" />;
     case "staff-suppliers": return <AdminSuppliersPage onNavigate={navigate} role="employee" activePage="staff-suppliers" />;
     case "staff-reports": return <AdminReportsPage onNavigate={navigate} role="employee" activePage="staff-reports" />;
+    case "staff-friends": return <FriendsPage onNavigate={navigate} role="employee" activePage="staff-friends" />;
 
     // Vet
     case "vet-dashboard": return <VetDashboardPage onNavigate={navigate} />;
@@ -315,6 +321,7 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "vet-vaccinations": return <VetVaccinationsPage onNavigate={navigate} params={{ petId: params.petId as string | undefined }} />;
     case "vet-reports": return <AdminReportsPage onNavigate={navigate} role="vet" activePage="vet-reports" />;
     case "vet-profile": return <VetProfilePage onNavigate={navigate} />;
+    case "vet-friends": return <FriendsPage onNavigate={navigate} role="vet" activePage="vet-friends" />;
 
     // Manager
     case "manager-dashboard": return <ManagerDashboardPage onNavigate={navigate} />;
@@ -329,6 +336,7 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "manager-inventory": return <ManagerInventoryPage onNavigate={navigate} />;
     case "manager-suppliers": return <AdminSuppliersPage onNavigate={navigate} role="manager" activePage="manager-suppliers" />;
     case "manager-reports": return <AdminReportsPage onNavigate={navigate} role="manager" activePage="manager-reports" />;
+    case "manager-friends": return <FriendsPage onNavigate={navigate} role="manager" activePage="manager-friends" />;
 
     // Admin
     case "admin-dashboard": return <AdminDashboardPage onNavigate={navigate} />;
@@ -347,6 +355,7 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "admin-roles": return <AdminRolesPage onNavigate={navigate} />;
     case "admin-files": return <AdminFilesPage onNavigate={navigate} />;
     case "admin-activity": return <ActivityLogPage onNavigate={navigate} />;
+    case "admin-friends": return <FriendsPage onNavigate={navigate} role="admin" activePage="admin-friends" />;
 
     default: return <HomePage onNavigate={navigate} />;
   }

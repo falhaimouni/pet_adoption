@@ -1,3 +1,4 @@
+import { ChatPresenceService } from '../services/chat-presence.service';
 import {
         ConnectedSocket,
         MessageBody,
@@ -13,6 +14,9 @@ import { MessageService } from "../services/message.service";
 import { ConversationService } from "../services/conversation.service";
 import { SendMessageDto } from "@shared/dto/message.dto";
 import { WsJwtGuard } from "../guards/ws-jwt.guard";
+import { SOCKET_EVENTS } from '@shared/events';
+import { validateOrReject } from 'class-validator';
+import { Message } from '../../../database/entities';
 
 @WebSocketGateway({
         cors:{
@@ -30,7 +34,15 @@ export class ChatGateway
                 private readonly messageService: MessageService,
                 private readonly conversationService: ConversationService,
                 private readonly jwtService: JwtService,
+                private readonly presence: ChatPresenceService,
         ) {}
+
+        afterInit() {
+                this.presence.changes.on('change', (state) => {
+                        this.server.to(`conversation:${state.conversationId}`).emit('conversationOwnership', state);
+                        this.server.to('staff-inbox').emit('chatInboxChanged');
+                });
+        }
 
         async handleConnection(socket: Socket)
         {
@@ -47,6 +59,7 @@ export class ChatGateway
                                 email: payload.email,
                                 role: payload.role,
                         };
+                        if (['EMPLOYEE', 'ADMIN', 'MANAGER'].includes(payload.role)) await socket.join('staff-inbox');
                         console.log(
                                 `User ${socket.data.user.userId} connected`,
                         );
@@ -57,6 +70,7 @@ export class ChatGateway
 
         handleDisconnect(socket: Socket)
         {
+                this.presence.disconnect(socket.id);
                 console.log(
                         `User ${socket.data.user?.userId} disconnected`,
                 );
@@ -75,7 +89,13 @@ export class ChatGateway
                 return null;
         }
 
-        @SubscribeMessage('joinConversation')
+        broadcastMessage(conversationId: string, message: Message) {
+                this.server
+                        .to(`conversation:${conversationId}`)
+                        .emit(SOCKET_EVENTS.RECEIVE_MESSAGE, message);
+        }
+
+        @SubscribeMessage(SOCKET_EVENTS.JOIN_CONVERSATION)
         async handleJoinConversation(
                 @MessageBody() conversationId: string,
                 @ConnectedSocket() client: Socket
@@ -94,14 +114,16 @@ export class ChatGateway
                                 user.userId,
                                 user.role,
                         );
-                        client.join(`conversation:${conversationId}`);
+                        await client.join(`conversation:${conversationId}`);
+                        if (user.role === 'EMPLOYEE') this.presence.join(conversationId, user.userId, client.id);
+                        client.emit('conversationOwnership', { conversationId, assignedEmployeeId: this.presence.owner(conversationId) });
                         return {
                                 event: 'joinedConversation',
                                 conversationId,
                                 userId: user.userId,
                         };
                 } catch (error)
-                {    
+                {
                         return {
                                 event: 'joinedConversationError',
                                 message: error instanceof Error ? error.message : 'Unable to join conversation',
@@ -109,7 +131,7 @@ export class ChatGateway
                 }
         }
 
-        @SubscribeMessage('sendMessage')
+        @SubscribeMessage(SOCKET_EVENTS.SEND_MESSAGE)
         async handleSendMessage(
                 @MessageBody() data: { conversationId: string; dto: SendMessageDto },
                 @ConnectedSocket() client: Socket
@@ -121,13 +143,17 @@ export class ChatGateway
                 }
 
                 try{
+                        await validateOrReject(
+                                Object.assign(new SendMessageDto(), data?.dto),
+                                { whitelist: true, forbidNonWhitelisted: true },
+                        );
                         const message = await this.messageService.sendMessage(
                                 data.conversationId,
                                 user.userId,
                                 user.role,
                                 data.dto,
                         );
-                        this.server.to(`conversation:${data.conversationId}`).emit('newMessage', message);
+                        this.broadcastMessage(data.conversationId, message);
                         return{
                                 event: 'messageSent',
                                 message,
@@ -141,7 +167,7 @@ export class ChatGateway
                 }
         }
 
-        @SubscribeMessage('leaveConversation')
+        @SubscribeMessage(SOCKET_EVENTS.LEAVE_CONVERSATION)
         async handleLeaveConversation(
                 @MessageBody() conversationId: string,
                 @ConnectedSocket() client: Socket
@@ -154,14 +180,15 @@ export class ChatGateway
                                 message: 'Unauthorized',
                         };
                 }
-                client.leave(`conversation:${conversationId}`);
+                this.presence.leave(conversationId, user.userId, client.id);
+                await client.leave(`conversation:${conversationId}`);
                 return {
                         event: 'leftConversation',
                         conversationId,
                 };
         }
 
-        @SubscribeMessage('markMessagesAsRead')
+        @SubscribeMessage(SOCKET_EVENTS.MARK_MESSAGES_READ)
         async handleMarkMessageAsRead(
                 @MessageBody() conversationId: string,
                 @ConnectedSocket() client: Socket

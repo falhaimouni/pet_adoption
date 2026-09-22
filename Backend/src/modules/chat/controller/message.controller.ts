@@ -5,21 +5,32 @@ import { RequestWithUser } from '@shared/types/auth.types';
 import { JwtAuthGuard } from 'src/modules/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/modules/roles/roles.guard';
 import { Roles } from 'src/modules/roles/roles.decorator';
+import { ChatGateway } from '../gateway/chat.gateway';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('conversations')
 export class MessageController {
-  constructor(private readonly msgService: MessageService) {}
+  constructor(
+    private readonly msgService: MessageService,
+    private readonly chatGateway: ChatGateway,
+  ) {}
 
 
   @Post(':id/messages')
   @Roles('ADOPTER', 'EMPLOYEE')
-  sendMessage(
+  async sendMessage(
     @Param('id') conversationId: string,
     @Body() dto: SendMessageDto,
     @Req() req: RequestWithUser)
   {
-    return this.msgService.sendMessage(conversationId, req.user.userId, req.user.role, dto);
+    const message = await this.msgService.sendMessage(
+      conversationId,
+      req.user.userId,
+      req.user.role,
+      dto,
+    );
+    this.chatGateway.broadcastMessage(conversationId, message);
+    return message;
   }
 
   @Get(':id/messages')

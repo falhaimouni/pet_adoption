@@ -129,7 +129,7 @@ export class User {
 
   @OneToMany(() => FileUpload, (file) => file.uploadedByUser)
   uploadedFiles!: FileUpload[];
-  
+
   @OneToMany(() => Friendship, (friendship) => friendship.user1)
   friendshipsAsUser1!: Friendship[];
 

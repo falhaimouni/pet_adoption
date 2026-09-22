@@ -4,7 +4,7 @@ import { User } from './user.entity';
 import { MessageType } from '@shared/enums/message-type.enum';
 
 @Entity('messages')
-@Index(['conversationId', 'createdAt'])
+@Index('IDX_messages_conversation_created_at', ['conversationId', 'createdAt'])
 export class Message {
   @PrimaryGeneratedColumn('uuid', { name: 'message_id' })
   messageId!: string;

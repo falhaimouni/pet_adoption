@@ -94,6 +94,15 @@ export async function seedUsers(
     },
 
     {
+      firstName: 'Sara',
+      lastName: 'Support',
+      email: 'ssupport@test.com',
+      password: 'Ssupport@123',
+      role: employeeRole,
+      status: 'active',
+    },
+
+    {
       firstName: 'Roaa',
       lastName: 'Manager',
       email: 'manager@test.com',

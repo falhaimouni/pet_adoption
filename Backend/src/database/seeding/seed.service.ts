@@ -38,10 +38,8 @@ export class SeedService {
     //users system
     await seedUsers(this.dataSource);
     await seedEmployees(this.dataSource);
-    await seedFriendships(this.dataSource);
     await seedAdopters(this.dataSource);
-
-
+    await seedFriendships(this.dataSource);
     //pets system
     await seedPets(this.dataSource);
     await seedPetImages(this.dataSource);

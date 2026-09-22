@@ -1,8 +1,13 @@
 export const CHAT_ALLOWED_ROLES = [
+  "ADOPTER",
   "ADMIN",
   "MANAGER",
   "EMPLOYEE",
-  "VET",
+] as const;
+
+export const CHAT_SENDER_ROLES = [
+  "ADOPTER",
+  "EMPLOYEE",
 ] as const;
 
 export const FRIEND_SYSTEM_ROLES = [

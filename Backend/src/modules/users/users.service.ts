@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource, EntityManager, QueryFailedError, Repository, In} from 'typeorm';
+import { DataSource, EntityManager, In, QueryFailedError, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 
@@ -85,7 +85,7 @@ export class UsersService {
 
     @InjectRepository(Friendship)
     private friendshipRepo: Repository<Friendship>,
-  
+
     private readonly uploadsService: UploadsService,
     private dataSource: DataSource,
     @InjectRepository(ActivityLog)
@@ -526,6 +526,8 @@ export class UsersService {
       }
     });
 
+    await this.syncStaffFriendshipsForUser(id);
+
     return {
       message: 'User deactivated successfully',
     };
@@ -560,7 +562,7 @@ export class UsersService {
       isSystemGenerated: friendship.isSystemGenerated,
       createdAt: friendship.createdAt,
       updatedAt: friendship.updatedAt,
-      friend: this.stripPassword(
+      friend: this.stripSensitiveFields(
         friendship.user1Id === currentUser.userId
           ? friendship.user2
           : friendship.user1,
@@ -612,7 +614,7 @@ export class UsersService {
 
     return candidates
       .filter((user) => !friendIds.has(user.userId))
-      .map((user) => this.stripPassword(user));
+      .map((user) => this.stripSensitiveFields(user));
   }
 
   async addFriend(
@@ -628,6 +630,10 @@ export class UsersService {
 
     if (currentUser.userId === friendUserId) {
       throw new BadRequestException('You cannot add yourself as a friend');
+    }
+
+    if (friendUser.status !== USER_STATUS.ACTIVE) {
+      throw new BadRequestException('You cannot add an inactive user');
     }
 
     if (
@@ -657,14 +663,22 @@ export class UsersService {
       friendUserId,
     );
 
-    const friendship = await this.friendshipRepo.save(
-      this.friendshipRepo.create({
-        user1Id: pair.user1Id,
-        user2Id: pair.user2Id,
-        createdByUserId: currentUser.userId,
-        isSystemGenerated: false,
-      }),
-    );
+    let friendship: Friendship;
+    try {
+      friendship = await this.friendshipRepo.save(
+        this.friendshipRepo.create({
+          user1Id: pair.user1Id,
+          user2Id: pair.user2Id,
+          createdByUserId: currentUser.userId,
+          isSystemGenerated: false,
+        }),
+      );
+    } catch (error) {
+      if (error instanceof QueryFailedError && (error as any).code === '23505') {
+        throw new ConflictException('Friendship already exists');
+      }
+      throw error;
+    }
 
     return {
       message: 'Friend added successfully',
@@ -774,7 +788,7 @@ export class UsersService {
       isSystemGenerated: friendship.isSystemGenerated,
       createdAt: friendship.createdAt,
       updatedAt: friendship.updatedAt,
-      friend: this.stripPassword(
+      friend: this.stripSensitiveFields(
         friendship.user1Id === currentUserId ? friendship.user2 : friendship.user1,
       ),
     };
@@ -792,7 +806,10 @@ export class UsersService {
 
     const roleName = this.toRoleName(user.role.roleName);
 
-    if (!this.isFriendSystemRole(roleName)) {
+    if (
+      !this.isFriendSystemRole(roleName) ||
+      user.status !== USER_STATUS.ACTIVE
+    ) {
       await this.friendshipRepo
         .createQueryBuilder()
         .delete()
@@ -802,11 +819,34 @@ export class UsersService {
       return;
     }
 
+    const validTargetRoles = this.getAutoFriendTargetRoles(roleName);
+    const existingSystemFriendships = await this.friendshipRepo.find({
+      where: [{ user1Id: userId }, { user2Id: userId }],
+      relations: ['user1', 'user1.role', 'user2', 'user2.role'],
+    });
+
+    const obsoleteIds = existingSystemFriendships
+      .filter((friendship) => {
+        if (!friendship.isSystemGenerated) return false;
+        const target = friendship.user1Id === userId
+          ? friendship.user2
+          : friendship.user1;
+        return (
+          target.status !== USER_STATUS.ACTIVE ||
+          !validTargetRoles.includes(target.role.roleName as never)
+        );
+      })
+      .map((friendship) => friendship.friendshipId);
+
+    if (obsoleteIds.length > 0) {
+      await this.friendshipRepo.delete(obsoleteIds);
+    }
+
     const targetUsers = await this.userRepo.find({
       where: {
         status: USER_STATUS.ACTIVE,
         role: {
-          roleName: In(this.getAutoFriendTargetRoles(roleName) as string[]),
+          roleName: In(validTargetRoles as string[]),
         },
       },
       relations: ['role'],
@@ -861,8 +901,8 @@ export class UsersService {
       : { user1Id: userId2, user2Id: userId1 };
   }
 
-  private stripPassword<T extends User>(user: T) {
-    const { password: _, ...rest } = user;
+  private stripSensitiveFields<T extends User>(user: T) {
+    const { password: _, refreshTokenVersion: __, ...rest } = user;
     return rest;
   }
 

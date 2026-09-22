@@ -1,4 +1,5 @@
-import {Controller, Get, Post, Body, Param, Patch, Delete, Query, Req, UseGuards} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Req, UseGuards } from '@nestjs/common';
+import { UpdateConversationDto } from '@shared/dto/conversation.dto';
 import { RequestWithUser } from '@shared/types/auth.types';
 import { JwtAuthGuard } from 'src/modules/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/modules/roles/roles.guard';
@@ -36,7 +37,7 @@ export class ConversationController {
   // {
   //   return this.convService.assignConversation(conversationId, req.user.userId);
   // }
-  
+
   @Get(':id')
   @Roles('ADOPTER', 'EMPLOYEE', 'ADMIN', 'MANAGER')
   async getConversation(
@@ -46,17 +47,22 @@ export class ConversationController {
     return this.convService.getConversation(conversationId, req.user.userId, req.user.role);
   }
 
-  // @Patch(':id/close')
-  // @Roles('EMPLOYEE', 'ADMIN', 'MANAGER')
-  // async closeConversation(
-  //   @Param('id') conversationId: string,
-  //   @Req() req: RequestWithUser)
-  // {
-  //   return this.convService.closeConversation(conversationId, req.user.userId);
-  // }
+  @Patch(':id')
+  @Roles('EMPLOYEE')
+  async updateConversation(
+    @Param('id') conversationId: string,
+    @Body() dto: UpdateConversationDto,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.convService.updateStatus(
+      conversationId,
+      req.user.userId,
+      dto.status,
+    );
+  }
 
   @Patch(':id/release')
-  @Roles('EMPLOYEE', 'ADMIN', 'MANAGER')
+  @Roles('EMPLOYEE')
   async releaseConversation(
     @Param('id') conversationId: string,
     @Req() req: RequestWithUser)

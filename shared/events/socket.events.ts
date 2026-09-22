@@ -1,6 +1,6 @@
 export const SOCKET_EVENTS = {
-  SEND_MESSAGE: "send_message",
-  RECEIVE_MESSAGE: "receive_message",
+  SEND_MESSAGE: "sendMessage",
+  RECEIVE_MESSAGE: "newMessage",
 
   NEW_NOTIFICATION: "new_notification",
 
@@ -8,7 +8,8 @@ export const SOCKET_EVENTS = {
 
   ADOPTION_UPDATED: "adoption_updated",
 
-  JOIN_CONVERSATION: "join_conversation",
+  JOIN_CONVERSATION: "joinConversation",
 
-  LEAVE_CONVERSATION: "leave_conversation",
+  LEAVE_CONVERSATION: "leaveConversation",
+  MARK_MESSAGES_READ: "markMessagesAsRead",
 };

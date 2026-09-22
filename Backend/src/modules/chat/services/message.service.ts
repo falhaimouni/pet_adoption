@@ -1,181 +1,162 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { InjectRepository, InjectDataSource} from "@nestjs/typeorm";
-import { Message } from "src/database/entities";
-import { Repository, DataSource} from "typeorm";
-import { Conversation } from "src/database/entities";
-import { ConversationStatusEnum } from "@shared/enums/conversation-status.enum";
-import { SendMessageDto } from "@shared/dto/message.dto";
+import { ChatPresenceService } from './chat-presence.service';
+import { NotificationsService } from '../../notifications/notifications.service';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import {
+  CHAT_ALLOWED_ROLES,
+  CHAT_SENDER_ROLES,
+} from '@shared/constants/chat.constants';
+import { SendMessageDto } from '@shared/dto/message.dto';
+import { MessageType } from '@shared/enums/message-type.enum';
+import { Conversation, Message, User } from '../../../database/entities';
+import { DataSource, Repository } from 'typeorm';
 
-const CHAT_ALLOWED_ROLES = ['ADOPTER', 'EMPLOYEE', 'ADMIN', 'MANAGER'] as const;
+type ChatRole = (typeof CHAT_ALLOWED_ROLES)[number];
 
 @Injectable()
 export class MessageService {
+  private readonly logger = new Logger(MessageService.name);
+
   constructor(
-        @InjectRepository(Message)
-        private readonly messageRepo: Repository<Message>,
+    @InjectRepository(Message)
+    private readonly messageRepo: Repository<Message>,
+    @InjectRepository(Conversation)
+    private readonly conversationRepo: Repository<Conversation>,
+    private readonly notifications: NotificationsService,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
+    private readonly presence: ChatPresenceService,
+  ) {}
 
-        @InjectRepository(Conversation)
-        private readonly conversationRepo: Repository<Conversation>,
+  async sendMessage(
+    conversationId: string,
+    userId: string,
+    role: string,
+    dto: SendMessageDto,
+  ): Promise<Message> {
+    const chatRole = this.ensureChatRole(role);
+    if (!(CHAT_SENDER_ROLES as readonly string[]).includes(chatRole)) {
+      throw new ForbiddenException('Your role has read-only chat access');
+    }
 
-        @InjectDataSource()
-        private readonly dataSource: DataSource,) {}
+    const persist = () => this.dataSource.transaction(async (manager) => {
+      const conversationRepo = manager.getRepository(Conversation);
+      const messageRepo = manager.getRepository(Message);
+      const conversation = await conversationRepo.findOne({
+        where: { conversationId },
+        relations: { adopter: true },
+      });
 
-        async sendMessage( conversationId: string, userId: string, role: string, dto: SendMessageDto): Promise<Message>
-        {
-                if (!CHAT_ALLOWED_ROLES.includes(role as (typeof CHAT_ALLOWED_ROLES)[number])) {
-                        throw new ForbiddenException('You do not have access to this conversation');
-                }
-
-                return this.dataSource.transaction(async (manager) => {
-                        const conversationRepo = manager.getRepository(Conversation);
-                        const messageRepo = manager.getRepository(Message);
-                        const conversation = await conversationRepo.findOne({
-                                where: {conversationId},
-                                relations: {
-                                        adopter: true,
-                                },
-                        });
-
-                        if (!conversation) {
-                                throw new NotFoundException('Conversation not found');
-                        }
-
-                        if (conversation.status === ConversationStatusEnum.CLOSED) {
-                                throw new ForbiddenException('Cannot send message to a closed conversation');
-                        }
-
-                        if (role === 'ADOPTER')
-                        {
-                                if (conversation.adopter.userId !== userId)
-                                {
-                                        throw new ForbiddenException('Cannot send message to a conversation you are not part of');
-                                }
-                        }
-
-                        if (role === 'EMPLOYEE')
-                        {
-                                if (conversation.assignedEmployeeId &&
-                                        conversation.assignedEmployeeId !== userId)
-                                {
-                                        throw new ForbiddenException('Cannot send message to a conversation you are not assigned to');
-                                }
-                                if (!conversation.assignedEmployeeId)
-                                {
-                                        const res = await manager
-                                        .createQueryBuilder()
-                                        .update(Conversation)
-                                        .set({assignedEmployeeId: userId, status: ConversationStatusEnum.ASSIGNED})
-                                        .where("conversation_id = :conversationId", { conversationId })
-                                        .andWhere("assigned_employee_id IS NULL")
-                                        .andWhere("status = :status", { status: ConversationStatusEnum.OPEN })
-                                        .execute();
-                                        //if someone else assigned the conversation before this employee, throw an error
-                                        if (res.affected === 0) {
-                                                throw new ForbiddenException('Cannot send message to a conversation you are not assigned to');
-                                        }
-                                }
-                                
-
-                                //old solution, but it has a race condition problem, so we use the query builder instead
-                                // conversation.assignedEmployeeId = userId;
-                                // conversation.status = ConversationStatusEnum.ASSIGNED;
-                                // await this.conversationRepo.save(conversation);
-                        }
-                        //create the msg
-                        const message = messageRepo.create({
-                                senderId: userId,
-                                conversationId: conversationId,
-                                messageText: dto.messageText,
-                                type: dto.type,
-                                // isRead: false,
-                        });
-                        
-                        return messageRepo.save(message);
-                });
+      if (!conversation) {
+        throw new NotFoundException('Conversation not found');
+      }
+      if (chatRole === 'ADOPTER') {
+        if (conversation.adopter.userId !== userId) {
+          throw new ForbiddenException(
+            'Cannot send message to a conversation you are not part of',
+          );
         }
+      }
 
-        async getMessages(conversationId: string, userId: string, role: string): Promise<Message[]>
-        {
-                const conversation = await this.conversationRepo.findOne({
-                        where: {conversationId},
-                        relations:
-                        {
-                                adopter: true,
-                        }
-                })
-                if (!conversation) {
-                        throw new NotFoundException('Conversation not found');
-                }
+      const message = messageRepo.create({
+        senderId: userId,
+        conversationId,
+        messageText:
+          dto.type === MessageType.TEXT ? dto.messageText : dto.caption ?? null,
+        fileUrl: dto.type === MessageType.TEXT ? null : dto.fileUrl,
+        type: dto.type,
+      });
+      const saved = await messageRepo.save(message);
+      await conversationRepo.update(conversationId, { updatedAt: saved.createdAt });
+      const sender = await manager.getRepository(User).findOne({ where: { userId }, select: { userId: true, firstName: true, lastName: true } });
+      if (sender) saved.sender = sender;
+      return saved;
+    });
+    const saved = chatRole === 'EMPLOYEE'
+      ? await this.presence.reply(conversationId, userId, persist)
+      : await persist();
+    try {
+      const conversation = await this.getAuthorizedConversation(conversationId, userId, chatRole);
+      await this.notifications.createChatMessage(userId, conversation.adopter.userId, chatRole === 'ADOPTER');
+    } catch (error) {
+      this.logger.error('Unable to deliver chat notification', error instanceof Error ? error.stack : undefined);
+    }
+    return saved;
+  }
 
-                if (role === 'ADOPTER')
-                {
-                        if (conversation.adopter.userId !== userId)
-                        {
-                                throw new ForbiddenException('Cannot view messages of a conversation you are not part of');
-                        }
-                }
+  async getMessages(
+    conversationId: string,
+    userId: string,
+    role: string,
+  ): Promise<Message[]> {
+    const chatRole = this.ensureChatRole(role);
+    await this.getAuthorizedConversation(conversationId, userId, chatRole);
 
-                if (!CHAT_ALLOWED_ROLES.includes(role as (typeof CHAT_ALLOWED_ROLES)[number])) {
-                        throw new ForbiddenException('Cannot view messages of a conversation you are not part of');
-                }
+    const messages = await this.messageRepo.find({
+      where: { conversationId },
+      relations: { sender: true },
+      order: { createdAt: 'ASC' },
+    });
+    return messages.map((message) => {
+      if (message.sender) this.removeSensitiveFields(message.sender);
+      return message;
+    });
+  }
 
-                // if (role === 'EMPLOYEE')//we dont need this anymore because now the system is a shared inbox
-                // {
-                //         if (conversation.assignedEmployeeId !== userId)
-                //         {
-                //                 throw new ForbiddenException('Cannot view messages of a conversation you are not assigned to');
-                //         }
-                // }
+  async markMessagesAsRead(
+    conversationId: string,
+    userId: string,
+    role: string,
+  ): Promise<void> {
+    const chatRole = this.ensureChatRole(role);
+    const conversation = await this.getAuthorizedConversation(conversationId, userId, chatRole);
 
-                return this.messageRepo.find({
-                        where: {conversationId},
-                        relations: {
-                                sender: true,
-                        },
-                        order: {
-                                createdAt: 'ASC',
-                        },
-                });
-        }
+    const update = this.messageRepo
+      .createQueryBuilder()
+      .update(Message)
+      .set({ isRead: true })
+      .where('conversation_id = :conversationId', { conversationId })
+      .andWhere('is_read = false');
 
-        async markMessagesAsRead(conversationId: string, userId: string, role: string): Promise<void>
-        {
-                const conversation = await this.conversationRepo.findOne({
-                        where: {conversationId},
-                        relations:
-                        {
-                                adopter: true,
-                        }
-                });
-                if (!conversation) {
-                        throw new NotFoundException('Conversation not found');
-                }
-                if (role === 'ADOPTER')
-                {
-                        if (conversation.adopter.userId !== userId)
-                        {
-                                throw new ForbiddenException('Cannot mark messages as read of a conversation you are not part of');
-                        }
-                        await this.messageRepo.createQueryBuilder()
-                                .update(Message)
-                                .set({isRead: true})
-                                .where("conversation_id = :conversationId", { conversationId })
-                                .andWhere("sender_id != :userId", { userId })
-                                .andWhere("is_read = false")
-                                .execute();
-                        return;
-                }
-                if (role === 'EMPLOYEE' || role === 'ADMIN' || role === 'MANAGER')
-                {
-                        await this.messageRepo.createQueryBuilder()
-                                .update(Message)
-                                .set({isRead: true})
-                                .where("conversation_id = :conversationId", { conversationId })
-                                .andWhere("is_read = false")
-                                .execute();
-                        return;
-                }
-                throw new ForbiddenException('Cannot mark messages as read of a conversation you are not part of');
-        }
+    if (chatRole === 'ADOPTER') {
+      update.andWhere('sender_id != :userId', { userId });
+    } else {
+      update.andWhere('sender_id = :adopterUserId', { adopterUserId: conversation.adopter.userId });
+    }
+    await update.execute();
+  }
 
+  private async getAuthorizedConversation(
+    conversationId: string,
+    userId: string,
+    role: ChatRole,
+  ): Promise<Conversation> {
+    const conversation = await this.conversationRepo.findOne({
+      where: { conversationId },
+      relations: { adopter: true },
+    });
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found');
+    }
+    if (role === 'ADOPTER' && conversation.adopter.userId !== userId) {
+      throw new ForbiddenException(
+        'Cannot access a conversation you are not part of',
+      );
+    }
+    return conversation;
+  }
+
+  private ensureChatRole(role: string): ChatRole {
+    if (!(CHAT_ALLOWED_ROLES as readonly string[]).includes(role)) {
+      throw new ForbiddenException(
+        'You do not have access to this conversation',
+      );
+    }
+    return role as ChatRole;
+  }
+
+  private removeSensitiveFields(user: User): void {
+    delete (user as Partial<User>).password;
+    delete (user as Partial<User>).refreshTokenVersion;
+  }
 }

@@ -1,5 +1,6 @@
 import {
   Column,
+  Check,
   CreateDateColumn,
   Entity,
   JoinColumn,
@@ -12,6 +13,8 @@ import { User } from './user.entity';
 
 @Entity('friendships')
 @Unique('UQ_friendships_user_pair', ['user1Id', 'user2Id'])
+@Check('CHK_friendships_distinct_users', 'user1_id <> user2_id')
+@Check('CHK_friendships_canonical_pair', 'user1_id::text < user2_id::text')
 export class Friendship {
   @PrimaryGeneratedColumn('uuid', { name: 'friendship_id' })
   friendshipId!: string;

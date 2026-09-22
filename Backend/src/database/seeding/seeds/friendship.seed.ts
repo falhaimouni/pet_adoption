@@ -15,8 +15,12 @@ export async function seedFriendships(dataSource: DataSource) {
     relations: ['role'],
   });
 
-  const staffUsers = users.filter((user) =>
-    FRIEND_SYSTEM_ROLES.includes(user.role.roleName as (typeof FRIEND_SYSTEM_ROLES)[number]),
+  const staffUsers = users.filter(
+    (user) =>
+      user.status === 'active' &&
+      FRIEND_SYSTEM_ROLES.includes(
+        user.role.roleName as (typeof FRIEND_SYSTEM_ROLES)[number],
+      ),
   );
 
   const processedPairs = new Set<string>();
@@ -69,6 +73,20 @@ export async function seedFriendships(dataSource: DataSource) {
         }),
       );
     }
+  }
+
+  const systemFriendships = await friendshipRepo.find({
+    where: { isSystemGenerated: true },
+  });
+  const obsoleteIds = systemFriendships
+    .filter((friendship) => {
+      const pair = normalizePair(friendship.user1Id, friendship.user2Id);
+      return !processedPairs.has(`${pair.user1Id}:${pair.user2Id}`);
+    })
+    .map((friendship) => friendship.friendshipId);
+
+  if (obsoleteIds.length > 0) {
+    await friendshipRepo.delete(obsoleteIds);
   }
 
   console.log('Friendships seeded');
