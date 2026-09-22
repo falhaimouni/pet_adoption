@@ -23,6 +23,8 @@ services:
     build:
       context: .
       dockerfile: Backend/Dockerfile
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
     env_file:
       - ${ENV_FILE:-.env.development}
     environment:

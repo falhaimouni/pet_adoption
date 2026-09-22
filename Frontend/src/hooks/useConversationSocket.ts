@@ -81,6 +81,7 @@ export function useConversationSocket(
       socket.off("joinedConversation", handleJoinedConversation);
       socket.off("joinedConversationError", handleJoinError);
       socket.off(SOCKET_EVENTS.RECEIVE_MESSAGE, onMessage);
+      if (onOwnership) socket.off("conversationOwnership", onOwnership);
       socket.disconnect();
     };
   }, [conversationId, onMessage, onOwnership]);
