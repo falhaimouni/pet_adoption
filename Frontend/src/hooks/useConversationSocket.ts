@@ -21,6 +21,7 @@ function socketServerUrl() {
 export function useConversationSocket(
   conversationId: string | undefined,
   onMessage: (message: RealtimeMessage) => void,
+  onOwnership?: (state: { conversationId: string; assignedEmployeeId: string | null }) => void,
 ) {
   const [status, setStatus] = useState<RealtimeStatus>(
     MOCK_API_ENABLED ? "disabled" : "connecting",
@@ -60,6 +61,7 @@ export function useConversationSocket(
       setStatus("disconnected");
     }
 
+    if (onOwnership) socket.on("conversationOwnership", onOwnership);
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("connect_error", handleDisconnect);
@@ -79,9 +81,10 @@ export function useConversationSocket(
       socket.off("joinedConversation", handleJoinedConversation);
       socket.off("joinedConversationError", handleJoinError);
       socket.off(SOCKET_EVENTS.RECEIVE_MESSAGE, onMessage);
+      if (onOwnership) socket.off("conversationOwnership", onOwnership);
       socket.disconnect();
     };
-  }, [conversationId, onMessage]);
+  }, [conversationId, onMessage, onOwnership]);
 
   return status;
 }

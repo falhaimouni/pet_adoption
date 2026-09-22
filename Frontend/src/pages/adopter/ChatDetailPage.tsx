@@ -70,7 +70,7 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
   }, [conversation?.messages.length]);
 
   async function send() {
-    if (!conversationId || !input.trim() || input.length > 5000) return;
+    if (sending || !conversationId || !input.trim() || input.length > 5000) return;
     setSending(true);
     setError("");
     try {
@@ -87,7 +87,7 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
     }
   }
 
-  const closed = conversation?.status === "CLOSED";
+
 
   return (
     <DashboardLayout role="adopter" activePage="chats" onNavigate={onNavigate}>
@@ -98,7 +98,7 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
           </button>
           <MessageCircle size={20} className="text-[#089D97]" />
           <div className="min-w-0 flex-1">
-            <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black">{t("chat_conversation")}</p>
+            <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black">{t("chats_support")}</p>
             {realtimeStatus !== "disabled" && (
               <p className={`flex items-center gap-1.5 font-['Poppins',sans-serif] text-[10px] ${realtimeStatus === "connected" ? "text-emerald-600" : "text-black/45"}`}>
                 <span className={`h-1.5 w-1.5 rounded-full ${realtimeStatus === "connected" ? "bg-emerald-500" : "bg-black/30"}`} />
@@ -137,11 +137,10 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && send()}
                   maxLength={5000}
-                  disabled={closed}
-                  placeholder={closed ? t("chat_closed") : t("chat_type_message")}
+                  placeholder={t("chat_type_message")}
                   className="flex-1 bg-[rgba(8,157,151,0.06)] rounded-[20px] px-4 py-2.5 font-['Poppins',sans-serif] text-[13px] outline-none focus:ring-1 focus:ring-[#089D97] transition-all disabled:opacity-60"
                 />
-                <button onClick={send} disabled={sending || closed || !input.trim()} className="w-[38px] h-[38px] bg-[#089D97] disabled:opacity-40 rounded-full flex items-center justify-center text-white hover:bg-[#047975] transition-colors shrink-0" aria-label={t("chat_send_message")}>
+                <button onClick={send} disabled={sending || !input.trim()} className="w-[38px] h-[38px] bg-[#089D97] disabled:opacity-40 rounded-full flex items-center justify-center text-white hover:bg-[#047975] transition-colors shrink-0" aria-label={t("chat_send_message")}>
                   <Send size={16} />
                 </button>
               </div>

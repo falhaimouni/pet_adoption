@@ -18,13 +18,6 @@ interface ChatsListPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
 }
 
-function participantName(conversation: Conversation) {
-  const employee = conversation.assignedEmployee;
-  return employee
-    ? `${employee.firstName} ${employee.lastName}`.trim()
-    : "Petopia Support";
-}
-
 export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
   const { t } = useLanguage();
   const [search, setSearch] = useState("");
@@ -36,14 +29,20 @@ export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
   useEffect(() => {
     setLoading(true);
     setError("");
-    apiFetch<Conversation[]>("/conversations/my")
-      .then(setItems)
-      .catch((err) => setError(err instanceof Error ? err.message : t("chats_unavailable")))
-      .finally(() => setLoading(false));
+    let active = true;
+    const refresh = () => apiFetch<Conversation[]>("/conversations/my")
+      .then(data => { if (active) { setItems(data); setError(""); } })
+      .catch(err => { if (active) setError(err instanceof Error ? err.message : t("chat_load_error")); })
+      .finally(() => { if (active) setLoading(false); });
+    void refresh();
+    const timer = window.setInterval(refresh, 5000);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("petopia:notifications-changed", refresh);
+    return () => { active = false; window.clearInterval(timer); window.removeEventListener("focus", refresh); window.removeEventListener("petopia:notifications-changed", refresh); };
   }, []);
 
   const filtered = items.filter((c) =>
-    participantName(c).toLowerCase().includes(search.toLowerCase()) ||
+    t("chats_support").toLowerCase().includes(search.toLowerCase()) ||
     (c.lastMessage?.messageText ?? "").toLowerCase().includes(search.toLowerCase())
   );
 
@@ -96,10 +95,11 @@ export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-['Poppins',sans-serif] text-[14px] font-semibold text-black truncate">{participantName(conversation) === "Petopia Support" ? t("chats_support") : participantName(conversation)}</p>
+                    <p className="font-['Poppins',sans-serif] text-[14px] font-semibold text-black truncate">{t("chats_support")}</p>
                     <span className="font-['Poppins',sans-serif] text-[11px] text-black/40 shrink-0">{new Date(conversation.updatedAt).toLocaleDateString()}</span>
                   </div>
-                  <p className="font-['Poppins',sans-serif] text-[12px] text-black/50 truncate">{translateChatMessage(conversation.lastMessage?.messageText ?? undefined, t)}</p>
+                  {(conversation.unreadCount ?? 0) > 0 && <p className="text-[12px] font-bold text-[#089D97]">{t("chat_new_message")}</p>}
+                  <p className={`text-[12px] truncate ${(conversation.unreadCount ?? 0) > 0 ? "font-bold text-black" : "text-black/50"}`}>{conversation.lastMessage ? translateChatMessage(conversation.lastMessage.messageText ?? undefined, t) : t("chats_no_messages_yet")}</p>
                 </div>
                 {(conversation.unreadCount ?? 0) > 0 && <span className="shrink-0 min-w-5 h-5 px-1 bg-[#089D97] text-white text-[10px] font-bold rounded-full flex items-center justify-center">{conversation.unreadCount}</span>}
               </button>
@@ -112,7 +112,7 @@ export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
 }
 
 function translateChatMessage(value: string | undefined, t: (key: string) => string) {
-  if (!value) return t("chats_no_messages_yet");
+  if (!value) return t("chat_attachment");
   if (value === "Hello! How can we help with your adoption?") return t("chat_staff_greeting");
   return value;
 }

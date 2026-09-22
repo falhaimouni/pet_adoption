@@ -1,3 +1,4 @@
+import { ChatPresenceService } from '../services/chat-presence.service';
 import {
         ConnectedSocket,
         MessageBody,
@@ -33,7 +34,15 @@ export class ChatGateway
                 private readonly messageService: MessageService,
                 private readonly conversationService: ConversationService,
                 private readonly jwtService: JwtService,
+                private readonly presence: ChatPresenceService,
         ) {}
+
+        afterInit() {
+                this.presence.changes.on('change', (state) => {
+                        this.server.to(`conversation:${state.conversationId}`).emit('conversationOwnership', state);
+                        this.server.to('staff-inbox').emit('chatInboxChanged');
+                });
+        }
 
         async handleConnection(socket: Socket)
         {
@@ -50,6 +59,7 @@ export class ChatGateway
                                 email: payload.email,
                                 role: payload.role,
                         };
+                        if (['EMPLOYEE', 'ADMIN', 'MANAGER'].includes(payload.role)) await socket.join('staff-inbox');
                         console.log(
                                 `User ${socket.data.user.userId} connected`,
                         );
@@ -60,6 +70,7 @@ export class ChatGateway
 
         handleDisconnect(socket: Socket)
         {
+                this.presence.disconnect(socket.id);
                 console.log(
                         `User ${socket.data.user?.userId} disconnected`,
                 );
@@ -103,7 +114,9 @@ export class ChatGateway
                                 user.userId,
                                 user.role,
                         );
-                        client.join(`conversation:${conversationId}`);
+                        await client.join(`conversation:${conversationId}`);
+                        if (user.role === 'EMPLOYEE') this.presence.join(conversationId, user.userId, client.id);
+                        client.emit('conversationOwnership', { conversationId, assignedEmployeeId: this.presence.owner(conversationId) });
                         return {
                                 event: 'joinedConversation',
                                 conversationId,
@@ -167,7 +180,8 @@ export class ChatGateway
                                 message: 'Unauthorized',
                         };
                 }
-                client.leave(`conversation:${conversationId}`);
+                this.presence.leave(conversationId, user.userId, client.id);
+                await client.leave(`conversation:${conversationId}`);
                 return {
                         event: 'leftConversation',
                         conversationId,

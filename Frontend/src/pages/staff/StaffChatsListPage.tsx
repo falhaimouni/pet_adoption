@@ -9,6 +9,7 @@ import { useLanguage } from "../../context/LanguageContext";
 interface Conversation {
   conversationId: string;
   status: string;
+  isInProgress?: boolean;
   updatedAt: string;
   adopter: { user: { firstName: string; lastName: string } };
   lastMessage?: { messageText?: string | null; createdAt: string } | null;
@@ -33,10 +34,17 @@ export default function StaffChatsListPage({ onNavigate, role = "employee", acti
   useEffect(() => {
     setLoading(true);
     setError("");
-    apiFetch<Conversation[]>("/conversations/inbox")
-      .then(setItems)
-      .catch((err) => setError(err instanceof Error ? err.message : t("chat_load_conversations_error")))
-      .finally(() => setLoading(false));
+    let active = true;
+    const refresh = () => apiFetch<Conversation[]>("/conversations/inbox")
+      .then(data => { if (active) { setItems(data); setError(""); } })
+      .catch(err => { if (active) setError(err instanceof Error ? err.message : t("chat_load_error")); })
+      .finally(() => { if (active) setLoading(false); });
+    void refresh();
+    const timer = window.setInterval(refresh, 5000);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("petopia:chat-inbox-changed", refresh);
+    window.addEventListener("petopia:notifications-changed", refresh);
+    return () => { active = false; window.removeEventListener("petopia:chat-inbox-changed", refresh); window.clearInterval(timer); window.removeEventListener("focus", refresh); window.removeEventListener("petopia:notifications-changed", refresh); };
   }, []);
 
   const filtered = items.filter((c) => {
@@ -73,8 +81,9 @@ export default function StaffChatsListPage({ onNavigate, role = "employee", acti
                   <p className="font-['Poppins',sans-serif] text-[13px] font-semibold text-black truncate">{c.adopter.user.firstName} {c.adopter.user.lastName}</p>
                   <span className="font-['Poppins',sans-serif] text-[11px] text-black/40">{new Date(c.updatedAt).toLocaleDateString()}</span>
                 </div>
-                <p className="font-['Poppins',sans-serif] text-[11px] text-[#089D97] capitalize">{t(`status_${c.status.toLowerCase().replace(/\s+/g, "_")}`)}</p>
-                <p className="font-['Poppins',sans-serif] text-[12px] text-black/50 truncate">{c.lastMessage?.messageText ?? t("chats_no_messages_yet")}</p>
+                {c.isInProgress && <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2 py-0.5 my-1 text-[11px] font-semibold text-amber-800"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" />{t("chat_in_progress")}</span>}
+                {(c.unreadCount ?? 0) > 0 && <p className="text-[12px] font-bold text-[#089D97]">{t("chat_new_message")}</p>}
+                <p className={`text-[12px] truncate ${(c.unreadCount ?? 0) > 0 ? "font-bold text-black" : "text-black/50"}`}>{c.lastMessage ? c.lastMessage.messageText || t("chat_attachment") : t("chats_no_messages_yet")}</p>
               </div>
               {(c.unreadCount ?? 0) > 0 && <span className="shrink-0 min-w-5 h-5 px-1 bg-[#089D97] text-white text-[10px] font-bold rounded-full flex items-center justify-center">{c.unreadCount}</span>}
             </button>

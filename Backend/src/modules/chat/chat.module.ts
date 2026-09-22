@@ -1,3 +1,5 @@
+import { ChatPresenceService } from './services/chat-presence.service';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
@@ -17,6 +19,7 @@ import { WsJwtGuard } from './guards/ws-jwt.guard';
 
 @Module({
         imports: [
+                NotificationsModule,
                 TypeOrmModule.forFeature([Conversation, Message, Adopter]),
                 ConfigModule,
                 JwtModule.registerAsync({
@@ -27,7 +30,7 @@ import { WsJwtGuard } from './guards/ws-jwt.guard';
                 }),
         ],
         controllers: [MessageController, ConversationController],
-        providers: [MessageService, ConversationService, ChatGateway, WsJwtGuard],
+        providers: [ChatPresenceService, MessageService, ConversationService, ChatGateway, WsJwtGuard],
         exports: [ChatGateway],
 })
 

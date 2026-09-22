@@ -11,6 +11,7 @@ import { useConversationSocket } from "../../hooks/useConversationSocket";
 interface Message {
   messageId: string;
   senderId: string;
+  sender?: { firstName: string; lastName: string };
   messageText?: string | null;
   createdAt: string;
 }
@@ -19,6 +20,7 @@ interface ConversationDetail {
   conversationId: string;
   status: string;
   assignedEmployeeId?: string | null;
+  adopter: { userId: string; user: { firstName: string; lastName: string } };
   messages: Message[];
 }
 
@@ -51,7 +53,13 @@ export default function StaffChatDetailPage({ onNavigate, conversationId, role =
     }
   }, [conversationId, user?.id]);
 
-  const realtimeStatus = useConversationSocket(conversationId, receiveMessage);
+  const [replyOwner, setReplyOwner] = useState<string | null>(null);
+  const receiveOwnership = useCallback((state: { conversationId: string; assignedEmployeeId: string | null }) => {
+    if (state.conversationId === conversationId) setReplyOwner(state.assignedEmployeeId);
+  }, [conversationId]);
+  const realtimeStatus = useConversationSocket(conversationId, receiveMessage, receiveOwnership);
+  const assignedElsewhere = Boolean(replyOwner && replyOwner !== user?.id);
+  const cannotReply = assignedElsewhere || (realtimeStatus !== "connected" && realtimeStatus !== "disabled");
 
   useEffect(() => {
     if (!conversationId) {
@@ -75,8 +83,8 @@ export default function StaffChatDetailPage({ onNavigate, conversationId, role =
   }, [conversation?.messages.length]);
 
   async function send() {
-    if (readOnly) return;
-    if (!conversationId || !input.trim() || input.length > 5000) return;
+    if (readOnly || cannotReply) return;
+    if (sending || !conversationId || !input.trim() || input.length > 5000) return;
     setSending(true);
     setError("");
     try {
@@ -93,25 +101,6 @@ export default function StaffChatDetailPage({ onNavigate, conversationId, role =
     }
   }
 
-  async function setStatus(status: "CLOSED" | "OPEN") {
-    if (readOnly) return;
-    if (!conversationId) return;
-    try {
-      const updated = await apiFetch<ConversationDetail>(`/conversations/${conversationId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status }),
-      });
-      setConversation((prev) => prev ? { ...prev, status: updated.status } : prev);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("chat_update_error"));
-    }
-  }
-
-  const closed = conversation?.status === "CLOSED";
-  const assignedElsewhere = Boolean(
-    conversation?.assignedEmployeeId &&
-    conversation.assignedEmployeeId !== user?.id,
-  );
 
   return (
     <DashboardLayout role={role} activePage={activePage} onNavigate={onNavigate}>
@@ -120,9 +109,9 @@ export default function StaffChatDetailPage({ onNavigate, conversationId, role =
           <button onClick={() => onNavigate(listPage)} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label={t("chat_back_inbox")}><ArrowLeft size={20} /></button>
           <MessageCircle size={20} className="text-[#089D97]" />
           <div className="flex-1">
-            <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black">{t("chat_conversation")}</p>
+            <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black">{conversation ? `${conversation.adopter.user.firstName} ${conversation.adopter.user.lastName}` : t("chat_conversation")}</p>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-              {conversation && <p className="font-['Poppins',sans-serif] text-[11px] text-[#089D97] capitalize">{t(`status_${conversation.status.toLowerCase().replace(/\s+/g, "_")}`)}</p>}
+
               {realtimeStatus !== "disabled" && (
                 <p className={`flex items-center gap-1.5 font-['Poppins',sans-serif] text-[10px] ${realtimeStatus === "connected" ? "text-emerald-600" : "text-black/45"}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${realtimeStatus === "connected" ? "bg-emerald-500" : "bg-black/30"}`} />
@@ -131,11 +120,7 @@ export default function StaffChatDetailPage({ onNavigate, conversationId, role =
               )}
             </div>
           </div>
-          {conversation && !readOnly && (closed || conversation.assignedEmployeeId === user?.id) && (
-            <button onClick={() => setStatus(closed ? "OPEN" : "CLOSED")} className="px-3 py-1.5 rounded-[10px] border border-[#089D97] text-[#089D97] font-['Poppins',sans-serif] text-[12px] hover:bg-[rgba(8,157,151,0.08)]">
-              {closed ? t("action_reopen") : t("action_close")}
-            </button>
-          )}
+
         </div>
 
         {loading ? (
@@ -146,10 +131,11 @@ export default function StaffChatDetailPage({ onNavigate, conversationId, role =
           <>
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[rgba(186,216,211,0.1)]">
               {conversation?.messages.map((m) => {
-                const fromMe = m.senderId === user?.id;
+                const fromMe = m.senderId !== conversation.adopter.userId;
                 return (
                   <div key={m.messageId} className={`flex ${fromMe ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[88%] sm:max-w-[75%] rounded-[16px] px-4 py-2.5 ${fromMe ? "bg-[#089D97] text-white rounded-tr-[4px]" : "bg-white text-black shadow-sm rounded-tl-[4px]"}`}>
+                      {(role === "admin" || role === "manager") && fromMe && m.sender && <p className="text-[10px] font-semibold mb-1">{m.sender.firstName} {m.sender.lastName}</p>}
                       <p className="font-['Poppins',sans-serif] text-[13px] leading-relaxed whitespace-pre-wrap break-words">{m.messageText}</p>
                       <span className={`block text-right font-['Poppins',sans-serif] text-[10px] mt-1 ${fromMe ? "text-white/70" : "text-black/40"}`}>{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                     </div>
@@ -166,8 +152,8 @@ export default function StaffChatDetailPage({ onNavigate, conversationId, role =
             ) : (
               <div className="px-4 py-3 border-t border-gray-100 bg-white">
                 <div className="flex items-center gap-2">
-                  <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} maxLength={5000} disabled={closed || assignedElsewhere} placeholder={closed ? t("chat_closed") : assignedElsewhere ? t("chat_assigned_elsewhere") : t("chat_type_message")} className="flex-1 bg-[rgba(8,157,151,0.06)] rounded-[20px] px-4 py-2.5 font-['Poppins',sans-serif] text-[13px] outline-none focus:ring-1 focus:ring-[#089D97] transition-all disabled:opacity-60" />
-                  <button onClick={send} disabled={sending || closed || assignedElsewhere || !input.trim()} className="w-[38px] h-[38px] bg-[#089D97] disabled:opacity-40 rounded-full flex items-center justify-center text-white hover:bg-[#047975] transition-colors shrink-0" aria-label={t("chat_send_message")}><Send size={16} /></button>
+                  <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} maxLength={5000} disabled={cannotReply} placeholder={assignedElsewhere ? t("chat_assigned_elsewhere") : t("chat_type_message")} className="flex-1 bg-[rgba(8,157,151,0.06)] rounded-[20px] px-4 py-2.5 font-['Poppins',sans-serif] text-[13px] outline-none focus:ring-1 focus:ring-[#089D97] transition-all disabled:opacity-60" />
+                  <button onClick={send} disabled={sending || cannotReply || !input.trim()} className="w-[38px] h-[38px] bg-[#089D97] disabled:opacity-40 rounded-full flex items-center justify-center text-white hover:bg-[#047975] transition-colors shrink-0" aria-label={t("chat_send_message")}><Send size={16} /></button>
                 </div>
               </div>
             )}
