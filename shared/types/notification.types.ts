@@ -1,4 +1,4 @@
-export type NotificationType = "MESSAGE" | "ADOPTION" | "INVENTORY" | "SYSTEM";
+export type NotificationType = "MESSAGE" | "ADOPTION" | "INVENTORY";
 export type NotificationStatus = "READ" | "UNREAD";
 
 export interface Notification {

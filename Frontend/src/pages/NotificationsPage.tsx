@@ -67,7 +67,6 @@ export default function NotificationsPage({ onNavigate, role }: NotificationsPag
     { key: "MESSAGE", label: t("nav_chats") },
     { key: "ADOPTION", label: t("notif_adoptions") },
     { key: "INVENTORY", label: t("notif_inventory") },
-    { key: "SYSTEM", label: t("notif_system") },
   ];
   const locale = lang === "ar" ? "ar-JO" : lang === "fr" ? "fr-FR" : "en-US";
 
