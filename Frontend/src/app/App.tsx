@@ -1,8 +1,10 @@
 import { lazy, Suspense, useState, useEffect } from "react";
+import { Toaster } from "sonner";
 import { CartProvider } from "../context/CartContext";
 import { AuthProvider, useAuth, UserRole } from "../context/AuthContext";
 import { ThemeProvider } from "../context/ThemeContext";
 import { LanguageProvider, useLanguage } from "../context/LanguageContext";
+import { useNotificationSocket } from "../hooks/useNotificationSocket";
 
 import SystemStatusPage from "../pages/SystemStatusPage";
 import HomePage from "../pages/HomePage";
@@ -162,6 +164,7 @@ function AppRouter() {
   const initialRoute = readHashRoute();
   const [currentPage, setCurrentPage] = useState<string>(initialRoute.page);
   const [params, setParams] = useState<Params>(initialRoute.params);
+  useNotificationSocket(user?.id);
 
   useEffect(() => {
     const onHashChange = () => {
@@ -367,6 +370,7 @@ export default function App() {
       <ThemeProvider>
         <LanguageProvider>
           <CartProvider>
+            <Toaster position="top-center" richColors />
             <Suspense fallback={<RouteLoadingFallback />}>
               <AppRouter />
             </Suspense>

@@ -1,5 +1,3 @@
-import { Toaster } from "sonner";
-import { useNotificationSocket } from "../hooks/useNotificationSocket";
 import { useEffect, useState } from "react";
 import {
   Home, User, Heart, Bell, Settings,
@@ -154,7 +152,6 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuth();
-  useNotificationSocket(user?.id);
   const { t, lang, setLang, isRtl } = useLanguage();
   const { isDark, toggleTheme } = useTheme();
   const { count } = useCart();
@@ -210,7 +207,6 @@ export default function DashboardLayout({
 
   return (
     <div className="h-dvh bg-[rgba(186,216,211,0.99)] flex flex-col overflow-hidden">
-      <Toaster position="top-center" richColors />
       {/* Top Navbar */}
       <header className="w-full bg-white shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] z-20 relative shrink-0">
         <div className="flex items-center justify-between gap-2 h-[80px] px-2 sm:px-4">

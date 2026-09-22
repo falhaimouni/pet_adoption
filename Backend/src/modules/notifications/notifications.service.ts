@@ -90,6 +90,31 @@ export class NotificationsService {
     });
   }
 
+  async createAdoptionRequestAlert(
+    adopterName: string,
+    petName: string,
+  ): Promise<NotificationResponse[]> {
+    const users = await this.userRepo.find({
+      where: {
+        status: 'active',
+        role: {
+          roleName: In([RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE]),
+        },
+      },
+      relations: ['role'],
+    });
+
+    return Promise.all(
+      users.map((user) =>
+        this.createForUser(user.userId, {
+          title: 'New adoption request',
+          message: `${adopterName} submitted an adoption request for ${petName}.`,
+          type: NotificationTypeEnum.ADOPTION,
+        }),
+      ),
+    );
+  }
+
   async createInventoryAlert(
     title: string,
     message: string,
