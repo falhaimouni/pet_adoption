@@ -65,6 +65,19 @@ export class NotificationsService {
     return response;
   }
 
+  async createChatMessage(senderId: string, adopterUserId: string, fromAdopter: boolean): Promise<void> {
+    const sender = await this.userRepo.findOneByOrFail({ userId: senderId });
+    const recipients = fromAdopter
+      ? await this.userRepo.find({ where: { status: 'active', role: { roleName: In([RolesEnum.EMPLOYEE, RolesEnum.ADMIN, RolesEnum.MANAGER]) } } })
+      : await this.userRepo.find({ where: { userId: adopterUserId, status: 'active' } });
+    const name = fromAdopter ? `${sender.firstName} ${sender.lastName}`.trim() : 'Petopia Support';
+    await Promise.all(recipients.filter(user => user.userId !== senderId).map(user => this.createForUser(user.userId, {
+      title: 'New message',
+      message: `New message from ${name}`,
+      type: NotificationTypeEnum.MESSAGE,
+    })));
+  }
+
   async createAdoptionUpdate(
     userId: string,
     title: string,

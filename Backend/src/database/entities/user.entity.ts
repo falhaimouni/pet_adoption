@@ -15,6 +15,7 @@ import { AdoptionRequest } from './adoption-request.entity';
 import { Adopter } from './adopter.entity';
 import { Cart } from './cart.entity';
 import { Conversation } from './conversation.entity';
+import { Friendship } from './friendship.entity';
 import { Department } from './department.entity';
 import { Employee } from './employee.entity';
 import { FileUpload } from './file-upload.entity';
@@ -128,4 +129,10 @@ export class User {
 
   @OneToMany(() => FileUpload, (file) => file.uploadedByUser)
   uploadedFiles!: FileUpload[];
+
+  @OneToMany(() => Friendship, (friendship) => friendship.user1)
+  friendshipsAsUser1!: Friendship[];
+
+  @OneToMany(() => Friendship, (friendship) => friendship.user2)
+  friendshipsAsUser2!: Friendship[];
 }

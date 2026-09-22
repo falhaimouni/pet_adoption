@@ -52,14 +52,19 @@ export default function NotificationsPage({ onNavigate, role }: NotificationsPag
   useEffect(() => {
     setLoading(true);
     setError("");
-    apiFetch<NotificationItem[]>("/notifications")
-      .then(setItems)
+    let active = true;
+    const refresh = () => apiFetch<NotificationItem[]>("/notifications")
+      .then(data => { if (active) setItems(data); })
       .catch((err) => setError(err instanceof Error ? err.message : t("notif_load_error")))
-      .finally(() => setLoading(false));
+      .finally(() => { if (active) setLoading(false); });
+    void refresh();
+    window.addEventListener("petopia:notifications-changed", refresh);
+    return () => { active = false; window.removeEventListener("petopia:notifications-changed", refresh); };
   }, [t]);
 
   const filters = [
     { key: "all", label: t("notif_all") },
+    { key: "MESSAGE", label: t("nav_chats") },
     { key: "ADOPTION", label: t("notif_adoptions") },
     { key: "INVENTORY", label: t("notif_inventory") },
     { key: "SYSTEM", label: t("notif_system") },

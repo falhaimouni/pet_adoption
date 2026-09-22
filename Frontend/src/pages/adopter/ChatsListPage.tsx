@@ -9,19 +9,13 @@ export interface Conversation {
   conversationId: string;
   status: string;
   updatedAt: string;
-  adopter: { firstName: string; lastName: string };
   assignedEmployee?: { firstName: string; lastName: string } | null;
-  lastMessage?: { message: string; createdAt: string } | null;
-  unreadCount: number;
+  lastMessage?: { messageText?: string | null; createdAt: string } | null;
+  unreadCount?: number;
 }
 
 interface ChatsListPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
-}
-
-function participantName(conversation: Conversation) {
-  const other = conversation.assignedEmployee ?? conversation.adopter;
-  return `${other.firstName} ${other.lastName}`.trim() || "Petopia Support";
 }
 
 export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
@@ -29,21 +23,43 @@ export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
   const [search, setSearch] = useState("");
   const [items, setItems] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [starting, setStarting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     setLoading(true);
     setError("");
-    apiFetch<Conversation[]>("/messages/conversations")
-      .then(setItems)
-      .catch((err) => setError(err instanceof Error ? err.message : t("chats_unavailable")))
-      .finally(() => setLoading(false));
+    let active = true;
+    const refresh = () => apiFetch<Conversation[]>("/conversations/my")
+      .then(data => { if (active) { setItems(data); setError(""); } })
+      .catch(err => { if (active) setError(err instanceof Error ? err.message : t("chat_load_error")); })
+      .finally(() => { if (active) setLoading(false); });
+    void refresh();
+    const timer = window.setInterval(refresh, 5000);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("petopia:notifications-changed", refresh);
+    return () => { active = false; window.clearInterval(timer); window.removeEventListener("focus", refresh); window.removeEventListener("petopia:notifications-changed", refresh); };
   }, []);
 
   const filtered = items.filter((c) =>
-    participantName(c).toLowerCase().includes(search.toLowerCase()) ||
-    (c.lastMessage?.message ?? "").toLowerCase().includes(search.toLowerCase())
+    t("chats_support").toLowerCase().includes(search.toLowerCase()) ||
+    (c.lastMessage?.messageText ?? "").toLowerCase().includes(search.toLowerCase())
   );
+
+  async function startConversation() {
+    setStarting(true);
+    setError("");
+    try {
+      const conversation = await apiFetch<Conversation>("/conversations", {
+        method: "POST",
+      });
+      onNavigate("chat-detail", { conversationId: conversation.conversationId });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("chat_load_error"));
+    } finally {
+      setStarting(false);
+    }
+  }
 
   return (
     <DashboardLayout role="adopter" activePage="chats" onNavigate={onNavigate} pageTitle={t("chats_title")} breadcrumbs={[t("adopter_dash_crumb"), t("chats_crumb")]}>
@@ -66,7 +82,7 @@ export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
           ) : error ? (
             <EmptyState icon={<MessageCircle size={28} />} title={t("chats_unavailable")} description={error} />
           ) : filtered.length === 0 ? (
-            <EmptyState icon={<MessageCircle size={28} />} title={t("chats_no_conv")} description={t("chats_no_conv_desc")} />
+            <EmptyState icon={<MessageCircle size={28} />} title={t("chats_no_conv")} description={t("chats_no_conv_desc")} actionLabel={starting ? t("common_loading") : t("chat_start_conversation")} onAction={startConversation} />
           ) : (
             filtered.map((conversation) => (
               <button
@@ -79,12 +95,13 @@ export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-['Poppins',sans-serif] text-[14px] font-semibold text-black truncate">{participantName(conversation) === "Petopia Support" ? t("chats_support") : participantName(conversation)}</p>
+                    <p className="font-['Poppins',sans-serif] text-[14px] font-semibold text-black truncate">{t("chats_support")}</p>
                     <span className="font-['Poppins',sans-serif] text-[11px] text-black/40 shrink-0">{new Date(conversation.updatedAt).toLocaleDateString()}</span>
                   </div>
-                  <p className="font-['Poppins',sans-serif] text-[12px] text-black/50 truncate">{translateChatMessage(conversation.lastMessage?.message, t)}</p>
+                  {(conversation.unreadCount ?? 0) > 0 && <p className="text-[12px] font-bold text-[#089D97]">{t("chat_new_message")}</p>}
+                  <p className={`text-[12px] truncate ${(conversation.unreadCount ?? 0) > 0 ? "font-bold text-black" : "text-black/50"}`}>{conversation.lastMessage ? conversation.lastMessage.messageText || t("chat_attachment") : t("chats_no_messages_yet")}</p>
                 </div>
-                {conversation.unreadCount > 0 && <span className="shrink-0 min-w-5 h-5 px-1 bg-[#089D97] text-white text-[10px] font-bold rounded-full flex items-center justify-center">{conversation.unreadCount}</span>}
+                {(conversation.unreadCount ?? 0) > 0 && <span className="shrink-0 min-w-5 h-5 px-1 bg-[#089D97] text-white text-[10px] font-bold rounded-full flex items-center justify-center">{conversation.unreadCount}</span>}
               </button>
             ))
           )}
@@ -92,10 +109,4 @@ export default function ChatsListPage({ onNavigate }: ChatsListPageProps) {
       </div>
     </DashboardLayout>
   );
-}
-
-function translateChatMessage(value: string | undefined, t: (key: string) => string) {
-  if (!value) return t("chats_no_messages_yet");
-  if (value === "Hello! How can we help with your adoption?") return t("chat_staff_greeting");
-  return value;
 }

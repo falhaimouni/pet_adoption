@@ -38,9 +38,17 @@ export const API_ENDPOINTS = {
     ASSIGN_USERS: "/departments/:id/users",
   },
   MESSAGES: {
-    CONVERSATIONS: "/messages/conversations",
-    SEND: "/messages/send",
-    LIST: "/messages/conversations/:id",
+    CONVERSATIONS: "/conversations/my",
+    INBOX: "/conversations/inbox",
+    CREATE: "/conversations",
+    SEND: "/conversations/:id/messages",
+    LIST: "/conversations/:id",
+  },
+  FRIENDS: {
+    LIST: "/users/friends",
+    CANDIDATES: "/users/friends/candidates",
+    ADD: "/users/friends/:friendId",
+    REMOVE: "/users/friends/:friendId",
   },
   NOTIFICATIONS: {
     LIST: "/notifications",

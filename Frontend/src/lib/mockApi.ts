@@ -212,6 +212,36 @@ let users = [
   },
 }));
 
+const manualFriendships = new Map<string, { friendshipId: string; createdAt: string }>();
+
+function friendshipKey(userId1: string, userId2: string) {
+  return [userId1, userId2].sort().join("::");
+}
+
+function isAutomaticFriendship(role1: string, role2: string) {
+  const autoRoles = new Set(["ADMIN", "MANAGER"]);
+  return (autoRoles.has(role1) || autoRoles.has(role2)) && role1 !== role2;
+}
+
+function mockFriendshipsForCurrentUser() {
+  const currentRole = currentProfile.roleName;
+  return users
+    .filter((user) => user.userId !== currentProfile.userId)
+    .flatMap((user) => {
+      const key = friendshipKey(currentProfile.userId, user.userId);
+      const manual = manualFriendships.get(key);
+      const isSystemGenerated = isAutomaticFriendship(currentRole, user.roleName);
+      if (!isSystemGenerated && !manual) return [];
+      return [{
+        friendshipId: manual?.friendshipId ?? `mock-system-${key}`,
+        isSystemGenerated,
+        createdAt: manual?.createdAt ?? "2026-01-10T09:00:00.000Z",
+        updatedAt: manual?.createdAt ?? "2026-01-10T09:00:00.000Z",
+        friend: user,
+      }];
+    });
+}
+
 departments = departments.map((department) => ({
   ...department,
   employees: users
@@ -251,13 +281,14 @@ let vaccinations = [
 let conversations = [
   {
     conversationId: "conversation-1",
-    status: "open",
+    status: "OPEN",
     updatedAt: now(),
-    adopter: { firstName: "Adopter", lastName: "Demo" },
+    adopter: { user: { firstName: "Adopter", lastName: "Demo" } },
     assignedEmployee: { firstName: "Staff", lastName: "Demo" },
+    assignedEmployeeId: "mock-employee",
     unreadCount: 1,
     messages: [
-      { messageId: "message-1", senderId: "mock-employee", message: "Hello! How can we help with your adoption?", isRead: false, createdAt: now() },
+      { messageId: "message-1", senderId: "mock-employee", messageText: "Hello! How can we help with your adoption?", type: "TEXT", isRead: false, createdAt: now() },
     ],
   },
 ];
@@ -517,6 +548,38 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
     return withDelay(currentProfile as T);
   }
   if (url.pathname === "/users/profile/avatar" && method === "POST") return withDelay({ avatar: null } as T);
+  if (url.pathname === "/users/friends" && method === "GET") {
+    return withDelay(mockFriendshipsForCurrentUser() as T);
+  }
+  if (url.pathname === "/users/friends/candidates" && method === "GET") {
+    if (!["EMPLOYEE", "VET"].includes(currentProfile.roleName)) return withDelay([] as T);
+    const friendIds = new Set(mockFriendshipsForCurrentUser().map((friendship) => friendship.friend.userId));
+    const candidates = users.filter((user) =>
+      user.userId !== currentProfile.userId &&
+      ["EMPLOYEE", "VET"].includes(user.roleName) &&
+      !friendIds.has(user.userId),
+    );
+    return withDelay(candidates as T);
+  }
+  const friendMatch = url.pathname.match(/^\/users\/friends\/([^/]+)$/);
+  if (friendMatch && method === "POST") {
+    const friend = users.find((user) => user.userId === friendMatch[1]);
+    const allowed = ["EMPLOYEE", "VET"];
+    if (!friend || !allowed.includes(currentProfile.roleName) || !allowed.includes(friend.roleName)) {
+      throw new Error("Only employees and vets can manage manual friendships");
+    }
+    const key = friendshipKey(currentProfile.userId, friend.userId);
+    const createdAt = now();
+    const friendshipId = `mock-friendship-${Date.now()}`;
+    manualFriendships.set(key, { friendshipId, createdAt });
+    const friendship = mockFriendshipsForCurrentUser().find((item) => item.friend.userId === friend.userId);
+    return withDelay({ message: "Friend added successfully", friendship } as T);
+  }
+  if (friendMatch && method === "DELETE") {
+    const key = friendshipKey(currentProfile.userId, friendMatch[1]);
+    manualFriendships.delete(key);
+    return withDelay({ message: "Friend removed successfully" } as T);
+  }
   if (url.pathname === "/users" && method === "GET") {
     const status = url.searchParams.get("status") ?? "active";
     const data = status === "all" ? users : users.filter((user) => user.status === status);
@@ -867,19 +930,36 @@ export async function mockApiFetch<T>(path: string, init: RequestInit = {}): Pro
     return withDelay(notifications.find((item) => item.id === notificationMatch[1]) as T);
   }
 
-  if (url.pathname === "/messages/conversations" && method === "GET") {
+  if (["/conversations/my", "/conversations/inbox"].includes(url.pathname) && method === "GET") {
     return withDelay(conversations.map(({ messages, ...conversation }) => ({ ...conversation, lastMessage: messages[messages.length - 1] })) as T);
   }
-  const conversationMatch = url.pathname.match(/^\/messages\/conversations\/([^/]+)$/);
+  if (url.pathname === "/conversations" && method === "POST") {
+    const existing = conversations.find((item) => ["OPEN", "ASSIGNED"].includes(item.status));
+    if (existing) return withDelay(existing as T);
+    const conversation = {
+      conversationId: `conversation-${Date.now()}`,
+      status: "OPEN",
+      updatedAt: now(),
+      adopter: { user: { firstName: "Adopter", lastName: "Demo" } },
+      assignedEmployee: null,
+      assignedEmployeeId: null,
+      unreadCount: 0,
+      messages: [],
+    };
+    conversations = [conversation, ...conversations];
+    return withDelay(conversation as T);
+  }
+  const conversationMatch = url.pathname.match(/^\/conversations\/([^/]+)$/);
   if (conversationMatch && method === "GET") return withDelay(conversations.find((item) => item.conversationId === conversationMatch[1]) as T);
   if (conversationMatch && method === "PATCH") {
     conversations = conversations.map((item) => item.conversationId === conversationMatch[1] ? { ...item, ...body } : item);
     return withDelay(conversations.find((item) => item.conversationId === conversationMatch[1]) as T);
   }
-  if (url.pathname.match(/^\/messages\/conversations\/[^/]+\/read$/) && method === "PATCH") return withDelay({ success: true } as T);
-  if (url.pathname === "/messages/send" && method === "POST") {
-    const message = { messageId: `message-${Date.now()}`, senderId: currentProfile.userId, message: String(body.message ?? ""), isRead: false, createdAt: now() };
-    conversations = conversations.map((item) => item.conversationId === body.conversationId ? { ...item, messages: [...item.messages, message], updatedAt: now() } : item);
+  if (url.pathname.match(/^\/conversations\/[^/]+\/messages\/read$/) && method === "PATCH") return withDelay({ success: true } as T);
+  const sendMessageMatch = url.pathname.match(/^\/conversations\/([^/]+)\/messages$/);
+  if (sendMessageMatch && method === "POST") {
+    const message = { messageId: `message-${Date.now()}`, senderId: currentProfile.userId, messageText: String(body.messageText ?? ""), type: String(body.type ?? "TEXT"), isRead: false, createdAt: now() };
+    conversations = conversations.map((item) => item.conversationId === sendMessageMatch[1] ? { ...item, messages: [...item.messages, message], updatedAt: now() } : item);
     return withDelay(message as T);
   }
 
