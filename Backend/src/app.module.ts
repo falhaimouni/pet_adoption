@@ -1,3 +1,4 @@
+import { CommunityModule } from './modules/community/community.module';
 import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
 import { resolve } from 'path';
 import { ConfigModule } from '@nestjs/config';
@@ -19,6 +20,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { StoreModule } from './modules/store/store.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { ChatModule } from './modules/chat/chat.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PreventEmailChangeMiddleware } from './common/middleware/prevent-email-change.middleware';
 import { CheckoutModule } from './modules/checkout/checkout.module';
@@ -70,6 +72,8 @@ import { MetricsModule } from './monitoring/metrics.module';
     OrderModule,
     DepartmentsModule,
     MetricsModule,
+    ChatModule,
+    CommunityModule,
   ],
   controllers: [AppController],
   providers: [AppService],

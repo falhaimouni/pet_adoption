@@ -4,6 +4,4 @@ export enum NotificationTypeEnum {
   ADOPTION = "ADOPTION",
 
   INVENTORY = "INVENTORY",
-
-  SYSTEM = "SYSTEM",
 }

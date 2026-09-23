@@ -39,7 +39,6 @@ export default function VetDashboardPage({ onNavigate }: VetDashboardPageProps) 
   const QUICK_ACTIONS = [
     { label: t("vet_add_entry"), page: "vet-medical", icon: <Stethoscope size={15} /> },
     { label: t("vet_add_vaccination"), page: "vet-vaccinations", icon: <Syringe size={15} /> },
-    { label: t("vet_medical_records"), page: "vet-medical", icon: <ClipboardList size={15} /> },
   ];
 
   return (

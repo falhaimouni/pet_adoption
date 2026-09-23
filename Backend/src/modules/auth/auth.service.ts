@@ -294,7 +294,11 @@ export class AuthService implements OnModuleInit {
       throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
     }
 
-    await this.invalidateRefreshTokens(userId);
+    await this.dataSource.transaction(async manager => {
+      // Serializes against heartbeat's user lock and invalidates every old session.
+      await manager.getRepository(User).increment({ userId }, 'refreshTokenVersion', 1);
+      await manager.query('DELETE FROM user_presence WHERE user_id=$1', [userId]);
+    });
 
     await this.activityLogRepo.save(
       this.activityLogRepo.create({

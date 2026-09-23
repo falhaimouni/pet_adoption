@@ -120,7 +120,9 @@ export default function ShopPage({ onNavigate, embedded = false }: ShopPageProps
   }
 
   function categoryLabel(value: string) {
-    return t(`supply_category_${value.toLowerCase()}`);
+    const key = `supply_category_${value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "")}`;
+    const label = t(key);
+    return label === key ? value : label;
   }
 
   return (

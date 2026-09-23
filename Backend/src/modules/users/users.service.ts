@@ -5,8 +5,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, QueryFailedError, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { Department } from '../../database/entities/department.entity';
@@ -449,6 +449,7 @@ export class UsersService {
       }
     });
 
+
     return this.findProfile(id);
   }
 
@@ -513,6 +514,7 @@ export class UsersService {
         );
       }
     });
+
 
     return {
       message: 'User deactivated successfully',

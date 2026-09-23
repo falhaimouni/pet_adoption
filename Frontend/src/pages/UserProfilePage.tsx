@@ -181,11 +181,7 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
           </div>
 
           <div className="flex-1">
-            {isEditing ? (
-              <input value={displayName} readOnly className="font-['Prata',serif] text-2xl text-[#1a2e2d] bg-transparent border-b-2 border-[#089D97] outline-none w-full mb-1" placeholder={t("profile_full_name")} />
-            ) : (
-              <h1 className="font-['Prata',serif] text-2xl text-[#1a2e2d]">{displayName}</h1>
-            )}
+            <h1 className="font-['Prata',serif] text-2xl text-[#1a2e2d]">{displayName}</h1>
             {displayHandle && <p className="font-['Poppins',sans-serif] text-[14px] text-[#5a8a87]">@{displayHandle}</p>}
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <span className="inline-flex items-center px-3 py-0.5 rounded-full bg-[#e0f2f0] text-[#047975] text-[12px] font-['Poppins',sans-serif] font-medium capitalize">{user?.role}</span>

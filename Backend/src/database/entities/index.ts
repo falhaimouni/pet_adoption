@@ -1,3 +1,5 @@
+export { CommunityMessage, CommunityBlock, FriendRequest, DirectConversation, DirectMessage, UserPresence } from './community.entity';
+import { CommunityMessage, CommunityBlock, FriendRequest, DirectConversation, DirectMessage, UserPresence } from './community.entity';
 export { ActivityLog } from './activity-log.entity';
 export { Adoption } from './adoption.entity';
 export { AdoptionRequest } from './adoption-request.entity';
@@ -7,6 +9,7 @@ export { CartItem } from './cart-item.entity';
 export { Conversation } from './conversation.entity';
 export { Department } from './department.entity';
 export { Employee } from './employee.entity';
+export { Friendship } from './friendship.entity';
 export { FileUpload } from './file-upload.entity';
 export { MedicalRecord } from './medical-record.entity';
 export { MedicalEntry } from './medical-entry.entity';
@@ -36,6 +39,7 @@ import { CartItem } from './cart-item.entity';
 import { Conversation } from './conversation.entity';
 import { Department } from './department.entity';
 import { Employee } from './employee.entity';
+import { Friendship } from './friendship.entity';
 import { FileUpload } from './file-upload.entity';
 import { MedicalRecord } from './medical-record.entity';
 import { MedicalEntry } from './medical-entry.entity';
@@ -57,6 +61,7 @@ import { User } from './user.entity';
 import { Vaccination } from './vaccination.entity';
 
 export const databaseEntities = [
+  CommunityMessage, CommunityBlock, FriendRequest, DirectConversation, DirectMessage, UserPresence,
   ActivityLog,
   Adoption,
   AdoptionRequest,
@@ -66,6 +71,7 @@ export const databaseEntities = [
   Conversation,
   Department,
   Employee,
+  Friendship,
   FileUpload,
   MedicalRecord,
   MedicalEntry,

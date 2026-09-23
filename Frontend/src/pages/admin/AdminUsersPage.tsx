@@ -50,6 +50,7 @@ const blankEmployee = {
   firstName: "",
   lastName: "",
   email: "",
+  password: "",
   phone: "",
   roleId: "",
   departmentId: "",
@@ -126,39 +127,6 @@ function departmentFallbackFromUsers(users: UserRecord[]): DepartmentOption[] {
     }
   });
   return Array.from(departments, ([departmentId, departmentName]) => ({ departmentId, departmentName })).sort((a, b) => a.departmentName.localeCompare(b.departmentName));
-}
-
-function randomChar(chars: string): string {
-  const values = new Uint32Array(1);
-  crypto.getRandomValues(values);
-  return chars[values[0] % chars.length];
-}
-
-function shuffle(value: string): string {
-  const chars = value.split("");
-  for (let i = chars.length - 1; i > 0; i -= 1) {
-    const values = new Uint32Array(1);
-    crypto.getRandomValues(values);
-    const j = values[0] % (i + 1);
-    [chars[i], chars[j]] = [chars[j], chars[i]];
-  }
-  return chars.join("");
-}
-
-function generateStrongPassword(): string {
-  const lower = "abcdefghijkmnopqrstuvwxyz";
-  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-  const digits = "23456789";
-  const symbols = "!@#$%^&*()-_=+";
-  const all = lower + upper + digits + symbols;
-  const required = [
-    randomChar(lower),
-    randomChar(upper),
-    randomChar(digits),
-    randomChar(symbols),
-  ];
-  while (required.length < 18) required.push(randomChar(all));
-  return shuffle(required.join(""));
 }
 
 interface AdminUsersPageProps { onNavigate: (page: string) => void; role?: Extract<UserRole, "admin" | "manager">; activePage?: string; }
@@ -414,7 +382,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
   }
 
   async function createEmployee() {
-    const fieldErrors = validateFields(formSchemas.employee, { ...employeeForm, password: generateStrongPassword() }, t, { mockIds: true });
+    const fieldErrors = validateFields(formSchemas.employee, employeeForm, t, { mockIds: true });
     if (Object.keys(fieldErrors).length) { setFormError(validationMessage(fieldErrors, t)); return; }
 
     if (!canCreateEmployee) return;
@@ -435,7 +403,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
       firstName: employeeForm.firstName.trim(),
       lastName: employeeForm.lastName.trim(),
       email: employeeForm.email.trim(),
-      password: generateStrongPassword(),
+      password: employeeForm.password,
       roleId: employeeForm.roleId,
       departmentId: employeeForm.departmentId,
       hireDate: employeeForm.hireDate,
@@ -646,13 +614,14 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
         )}
       </Modal>
 
-      <Modal title={t("action_add_employee")} open={employeeOpen} onClose={() => setEmployeeOpen(false)} onConfirm={createEmployee} confirmLabel={saving ? t("common_creating") : t("action_generate_password")} size="md">
+      <Modal title={t("action_add_employee")} open={employeeOpen} onClose={() => setEmployeeOpen(false)} onConfirm={createEmployee} confirmLabel={saving ? t("common_creating") : t("action_add_employee")} confirmDisabled={saving} size="md">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {formError && <p role="alert" className="whitespace-pre-line sm:col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
           {lookupsLoading && <p className="sm:col-span-2 text-[13px] text-black/50 bg-gray-50 rounded-[10px] px-3 py-2">{t("loading_roles_departments")}</p>}
           <Field label={t("field_first_name")} value={employeeForm.firstName} onChange={(value) => setEmployeeForm((form) => ({ ...form, firstName: value }))} />
           <Field label={t("field_last_name")} value={employeeForm.lastName} onChange={(value) => setEmployeeForm((form) => ({ ...form, lastName: value }))} />
           <Field label={t("field_email")} type="email" maxLength={254} value={employeeForm.email} onChange={(value) => setEmployeeForm((form) => ({ ...form, email: value }))} />
+          <Field label={t("login_password")} type="password" maxLength={255} value={employeeForm.password} onChange={(value) => setEmployeeForm((form) => ({ ...form, password: value }))} />
           <p className="sm:col-span-2 font-['Poppins',sans-serif] text-[12px] text-black/50 bg-[#f0f8f7] rounded-[10px] px-3 py-2">
             {t("employee_password_hint")}
           </p>

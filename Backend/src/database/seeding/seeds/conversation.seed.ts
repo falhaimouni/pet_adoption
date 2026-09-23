@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { Conversation } from '../../entities/conversation.entity';
 import { Adopter } from '../../entities/adopter.entity';
+import { ConversationStatusEnum } from '@shared/enums/conversation-status.enum';
 
 export async function seedConversations(dataSource: DataSource) {
   const repo = dataSource.getRepository(Conversation);
@@ -15,7 +16,7 @@ export async function seedConversations(dataSource: DataSource) {
 
     const conversationData = {
       adopter,
-      status: 'open',
+      status: ConversationStatusEnum.OPEN,
     };
 
     if (exists) {

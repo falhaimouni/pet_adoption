@@ -1,16 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, MessageCircle, Send } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import EmptyState from "../../components/EmptyState";
 import { apiFetch } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { useConversationSocket } from "../../hooks/useConversationSocket";
 
 interface Message {
   messageId: string;
   senderId: string;
-  message: string;
-  isRead: boolean;
+  messageText?: string | null;
+  isRead?: boolean;
   createdAt: string;
 }
 
@@ -35,6 +36,18 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
   const [error, setError] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
+  const receiveMessage = useCallback((message: Message) => {
+    setConversation((current) => {
+      if (!current || current.messages.some((item) => item.messageId === message.messageId)) return current;
+      return { ...current, messages: [...current.messages, message] };
+    });
+    if (conversationId && message.senderId !== user?.id) {
+      void apiFetch(`/conversations/${conversationId}/messages/read`, { method: "PATCH" }).catch(() => undefined);
+    }
+  }, [conversationId, user?.id]);
+
+  const realtimeStatus = useConversationSocket(conversationId, receiveMessage);
+
   useEffect(() => {
     if (!conversationId) {
       setError(t("chat_missing_conversation"));
@@ -43,10 +56,10 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
     }
     setLoading(true);
     setError("");
-    apiFetch<ConversationDetail>(`/messages/conversations/${conversationId}`)
+    apiFetch<ConversationDetail>(`/conversations/${conversationId}`)
       .then((detail) => {
         setConversation(detail);
-        void apiFetch(`/messages/conversations/${conversationId}/read`, { method: "PATCH" }).catch(() => undefined);
+        void apiFetch(`/conversations/${conversationId}/messages/read`, { method: "PATCH" }).catch(() => undefined);
       })
       .catch((err) => setError(err instanceof Error ? err.message : t("chat_load_error")))
       .finally(() => setLoading(false));
@@ -57,15 +70,15 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
   }, [conversation?.messages.length]);
 
   async function send() {
-    if (!conversationId || !input.trim() || input.length > 5000) return;
+    if (sending || !conversationId || !input.trim() || input.length > 5000) return;
     setSending(true);
     setError("");
     try {
-      const sent = await apiFetch<Message>("/messages/send", {
+      const sent = await apiFetch<Message>(`/conversations/${conversationId}/messages`, {
         method: "POST",
-        body: JSON.stringify({ conversationId, message: input.trim() }),
+        body: JSON.stringify({ messageText: input.trim(), type: "TEXT" }),
       });
-      setConversation((prev) => prev ? { ...prev, messages: [...prev.messages, sent] } : prev);
+      receiveMessage(sent);
       setInput("");
     } catch (err) {
       setError(err instanceof Error ? err.message : t("chat_send_error"));
@@ -74,23 +87,31 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
     }
   }
 
-  const closed = conversation?.status === "closed" || conversation?.status === "archived";
+
 
   return (
-    <DashboardLayout role="adopter" activePage="chats" onNavigate={onNavigate}>
-      <div className="w-full max-w-2xl flex flex-col h-[min(720px,calc(100dvh-128px))] min-h-[420px] bg-white rounded-[15px] shadow-md overflow-hidden">
+    <DashboardLayout role="adopter" activePage="support-chat" onNavigate={onNavigate}>
+      <div className="w-full flex flex-col h-[min(720px,calc(100dvh-128px))] min-h-[420px] bg-white rounded-[15px] shadow-md overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white">
-          <button onClick={() => onNavigate("chats")} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label={t("chat_back_conversations")}>
+          <button onClick={() => onNavigate("support-chat")} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label={t("chat_back_conversations")}>
             <ArrowLeft size={20} />
           </button>
           <MessageCircle size={20} className="text-[#089D97]" />
-          <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black">{t("chat_conversation")}</p>
+          <div className="min-w-0 flex-1">
+            <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-black">{t("chats_support")}</p>
+            {realtimeStatus !== "disabled" && (
+              <p className={`flex items-center gap-1.5 font-['Poppins',sans-serif] text-[10px] ${realtimeStatus === "connected" ? "text-emerald-600" : "text-black/45"}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${realtimeStatus === "connected" ? "bg-emerald-500" : "bg-black/30"}`} />
+                {t(realtimeStatus === "connected" ? "chat_realtime_connected" : "chat_realtime_connecting")}
+              </p>
+            )}
+          </div>
         </div>
 
         {loading ? (
           <div className="flex-1 p-4 space-y-3 bg-[rgba(186,216,211,0.15)]">{[1, 2, 3].map((n) => <div key={n} className="h-12 rounded-[16px] bg-white animate-pulse" />)}</div>
         ) : error && !conversation ? (
-          <EmptyState icon={<MessageCircle size={28} />} title={t("chat_unavailable")} description={error} actionLabel={t("chat_back_messages")} onAction={() => onNavigate("chats")} />
+          <EmptyState icon={<MessageCircle size={28} />} title={t("chat_unavailable")} description={error} actionLabel={t("chat_back_messages")} onAction={() => onNavigate("support-chat")} />
         ) : (
           <>
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[rgba(186,216,211,0.15)]">
@@ -100,7 +121,7 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
                 return (
                   <div key={m.messageId} className={`flex ${fromMe ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[88%] sm:max-w-[75%] rounded-[16px] px-4 py-2.5 ${fromMe ? "bg-[#089D97] text-white rounded-tr-[4px]" : "bg-white text-black shadow-sm rounded-tl-[4px]"}`}>
-                      <p className="font-['Poppins',sans-serif] text-[13px] leading-relaxed whitespace-pre-wrap break-words">{m.message}</p>
+                      <p className="font-['Poppins',sans-serif] text-[13px] leading-relaxed whitespace-pre-wrap break-words">{m.messageText}</p>
                       <span className={`block text-right font-['Poppins',sans-serif] text-[10px] mt-1 ${fromMe ? "text-white/70" : "text-black/40"}`}>{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                     </div>
                   </div>
@@ -116,11 +137,10 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && send()}
                   maxLength={5000}
-                  disabled={closed}
-                  placeholder={closed ? t("chat_closed") : t("chat_type_message")}
+                  placeholder={t("chat_type_message")}
                   className="flex-1 bg-[rgba(8,157,151,0.06)] rounded-[20px] px-4 py-2.5 font-['Poppins',sans-serif] text-[13px] outline-none focus:ring-1 focus:ring-[#089D97] transition-all disabled:opacity-60"
                 />
-                <button onClick={send} disabled={sending || closed || !input.trim()} className="w-[38px] h-[38px] bg-[#089D97] disabled:opacity-40 rounded-full flex items-center justify-center text-white hover:bg-[#047975] transition-colors shrink-0" aria-label={t("chat_send_message")}>
+                <button onClick={send} disabled={sending || !input.trim()} className="w-[38px] h-[38px] bg-[#089D97] disabled:opacity-40 rounded-full flex items-center justify-center text-white hover:bg-[#047975] transition-colors shrink-0" aria-label={t("chat_send_message")}>
                   <Send size={16} />
                 </button>
               </div>

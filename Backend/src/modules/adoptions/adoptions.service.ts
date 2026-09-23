@@ -190,7 +190,7 @@ export class AdoptionsService {
     userId: string,
     dto: CreateAdoptionRequestDto,
   ): Promise<AdoptionRequestResponse> {
-    return this.dataSource.transaction(async (manager) => {
+    const createdRequest = await this.dataSource.transaction(async (manager) => {
       const petRepo = manager.getRepository(Pet);
       const requestRepo = manager.getRepository(AdoptionRequest);
       const logRepo = manager.getRepository(ActivityLog);
@@ -278,6 +278,13 @@ export class AdoptionsService {
 
       return this.mapRequestResponse(savedRequest);
     });
+
+    await this.notificationsService.createAdoptionRequestAlert(
+      `${createdRequest.adopter.firstName} ${createdRequest.adopter.lastName}`.trim(),
+      createdRequest.pet.name,
+    );
+
+    return createdRequest;
   }
 
   async approveRequest(

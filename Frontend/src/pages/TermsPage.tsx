@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Navbar from "../components/Navbar";
+import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import puppiesImg from "../imports/TermsAndConditions-2/7c457ab2a2d7637c44c2b710d5188196efcb58bb.png";
 import pawLeafImg from "../imports/TermsAndConditions-2/c5ef6e7fef83234c87222ba3003b9cd587a39b1f.png";
@@ -12,7 +13,12 @@ interface TermsPageProps {
 
 export default function TermsPage({ onNavigate }: TermsPageProps) {
   const [agreed, setAgreed] = useState(false);
+  const { user } = useAuth();
   const { t } = useLanguage();
+
+  function handleAccept() {
+    onNavigate(user ? "user-profile" : "signup");
+  }
 
   return (
     <div className="min-h-screen bg-[rgba(186,216,211,0.99)] flex flex-col">
@@ -133,10 +139,10 @@ export default function TermsPage({ onNavigate }: TermsPageProps) {
               </label>
             </div>
 
-            {/* Back to signup */}
+            {/* Continue */}
             <div className="mt-6 flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4">
               <button
-                onClick={() => onNavigate("signup")}
+                onClick={handleAccept}
                 disabled={!agreed}
                 className="w-full sm:w-auto bg-[#089D97] disabled:opacity-40 text-white font-['Poppins',sans-serif] font-semibold text-[15px] sm:text-[16px] px-6 sm:px-8 py-3 rounded-[20px] hover:bg-[#047975] transition-colors"
               >

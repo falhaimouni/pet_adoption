@@ -258,13 +258,8 @@ export class UploadsService {
         throw new ForbiddenException('You are not allowed to access this file');
       }
 
-      const managedByCurrentUser =
-        ['ADMIN', 'MANAGER'].includes(user.role) &&
-        this.isHigherRole(user.role, owner.role.roleName);
-
-      if (owner.userId !== user.userId && !managedByCurrentUser) {
-        throw new ForbiddenException('You are not allowed to access this file');
-      }
+      // Current profile images identify senders in Community and friends lists.
+      // Only image retrieval is shared; profile and deletion permissions stay separate.
       return;
     }
 

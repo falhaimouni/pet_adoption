@@ -38,7 +38,6 @@ export class SeedService {
     await seedUsers(this.dataSource);
     await seedEmployees(this.dataSource);
     await seedAdopters(this.dataSource);
-
     //pets system
     await seedPets(this.dataSource);
     await seedPetImages(this.dataSource);

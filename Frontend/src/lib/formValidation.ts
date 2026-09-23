@@ -153,6 +153,6 @@ export function validateRequest(path: string, init: RequestInit, mockIds = false
   else if (/^\/pets\/[^/]+\/medical-record\/entries$/.test(pathname) || /^\/medical-entries\/[^/]+$/.test(pathname)) schema = medical;
   else if (/^\/pets\/[^/]+\/vaccinations$/.test(pathname) || /^\/vaccinations\/[^/]+$/.test(pathname)) schema = vaccination;
   else if (/^\/adoption\/requests(?:\/[^/]+)?$/.test(pathname)) schema = { petId: id, notes: text(1000) };
-  else if (pathname === "/messages/send") schema = { conversationId: id, message: text(5000, true) };
+  else if (/^\/conversations\/[^/]+\/messages$/.test(pathname)) schema = { messageText: text(5000, true), type: choice(["TEXT", "IMAGE", "VIDEO", "AUDIO", "FILE"]) };
   if (schema) assertValidFields(schema, values, t, { partial: method === "PATCH", mockIds });
 }

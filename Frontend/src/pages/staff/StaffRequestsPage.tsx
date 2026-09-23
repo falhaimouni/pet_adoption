@@ -32,11 +32,18 @@ export default function StaffRequestsPage({ onNavigate, role = "employee", activ
   useEffect(() => {
     setLoading(true);
     setError("");
-    apiFetch<AdoptionRequest[]>("/adoption/requests")
-      .then(setRequests)
-      .catch((err) => setError(err instanceof Error ? err.message : t("requests_load_error")))
-      .finally(() => setLoading(false));
-  }, []);
+    let active = true;
+    const refresh = () => apiFetch<AdoptionRequest[]>("/adoption/requests")
+      .then((data) => { if (active) { setRequests(data); setError(""); } })
+      .catch((err) => { if (active) setError(err instanceof Error ? err.message : t("requests_load_error")); })
+      .finally(() => { if (active) setLoading(false); });
+    void refresh();
+    window.addEventListener("petopia:notifications-changed", refresh);
+    return () => {
+      active = false;
+      window.removeEventListener("petopia:notifications-changed", refresh);
+    };
+  }, [t]);
 
   const filtered = useMemo(() => requests.filter((r) => {
     const adopter = `${r.adopter.firstName} ${r.adopter.lastName}`.toLowerCase();

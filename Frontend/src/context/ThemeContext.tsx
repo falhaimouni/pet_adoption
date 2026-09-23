@@ -13,7 +13,7 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 const DEFAULT_THEME: Theme = "light";
-const LEGACY_THEME_KEY = "petopia_theme";
+const THEME_STORAGE_PREFIX = "petopia_theme:";
 
 function isTheme(value: string | null): value is Theme {
   return value === "light" || value === "dark";
@@ -21,7 +21,7 @@ function isTheme(value: string | null): value is Theme {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const storageKey = `petopia_theme:${user?.id ?? "guest"}`;
+  const storageKey = user ? `${THEME_STORAGE_PREFIX}${user.id}` : null;
   const [theme, setThemeState] = useState<Theme>(() => DEFAULT_THEME);
 
   const isDark = theme === "dark";
@@ -34,7 +34,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   function setTheme(t: Theme) {
     setThemeState(t);
-    sessionStorage.setItem(storageKey, t);
+    if (storageKey) localStorage.setItem(storageKey, t);
     applyTheme(t);
   }
 
@@ -43,8 +43,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    localStorage.removeItem(LEGACY_THEME_KEY);
-    const stored = sessionStorage.getItem(storageKey);
+    const stored = storageKey ? localStorage.getItem(storageKey) : null;
     setThemeState(isTheme(stored) ? stored : DEFAULT_THEME);
   }, [storageKey]);
 

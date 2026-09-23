@@ -1,8 +1,10 @@
 import { lazy, Suspense, useState, useEffect } from "react";
+import { Toaster } from "sonner";
 import { CartProvider } from "../context/CartContext";
 import { AuthProvider, useAuth, UserRole } from "../context/AuthContext";
 import { ThemeProvider } from "../context/ThemeContext";
 import { LanguageProvider, useLanguage } from "../context/LanguageContext";
+import { useNotificationSocket } from "../hooks/useNotificationSocket";
 
 import SystemStatusPage from "../pages/SystemStatusPage";
 import HomePage from "../pages/HomePage";
@@ -36,6 +38,9 @@ const StaffRequestsPage = lazy(() => import("../pages/staff/StaffRequestsPage"))
 const StaffAdoptionsPage = lazy(() => import("../pages/staff/StaffAdoptionsPage"));
 const StaffChatsListPage = lazy(() => import("../pages/staff/StaffChatsListPage"));
 const StaffChatDetailPage = lazy(() => import("../pages/staff/StaffChatDetailPage"));
+const CommunityPage = lazy(() => import("../pages/CommunityPage"));
+const SocialFriendsPage = lazy(() => import("../pages/FriendsPage"));
+const DirectChatPage = lazy(() => import("../pages/DirectChatPage"));
 
 const VetDashboardPage = lazy(() => import("../pages/vet/VetDashboardPage"));
 const VetPetsPage = lazy(() => import("../pages/vet/VetPetsPage"));
@@ -89,6 +94,9 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   "my-requests": ["adopter"],
   "my-adoptions": ["adopter"],
   chats: ["adopter"],
+  friends: ["adopter"],
+  "support-chat": ["adopter"],
+  community: ["adopter", "employee", "vet", "manager", "admin"],
   "chat-detail": ["adopter"],
   "user-profile": ["adopter", "employee", "vet", "manager", "admin"],
   settings: ["adopter", "employee", "vet", "manager", "admin"],
@@ -103,12 +111,14 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   "staff-inventory": ["employee"],
   "staff-suppliers": ["employee"],
   "staff-reports": ["employee"],
+  "staff-friends": ["employee"],
   "vet-dashboard": ["vet"],
   "vet-pets": ["vet"],
   "vet-medical": ["vet"],
   "vet-vaccinations": ["vet"],
   "vet-reports": ["vet"],
   "vet-profile": ["vet"],
+  "vet-friends": ["vet"],
   "manager-dashboard": ["manager"],
   "manager-pets": ["manager"],
   "manager-requests": ["manager"],
@@ -121,6 +131,7 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   "manager-inventory": ["manager"],
   "manager-suppliers": ["manager"],
   "manager-reports": ["manager"],
+  "manager-friends": ["manager"],
   "admin-dashboard": ["admin"],
   "admin-pets": ["admin"],
   "admin-requests": ["admin"],
@@ -137,6 +148,7 @@ const ROLE_PAGES: Record<string, UserRole[]> = {
   "admin-roles": ["admin"],
   "admin-files": ["admin"],
   "admin-activity": ["admin"],
+  "admin-friends": ["admin"],
 };
 
 function homePageForRole(role: UserRole): string {
@@ -157,6 +169,7 @@ function AppRouter() {
   const initialRoute = readHashRoute();
   const [currentPage, setCurrentPage] = useState<string>(initialRoute.page);
   const [params, setParams] = useState<Params>(initialRoute.params);
+  useNotificationSocket(user?.id);
 
   useEffect(() => {
     const onHashChange = () => {
@@ -293,7 +306,10 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
       : <UserProfilePage onNavigate={navigate} />;
     case "my-requests": return <MyRequestsPage onNavigate={navigate} />;
     case "my-adoptions": return <MyAdoptionsPage onNavigate={navigate} />;
-    case "chats": return <ChatsListPage onNavigate={navigate} />;
+    case "chats": return <DirectChatPage key={params.id as string ?? "list"} onNavigate={navigate} conversationId={params.id as string | undefined} />;
+    case "support-chat": return <ChatsListPage onNavigate={navigate} />;
+    case "friends": return <SocialFriendsPage onNavigate={navigate} />;
+    case "community": return <CommunityPage onNavigate={navigate} />;
     case "chat-detail": return <ChatDetailPage onNavigate={navigate} conversationId={params.conversationId as string} />;
 
     // Employee
@@ -307,6 +323,7 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "staff-inventory": return <AdminInventoryPage onNavigate={navigate} role="employee" activePage="staff-inventory" />;
     case "staff-suppliers": return <AdminSuppliersPage onNavigate={navigate} role="employee" activePage="staff-suppliers" />;
     case "staff-reports": return <AdminReportsPage onNavigate={navigate} role="employee" activePage="staff-reports" />;
+    case "staff-friends": return <CommunityPage onNavigate={navigate} />;
 
     // Vet
     case "vet-dashboard": return <VetDashboardPage onNavigate={navigate} />;
@@ -315,28 +332,30 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "vet-vaccinations": return <VetVaccinationsPage onNavigate={navigate} params={{ petId: params.petId as string | undefined }} />;
     case "vet-reports": return <AdminReportsPage onNavigate={navigate} role="vet" activePage="vet-reports" />;
     case "vet-profile": return <VetProfilePage onNavigate={navigate} />;
+    case "vet-friends": return <CommunityPage onNavigate={navigate} />;
 
     // Manager
     case "manager-dashboard": return <ManagerDashboardPage onNavigate={navigate} />;
     case "manager-pets": return <StaffPetsPage onNavigate={navigate} role="manager" activePage="manager-pets" />;
     case "manager-requests": return <StaffRequestsPage onNavigate={navigate} role="manager" activePage="manager-requests" />;
     case "manager-adoptions": return <StaffAdoptionsPage onNavigate={navigate} role="manager" activePage="manager-adoptions" />;
-    case "manager-chats": return <StaffChatsListPage onNavigate={navigate} role="manager" activePage="manager-chats" detailPage="manager-chat-detail" readOnly />;
-    case "manager-chat-detail": return <StaffChatDetailPage onNavigate={navigate} conversationId={params.conversationId as string} role="manager" activePage="manager-chats" listPage="manager-chats" readOnly />;
+    case "manager-chats": return <StaffChatsListPage onNavigate={navigate} role="manager" activePage="manager-chats" detailPage="manager-chat-detail" />;
+    case "manager-chat-detail": return <StaffChatDetailPage onNavigate={navigate} conversationId={params.conversationId as string} role="manager" activePage="manager-chats" listPage="manager-chats" />;
     case "manager-users": return <AdminUsersPage onNavigate={navigate} role="manager" activePage="manager-users" />;
     case "manager-orders": return <AdminOrdersPage onNavigate={navigate} role="manager" activePage="manager-orders" />;
     case "manager-analytics": return <ManagerAnalyticsPage onNavigate={navigate} />;
     case "manager-inventory": return <ManagerInventoryPage onNavigate={navigate} />;
     case "manager-suppliers": return <AdminSuppliersPage onNavigate={navigate} role="manager" activePage="manager-suppliers" />;
     case "manager-reports": return <AdminReportsPage onNavigate={navigate} role="manager" activePage="manager-reports" />;
+    case "manager-friends": return <CommunityPage onNavigate={navigate} />;
 
     // Admin
     case "admin-dashboard": return <AdminDashboardPage onNavigate={navigate} />;
     case "admin-pets": return <StaffPetsPage onNavigate={navigate} role="admin" activePage="admin-pets" />;
     case "admin-requests": return <StaffRequestsPage onNavigate={navigate} role="admin" activePage="admin-requests" />;
     case "admin-adoptions": return <StaffAdoptionsPage onNavigate={navigate} role="admin" activePage="admin-adoptions" />;
-    case "admin-chats": return <StaffChatsListPage onNavigate={navigate} role="admin" activePage="admin-chats" detailPage="admin-chat-detail" readOnly />;
-    case "admin-chat-detail": return <StaffChatDetailPage onNavigate={navigate} conversationId={params.conversationId as string} role="admin" activePage="admin-chats" listPage="admin-chats" readOnly />;
+    case "admin-chats": return <StaffChatsListPage onNavigate={navigate} role="admin" activePage="admin-chats" detailPage="admin-chat-detail" />;
+    case "admin-chat-detail": return <StaffChatDetailPage onNavigate={navigate} conversationId={params.conversationId as string} role="admin" activePage="admin-chats" listPage="admin-chats" />;
     case "admin-users": return <AdminUsersPage onNavigate={navigate} />;
     case "admin-departments": return <AdminDepartmentsPage onNavigate={navigate} />;
     case "admin-orders": return <AdminOrdersPage onNavigate={navigate} />;
@@ -347,6 +366,7 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "admin-roles": return <AdminRolesPage onNavigate={navigate} />;
     case "admin-files": return <AdminFilesPage onNavigate={navigate} />;
     case "admin-activity": return <ActivityLogPage onNavigate={navigate} />;
+    case "admin-friends": return <CommunityPage onNavigate={navigate} />;
 
     default: return <HomePage onNavigate={navigate} />;
   }
@@ -358,6 +378,7 @@ export default function App() {
       <ThemeProvider>
         <LanguageProvider>
           <CartProvider>
+            <Toaster position="top-center" richColors />
             <Suspense fallback={<RouteLoadingFallback />}>
               <AppRouter />
             </Suspense>
