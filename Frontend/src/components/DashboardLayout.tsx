@@ -216,7 +216,7 @@ export default function DashboardLayout({
 
   return (
     <div className="h-dvh bg-[rgba(186,216,211,0.99)] flex flex-col overflow-hidden">
-      {role === "adopter" && <button type="button" onClick={() => onNavigate("support-chat")} className="fixed bottom-5 end-5 z-40 flex items-center gap-2 rounded-full bg-[#087f79] px-5 py-3 text-white shadow-lg" aria-label="Open Support Chat"><MessageCircle size={20} /> Support Chat</button>}
+      {role === "adopter" && activePage !== "chats" && activePage !== "support-chat" && <button type="button" onClick={() => onNavigate("support-chat")} className="fixed bottom-5 end-5 z-40 flex items-center gap-2 rounded-full bg-[#087f79] px-5 py-3 text-white shadow-lg" aria-label="Open Support Chat"><MessageCircle size={20} /> Support Chat</button>}
       {/* Top Navbar */}
       <header className="w-full bg-white shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] z-20 relative shrink-0">
         <div className="flex items-center justify-between gap-2 h-[80px] px-2 sm:px-4">
@@ -427,6 +427,13 @@ export default function DashboardLayout({
             </div>
           )}
 
+          {role === "adopter" && activePage === "chats" && (
+            <div className="mb-3 flex justify-end">
+              <button type="button" onClick={() => onNavigate("support-chat")} className="flex items-center gap-2 rounded-full bg-[#087f79] px-4 py-2 text-sm text-white shadow-sm hover:bg-[#047975] transition-colors" aria-label="Open Support Chat">
+                <MessageCircle size={18} /> Support Chat
+              </button>
+            </div>
+          )}
           {children}
         </main>
       </div>
