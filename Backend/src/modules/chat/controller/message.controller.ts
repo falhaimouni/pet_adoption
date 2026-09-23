@@ -17,7 +17,7 @@ export class MessageController {
 
 
   @Post(':id/messages')
-  @Roles('ADOPTER', 'EMPLOYEE')
+  @Roles('ADOPTER', 'EMPLOYEE', 'ADMIN', 'MANAGER')
   async sendMessage(
     @Param('id') conversationId: string,
     @Body() dto: SendMessageDto,

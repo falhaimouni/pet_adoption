@@ -72,7 +72,7 @@ export class MessageService {
       if (sender) saved.sender = sender;
       return saved;
     });
-    const saved = chatRole === 'EMPLOYEE'
+    const saved = chatRole !== 'ADOPTER'
       ? await this.presence.reply(conversationId, userId, persist)
       : await persist();
     try {

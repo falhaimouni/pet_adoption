@@ -3,7 +3,7 @@ import { apiBlobFetch, API_BASE_URL, resolveAssetUrl } from "./api";
 
 export function getProtectedFilePath(url?: string | null) {
   if (!url) return "";
-  if (url.startsWith("/files/")) return url;
+  if (url.startsWith("/files/") || /^\/community\/messages\/[^/]+\/image$/.test(url)) return url;
 
   try {
     const parsed = new URL(url);

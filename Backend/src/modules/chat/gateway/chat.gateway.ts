@@ -115,7 +115,7 @@ export class ChatGateway
                                 user.role,
                         );
                         await client.join(`conversation:${conversationId}`);
-                        if (user.role === 'EMPLOYEE') this.presence.join(conversationId, user.userId, client.id);
+                        if (['EMPLOYEE', 'ADMIN', 'MANAGER'].includes(user.role)) this.presence.join(conversationId, user.userId, client.id);
                         client.emit('conversationOwnership', { conversationId, assignedEmployeeId: this.presence.owner(conversationId) });
                         return {
                                 event: 'joinedConversation',

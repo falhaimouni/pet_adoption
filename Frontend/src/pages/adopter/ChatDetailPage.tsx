@@ -90,10 +90,10 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
 
 
   return (
-    <DashboardLayout role="adopter" activePage="chats" onNavigate={onNavigate}>
-      <div className="w-full max-w-2xl flex flex-col h-[min(720px,calc(100dvh-128px))] min-h-[420px] bg-white rounded-[15px] shadow-md overflow-hidden">
+    <DashboardLayout role="adopter" activePage="support-chat" onNavigate={onNavigate}>
+      <div className="w-full flex flex-col h-[min(720px,calc(100dvh-128px))] min-h-[420px] bg-white rounded-[15px] shadow-md overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white">
-          <button onClick={() => onNavigate("chats")} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label={t("chat_back_conversations")}>
+          <button onClick={() => onNavigate("support-chat")} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label={t("chat_back_conversations")}>
             <ArrowLeft size={20} />
           </button>
           <MessageCircle size={20} className="text-[#089D97]" />
@@ -111,7 +111,7 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
         {loading ? (
           <div className="flex-1 p-4 space-y-3 bg-[rgba(186,216,211,0.15)]">{[1, 2, 3].map((n) => <div key={n} className="h-12 rounded-[16px] bg-white animate-pulse" />)}</div>
         ) : error && !conversation ? (
-          <EmptyState icon={<MessageCircle size={28} />} title={t("chat_unavailable")} description={error} actionLabel={t("chat_back_messages")} onAction={() => onNavigate("chats")} />
+          <EmptyState icon={<MessageCircle size={28} />} title={t("chat_unavailable")} description={error} actionLabel={t("chat_back_messages")} onAction={() => onNavigate("support-chat")} />
         ) : (
           <>
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[rgba(186,216,211,0.15)]">
