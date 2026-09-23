@@ -1,3 +1,4 @@
+import { CommunityModule } from './modules/community/community.module';
 import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
 import { resolve } from 'path';
 import { ConfigModule } from '@nestjs/config';
@@ -72,6 +73,7 @@ import { MetricsModule } from './monitoring/metrics.module';
     DepartmentsModule,
     MetricsModule,
     ChatModule,
+    CommunityModule,
   ],
   controllers: [AppController],
   providers: [AppService],

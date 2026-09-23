@@ -10,12 +10,11 @@ import { Employee } from '../../database/entities/employee.entity';
 import { ActivityLog } from '../../database/entities/activity-log.entity';
 import { Role } from '../../database/entities/role.entity';
 import { UploadsModule } from '../uploads/uploads.module';
-import { Friendship } from '../../database/entities/friendship.entity';
 
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Role, Department, Employee, Friendship, ActivityLog]),
+    TypeOrmModule.forFeature([User, Role, Department, Employee, ActivityLog]),
     UploadsModule,
   ],
   controllers: [UsersController, EmployeeLookupsController],

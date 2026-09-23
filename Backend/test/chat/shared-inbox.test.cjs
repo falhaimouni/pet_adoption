@@ -39,9 +39,9 @@ test('legacy closed conversation accepts adopter and employee replies', async ()
   assert.deepEqual(f.notifications, [['adopter', 'adopter', true], ['employee-two', 'adopter', false]]);
 });
 
-test('unrelated adopters and read-only roles cannot send', async () => {
+test('unrelated adopters and vets cannot send', async () => {
   const f = setup();
-  for (const [id, role] of [['other-adopter', 'ADOPTER'], ['admin', 'ADMIN'], ['manager', 'MANAGER']]) {
+  for (const [id, role] of [['other-adopter', 'ADOPTER'], ['vet', 'VET']]) {
     await assert.rejects(f.service.sendMessage('chat', id, role, { type: 'TEXT', messageText: 'No' }));
   }
   assert.equal(f.messages.length, 0);
@@ -123,3 +123,12 @@ test('failed initial reply releases ownership and disconnected employees cannot 
   f.presence.disconnect('socket-one');
   await assert.rejects(f.service.sendMessage('chat', 'employee-one', 'EMPLOYEE', { type: 'TEXT', messageText: 'No' }));
 });
+
+for (const role of ['ADMIN', 'MANAGER']) {
+  test(`${role} can reply to support after opening the conversation`, async () => {
+    const f = setup();
+    f.presence.join('chat', 'staff-user', 'staff-socket');
+    await f.service.sendMessage('chat', 'staff-user', role, { type: 'TEXT', messageText: 'Support reply' });
+    assert.equal(f.messages[0].senderId, 'staff-user');
+  });
+}

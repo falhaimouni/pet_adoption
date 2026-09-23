@@ -1,3 +1,5 @@
+export { CommunityMessage, CommunityBlock, FriendRequest, DirectConversation, DirectMessage, UserPresence } from './community.entity';
+import { CommunityMessage, CommunityBlock, FriendRequest, DirectConversation, DirectMessage, UserPresence } from './community.entity';
 export { ActivityLog } from './activity-log.entity';
 export { Adoption } from './adoption.entity';
 export { AdoptionRequest } from './adoption-request.entity';
@@ -59,6 +61,7 @@ import { User } from './user.entity';
 import { Vaccination } from './vaccination.entity';
 
 export const databaseEntities = [
+  CommunityMessage, CommunityBlock, FriendRequest, DirectConversation, DirectMessage, UserPresence,
   ActivityLog,
   Adoption,
   AdoptionRequest,

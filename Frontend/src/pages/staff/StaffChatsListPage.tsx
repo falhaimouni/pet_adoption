@@ -54,7 +54,7 @@ export default function StaffChatsListPage({ onNavigate, role = "employee", acti
 
   return (
     <DashboardLayout role={role} activePage={activePage} onNavigate={onNavigate} pageTitle={readOnly ? t("chat_readonly_title") : t("chat_staff_inbox")} breadcrumbs={[t(`role_${role}`), t("nav_chats")]}>
-      <div className="max-w-2xl bg-white rounded-[15px] shadow-md overflow-hidden">
+      <div className="w-full bg-white rounded-[15px] shadow-md overflow-hidden">
         {readOnly && (
           <div className="px-4 py-3 bg-amber-50 border-b border-amber-100">
             <p className="font-['Poppins',sans-serif] text-[12px] text-amber-800">{t("chat_readonly_list")}</p>

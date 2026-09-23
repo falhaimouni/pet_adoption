@@ -104,7 +104,7 @@ export default function StaffChatDetailPage({ onNavigate, conversationId, role =
 
   return (
     <DashboardLayout role={role} activePage={activePage} onNavigate={onNavigate}>
-      <div className="w-full max-w-3xl flex flex-col bg-white rounded-[15px] shadow-md overflow-hidden h-[min(720px,calc(100dvh-128px))] min-h-[420px]">
+      <div className="w-full flex flex-col bg-white rounded-[15px] shadow-md overflow-hidden h-[min(720px,calc(100dvh-128px))] min-h-[420px]">
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
           <button onClick={() => onNavigate(listPage)} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label={t("chat_back_inbox")}><ArrowLeft size={20} /></button>
           <MessageCircle size={20} className="text-[#089D97]" />

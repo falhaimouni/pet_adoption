@@ -16,7 +16,7 @@ export default function AdopterDashboardPage({ onNavigate }: AdopterDashboardPag
   const actions = [
     { label: t("nav_pets"), desc: t("adopter_action_pets_desc"), page: "pets", icon: PawPrint },
     { label: t("nav_my_requests"), desc: t("adopter_action_requests_desc"), page: "my-requests", icon: ClipboardList },
-    { label: t("nav_chats"), desc: t("adopter_action_chats_desc"), page: "chats", icon: MessageCircle },
+    { label: "Community", desc: "Share pet questions and photos with the community.", page: "community", icon: MessageCircle },
     { label: t("nav_my_adoptions"), desc: t("adopter_action_adoptions_desc"), page: "my-adoptions", icon: Heart },
   ];
 

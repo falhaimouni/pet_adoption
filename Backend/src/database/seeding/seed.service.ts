@@ -16,7 +16,6 @@ import { seedAdoptions } from './seeds/adoption.seed';
 
 import { seedConversations } from './seeds/conversation.seed';
 import { seedMessages } from './seeds/message.seed';
-import { seedFriendships } from './seeds/friendship.seed';
 
 import { seedSuppliers } from './seeds/supplier.seed';
 import { seedSupplies } from './seeds/supply.seed';
@@ -39,7 +38,6 @@ export class SeedService {
     await seedUsers(this.dataSource);
     await seedEmployees(this.dataSource);
     await seedAdopters(this.dataSource);
-    await seedFriendships(this.dataSource);
     //pets system
     await seedPets(this.dataSource);
     await seedPetImages(this.dataSource);
