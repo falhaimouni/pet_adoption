@@ -6,6 +6,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { useTheme } from "../context/ThemeContext";
 import { useCart } from "../context/CartContext";
 import { apiFetch } from "../lib/api";
+import AuthenticatedImage from "./AuthenticatedImage";
 
 interface NavbarProps {
   activePage?: string;
@@ -167,10 +168,10 @@ const LEGAL_LINKS = [
           <button
             onClick={() => setLang(nextLang[lang])}
             aria-label={t("common_toggle_language")}
-            className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-[10px] text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all font-['Poppins',sans-serif] text-[13px] font-medium"
+            className="flex w-9 h-9 sm:w-auto items-center justify-center gap-1.5 sm:px-2.5 rounded-[10px] text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all font-['Poppins',sans-serif] text-[13px] font-medium"
           >
             <Globe size={15} />
-            <span>{langLabel[lang]}</span>
+            <span className="hidden sm:inline">{langLabel[lang]}</span>
           </button>
 
           {/* Dark / Light toggle */}
@@ -186,7 +187,7 @@ const LEGAL_LINKS = [
             <button
               onClick={() => nav("cart")}
               aria-label={t("cart_title")}
-              className="relative hidden sm:flex w-9 h-9 rounded-[10px] items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
+              className="relative flex w-9 h-9 rounded-[10px] items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
             >
               <ShoppingCart size={17} />
               {count > 0 && <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-[#089D97] text-white text-[10px] font-bold flex items-center justify-center">{count}</span>}
@@ -268,7 +269,7 @@ const LEGAL_LINKS = [
                 className="flex items-center gap-2 px-3 py-1.5 rounded-[12px] hover:bg-[#f0f9f8] transition-colors"
               >
                 {user.avatar ? (
-                  <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
+                  <AuthenticatedImage src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#089D97] to-[#047975] flex items-center justify-center">
                     <span className="font-['Poppins',sans-serif] font-bold text-[11px] text-white">{initials}</span>
@@ -365,7 +366,7 @@ const LEGAL_LINKS = [
             <>
               <div className="flex items-center gap-3 px-3 py-3 border-t border-[#f0f8f7] mt-1">
                 {user.avatar ? (
-                  <img src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover" />
+                  <AuthenticatedImage src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover" />
                 ) : (
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#089D97] to-[#047975] flex items-center justify-center">
                     <span className="font-bold text-[11px] text-white">{initials}</span>

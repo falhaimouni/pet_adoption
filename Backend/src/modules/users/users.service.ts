@@ -5,14 +5,15 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { DataSource, EntityManager, In, QueryFailedError, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, QueryFailedError, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { Department } from '../../database/entities/department.entity';
 import { Employee } from '../../database/entities/employee.entity';
 import { Role } from '../../database/entities/role.entity';
 import { User } from '../../database/entities/user.entity';
+import { Friendship } from '../../database/entities/friendship.entity';
 import { ActivityLog } from '../../database/entities/activity-log.entity';
 import { UploadsService } from '../uploads/uploads.service';
 import {
@@ -20,6 +21,11 @@ import {
   UpdateProfileDto,
   UpdateUserDto,
 } from '@shared/dto/user.dto';
+import {
+  FRIEND_AUTO_ROLES,
+  FRIEND_MANUAL_ROLES,
+  FRIEND_SYSTEM_ROLES,
+} from '@shared/constants/chat.constants';
 import { RequestWithUser } from '@shared/types/auth.types';
 import { FileUploadCategory } from '@shared/enums';
 
@@ -76,6 +82,9 @@ export class UsersService {
 
     @InjectRepository(Department)
     private departmentRepo: Repository<Department>,
+
+    @InjectRepository(Friendship)
+    private friendshipRepo: Repository<Friendship>,
 
     private readonly uploadsService: UploadsService,
     private dataSource: DataSource,
@@ -250,6 +259,7 @@ export class UsersService {
       throw error;
     }
 
+    await this.syncStaffFriendshipsForUser(savedUser.userId);
     return this.findOne(savedUser.userId);
   }
 
@@ -449,6 +459,8 @@ export class UsersService {
       }
     });
 
+    await this.syncStaffFriendshipsForUser(id);
+
     return this.findProfile(id);
   }
 
@@ -480,12 +492,10 @@ export class UsersService {
       const lockedUser = await manager
         .getRepository(User)
         .createQueryBuilder('user')
-        //get the role with the user
-        .leftJoinAndSelect('user.role', 'role')
-        //lock this user row
+        // Role is required, and an inner join keeps FOR UPDATE valid on Postgres.
+        .innerJoinAndSelect('user.role', 'role')
         .setLock('pessimistic_write')
         .where('user.userId = :id', { id })
-        //run the query and get the result
         .getOne();
 
       if (!lockedUser) {
@@ -516,8 +526,209 @@ export class UsersService {
       }
     });
 
+    await this.syncStaffFriendshipsForUser(id);
+
     return {
       message: 'User deactivated successfully',
+    };
+  }
+
+  async getFriends(currentUser: RequestWithUser['user']) {
+    const currentRole = this.toRoleName(currentUser.role);
+    this.ensureFriendSystemRole(currentRole);
+
+    const friendships = await this.friendshipRepo.find({
+      where: [
+        { user1Id: currentUser.userId },
+        { user2Id: currentUser.userId },
+      ],
+      relations: [
+        'user1',
+        'user1.role',
+        'user1.employeeProfile',
+        'user1.employeeProfile.department',
+        'user2',
+        'user2.role',
+        'user2.employeeProfile',
+        'user2.employeeProfile.department',
+      ],
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return friendships.map((friendship) => ({
+      friendshipId: friendship.friendshipId,
+      isSystemGenerated: friendship.isSystemGenerated,
+      createdAt: friendship.createdAt,
+      updatedAt: friendship.updatedAt,
+      friend: this.stripSensitiveFields(
+        friendship.user1Id === currentUser.userId
+          ? friendship.user2
+          : friendship.user1,
+      ),
+    }));
+  }
+
+  async getFriendCandidates(currentUser: RequestWithUser['user']) {
+    const currentRole = this.toRoleName(currentUser.role);
+    this.ensureFriendSystemRole(currentRole);
+
+    if (!this.canManageFriendsManually(currentRole)) {
+      return [];
+    }
+
+    const friendships = await this.friendshipRepo.find({
+      where: [
+        { user1Id: currentUser.userId },
+        { user2Id: currentUser.userId },
+      ],
+      select: {
+        user1Id: true,
+        user2Id: true,
+      },
+    });
+
+    const friendIds = new Set<string>([currentUser.userId]);
+    for (const friendship of friendships) {
+      friendIds.add(
+        friendship.user1Id === currentUser.userId
+          ? friendship.user2Id
+          : friendship.user1Id,
+      );
+    }
+
+    const candidates = await this.userRepo.find({
+      where: {
+        status: USER_STATUS.ACTIVE,
+        role: {
+          roleName: In(FRIEND_MANUAL_ROLES as unknown as string[]),
+        },
+      },
+      relations: ['role', 'employeeProfile', 'employeeProfile.department'],
+      order: {
+        firstName: 'ASC',
+        lastName: 'ASC',
+      },
+    });
+
+    return candidates
+      .filter((user) => !friendIds.has(user.userId))
+      .map((user) => this.stripSensitiveFields(user));
+  }
+
+  async addFriend(
+    currentUser: RequestWithUser['user'],
+    friendUserId: string,
+  ) {
+    const currentRole = this.toRoleName(currentUser.role);
+    const friendUser = await this.getUserForAuthorization(friendUserId);
+    const friendRole = this.toRoleName(friendUser.role.roleName);
+
+    this.ensureFriendSystemRole(currentRole);
+    this.ensureFriendSystemRole(friendRole);
+
+    if (currentUser.userId === friendUserId) {
+      throw new BadRequestException('You cannot add yourself as a friend');
+    }
+
+    if (friendUser.status !== USER_STATUS.ACTIVE) {
+      throw new BadRequestException('You cannot add an inactive user');
+    }
+
+    if (
+      !this.canManageFriendsManually(currentRole) ||
+      !this.canManageFriendsManually(friendRole)
+    ) {
+      throw new ForbiddenException(
+        'Only employees and vets can manage manual friendships',
+      );
+    }
+
+    const existing = await this.getFriendshipByPair(
+      currentUser.userId,
+      friendUserId,
+    );
+
+    if (existing) {
+      if (existing.isSystemGenerated) {
+        throw new ConflictException('You are already connected');
+      }
+
+      throw new ConflictException('Friendship already exists');
+    }
+
+    const pair = this.normalizeFriendPair(
+      currentUser.userId,
+      friendUserId,
+    );
+
+    let friendship: Friendship;
+    try {
+      friendship = await this.friendshipRepo.save(
+        this.friendshipRepo.create({
+          user1Id: pair.user1Id,
+          user2Id: pair.user2Id,
+          createdByUserId: currentUser.userId,
+          isSystemGenerated: false,
+        }),
+      );
+    } catch (error) {
+      if (error instanceof QueryFailedError && (error as any).code === '23505') {
+        throw new ConflictException('Friendship already exists');
+      }
+      throw error;
+    }
+
+    return {
+      message: 'Friend added successfully',
+      friendship: await this.buildFriendshipResponse(
+        friendship.friendshipId,
+        currentUser.userId,
+      ),
+    };
+  }
+
+  async removeFriend(
+    currentUser: RequestWithUser['user'],
+    friendUserId: string,
+  ) {
+    const currentRole = this.toRoleName(currentUser.role);
+    const friendRole = await this.getTargetRoleName(friendUserId);
+
+    this.ensureFriendSystemRole(currentRole);
+    this.ensureFriendSystemRole(friendRole);
+
+    if (currentUser.userId === friendUserId) {
+      throw new BadRequestException('You cannot remove yourself');
+    }
+
+    if (
+      !this.canManageFriendsManually(currentRole) ||
+      !this.canManageFriendsManually(friendRole)
+    ) {
+      throw new ForbiddenException(
+        'Only employees and vets can manage manual friendships',
+      );
+    }
+
+    const friendship = await this.getFriendshipByPair(
+      currentUser.userId,
+      friendUserId,
+    );
+
+    if (!friendship) {
+      throw new NotFoundException('Friendship not found');
+    }
+
+    if (friendship.isSystemGenerated) {
+      throw new ForbiddenException('System friendships cannot be removed');
+    }
+
+    await this.friendshipRepo.delete(friendship.friendshipId);
+
+    return {
+      message: 'Friend removed successfully',
     };
   }
 
@@ -532,6 +743,189 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  private async getTargetRoleName(userId: string) {
+    const user = await this.getUserForAuthorization(userId);
+    return this.toRoleName(user.role.roleName);
+  }
+
+  private async getFriendshipByPair(userId1: string, userId2: string) {
+    const pair = this.normalizeFriendPair(userId1, userId2);
+
+    return this.friendshipRepo.findOne({
+      where: {
+        user1Id: pair.user1Id,
+        user2Id: pair.user2Id,
+      },
+    });
+  }
+
+  private async buildFriendshipResponse(
+    friendshipId: string,
+    currentUserId: string,
+  ) {
+    const friendship = await this.friendshipRepo.findOne({
+      where: { friendshipId },
+      relations: [
+        'user1',
+        'user1.role',
+        'user1.employeeProfile',
+        'user1.employeeProfile.department',
+        'user2',
+        'user2.role',
+        'user2.employeeProfile',
+        'user2.employeeProfile.department',
+      ],
+    });
+
+    if (!friendship) {
+      return null;
+    }
+
+    return {
+      friendshipId: friendship.friendshipId,
+      isSystemGenerated: friendship.isSystemGenerated,
+      createdAt: friendship.createdAt,
+      updatedAt: friendship.updatedAt,
+      friend: this.stripSensitiveFields(
+        friendship.user1Id === currentUserId ? friendship.user2 : friendship.user1,
+      ),
+    };
+  }
+
+  private async syncStaffFriendshipsForUser(userId: string) {
+    const user = await this.userRepo.findOne({
+      where: { userId },
+      relations: ['role'],
+    });
+
+    if (!user || !user.role) {
+      return;
+    }
+
+    const roleName = this.toRoleName(user.role.roleName);
+
+    if (
+      !this.isFriendSystemRole(roleName) ||
+      user.status !== USER_STATUS.ACTIVE
+    ) {
+      await this.friendshipRepo
+        .createQueryBuilder()
+        .delete()
+        .from(Friendship)
+        .where('user1_id = :userId OR user2_id = :userId', { userId })
+        .execute();
+      return;
+    }
+
+    const validTargetRoles = this.getAutoFriendTargetRoles(roleName);
+    const existingSystemFriendships = await this.friendshipRepo.find({
+      where: [{ user1Id: userId }, { user2Id: userId }],
+      relations: ['user1', 'user1.role', 'user2', 'user2.role'],
+    });
+
+    const obsoleteIds = existingSystemFriendships
+      .filter((friendship) => {
+        if (!friendship.isSystemGenerated) return false;
+        const target = friendship.user1Id === userId
+          ? friendship.user2
+          : friendship.user1;
+        return (
+          target.status !== USER_STATUS.ACTIVE ||
+          !validTargetRoles.includes(target.role.roleName as never)
+        );
+      })
+      .map((friendship) => friendship.friendshipId);
+
+    if (obsoleteIds.length > 0) {
+      await this.friendshipRepo.delete(obsoleteIds);
+    }
+
+    const targetUsers = await this.userRepo.find({
+      where: {
+        status: USER_STATUS.ACTIVE,
+        role: {
+          roleName: In(validTargetRoles as string[]),
+        },
+      },
+      relations: ['role'],
+    });
+
+    for (const targetUser of targetUsers) {
+      if (targetUser.userId === userId) {
+        continue;
+      }
+
+      await this.upsertFriendship(userId, targetUser.userId, true);
+    }
+  }
+
+  private async upsertFriendship(
+    userId1: string,
+    userId2: string,
+    isSystemGenerated: boolean,
+    createdByUserId?: string | null,
+  ) {
+    const pair = this.normalizeFriendPair(userId1, userId2);
+    const existing = await this.friendshipRepo.findOne({
+      where: {
+        user1Id: pair.user1Id,
+        user2Id: pair.user2Id,
+      },
+    });
+
+    if (existing) {
+      if (isSystemGenerated && !existing.isSystemGenerated) {
+        existing.isSystemGenerated = true;
+        existing.createdByUserId = null;
+        await this.friendshipRepo.save(existing);
+      }
+
+      return existing;
+    }
+
+    return this.friendshipRepo.save(
+      this.friendshipRepo.create({
+        user1Id: pair.user1Id,
+        user2Id: pair.user2Id,
+        createdByUserId: createdByUserId ?? null,
+        isSystemGenerated,
+      }),
+    );
+  }
+
+  private normalizeFriendPair(userId1: string, userId2: string) {
+    return userId1 < userId2
+      ? { user1Id: userId1, user2Id: userId2 }
+      : { user1Id: userId2, user2Id: userId1 };
+  }
+
+  private stripSensitiveFields<T extends User>(user: T) {
+    const { password: _, refreshTokenVersion: __, ...rest } = user;
+    return rest;
+  }
+
+  private ensureFriendSystemRole(role: RoleName) {
+    if (!this.isFriendSystemRole(role)) {
+      throw new ForbiddenException('Adopters do not use the friend system');
+    }
+  }
+
+  private isFriendSystemRole(role: RoleName) {
+    return (FRIEND_SYSTEM_ROLES as readonly string[]).includes(role);
+  }
+
+  private canManageFriendsManually(role: RoleName) {
+    return (FRIEND_MANUAL_ROLES as readonly string[]).includes(role);
+  }
+
+  private getAutoFriendTargetRoles(role: RoleName) {
+    if ((FRIEND_AUTO_ROLES as readonly string[]).includes(role)) {
+      return FRIEND_SYSTEM_ROLES.filter((candidate) => candidate !== role);
+    }
+
+    return FRIEND_AUTO_ROLES;
   }
 
   private hasEmployeeProfileUpdates(data: UpdateUserDto) {

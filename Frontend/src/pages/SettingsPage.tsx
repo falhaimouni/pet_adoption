@@ -185,6 +185,8 @@ export default function SettingsPage({ onNavigate, embedded = false }: SettingsP
                     ].map(({ key, placeholder }) => (
                       <div key={key} className="relative">
                         <input
+                          required
+                          maxLength={255}
                           type={pwShow ? "text" : "password"}
                           value={pwForm[key as keyof typeof pwForm]}
                           onChange={(e) => setPwForm((f) => ({ ...f, [key]: e.target.value }))}

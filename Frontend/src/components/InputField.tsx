@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -10,6 +10,8 @@ interface InputFieldProps {
   value?: string;
   onChange?: (val: string) => void;
   responsive?: boolean;
+  maxLength?: number;
+  required?: boolean;
 }
 
 export default function InputField({
@@ -20,7 +22,10 @@ export default function InputField({
   value = "",
   onChange,
   responsive = false,
+  maxLength,
+  required = true,
 }: InputFieldProps) {
+  const id = useId();
   const [showPassword, setShowPassword] = useState(false);
   const { t } = useLanguage();
   const isPassword = type === "password";
@@ -32,15 +37,18 @@ export default function InputField({
   return (
     <div className="relative w-full">
       {/* Floating label */}
-      <span className="absolute -top-[9px] left-3 bg-white px-1 text-[12px] font-['Inter',sans-serif] text-[#5e6368] z-10">
+      <label htmlFor={id} className="absolute -top-[9px] left-3 bg-white px-1 text-[12px] font-['Inter',sans-serif] text-[#5e6368] z-10">
         {label}
-      </span>
+      </label>
 
       <div className={`relative flex items-center bg-white rounded-[10px] shadow-[0px_1px_2px_rgba(0,0,0,0.25)] border border-[#6b737a] h-[48px] px-3 gap-2 ${responsiveClasses}`}>
         {/* Left icon */}
         {icon && <span className="shrink-0 text-[#5e6368]">{icon}</span>}
 
         <input
+          id={id}
+          required={required}
+          maxLength={maxLength ?? (type === "email" ? 254 : type === "password" ? 255 : 161)}
           type={inputType}
           placeholder={placeholder}
           value={value}

@@ -7,8 +7,9 @@ import Navbar from "../components/Navbar";
 import BackHomeButton from "../components/BackHomeButton";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
-import { apiFetch, resolveAssetUrl } from "../lib/api";
+import { apiFetch } from "../lib/api";
 import { validateImageFile } from "../lib/validation";
+import AuthenticatedImage from "../components/AuthenticatedImage";
 
 interface UserProfilePageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
@@ -78,7 +79,7 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
           address: form.address.trim(),
         }),
       });
-      let nextAvatar = profile.avatar ? resolveAssetUrl(profile.avatar) : user?.avatar;
+      let nextAvatar = profile.avatar ?? user?.avatar;
       if (avatarFile) {
         const body = new FormData();
         body.append("file", avatarFile);
@@ -86,7 +87,7 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
           method: "POST",
           body,
         });
-        nextAvatar = uploaded.avatar ? resolveAssetUrl(uploaded.avatar) : undefined;
+        nextAvatar = uploaded.avatar ?? undefined;
       }
       updateUser({ name: `${profile.firstName} ${profile.lastName}`.trim(), phone: profile.phone ?? undefined, address: profile.address ?? undefined, avatar: nextAvatar });
       setAvatarPreview(nextAvatar ?? "");
@@ -165,7 +166,7 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
         <div className="bg-white rounded-[20px] shadow-lg p-6 mb-6 flex flex-col sm:flex-row sm:items-end gap-5">
           <div className="relative self-start">
             {avatarPreview ? (
-              <img src={avatarPreview} alt={t("profile_avatar_alt")} className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md" />
+              <AuthenticatedImage src={avatarPreview} alt={t("profile_avatar_alt")} className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md" />
             ) : (
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#089D97] to-[#047975] flex items-center justify-center border-4 border-white shadow-md">
                 <span className="font-['Poppins',sans-serif] font-bold text-2xl text-white">{initials}</span>
@@ -180,11 +181,7 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
           </div>
 
           <div className="flex-1">
-            {isEditing ? (
-              <input value={displayName} readOnly className="font-['Prata',serif] text-2xl text-[#1a2e2d] bg-transparent border-b-2 border-[#089D97] outline-none w-full mb-1" placeholder={t("profile_full_name")} />
-            ) : (
-              <h1 className="font-['Prata',serif] text-2xl text-[#1a2e2d]">{displayName}</h1>
-            )}
+            <h1 className="font-['Prata',serif] text-2xl text-[#1a2e2d]">{displayName}</h1>
             {displayHandle && <p className="font-['Poppins',sans-serif] text-[14px] text-[#5a8a87]">@{displayHandle}</p>}
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <span className="inline-flex items-center px-3 py-0.5 rounded-full bg-[#e0f2f0] text-[#047975] text-[12px] font-['Poppins',sans-serif] font-medium capitalize">{user?.role}</span>
@@ -228,19 +225,19 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-white rounded-[20px] shadow-sm p-6">
             <h2 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-[#1a2e2d] mb-5">{t("profile_personal_info")}</h2>
-            {error && <p className="font-['Poppins',sans-serif] text-[13px] text-red-600 bg-red-50 rounded-[12px] px-4 py-3 mb-4">{error}</p>}
+            {error && <p role="alert" className="whitespace-pre-line font-['Poppins',sans-serif] text-[13px] text-red-600 bg-red-50 rounded-[12px] px-4 py-3 mb-4">{error}</p>}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label={t("adopter_first_name")} icon={User}>
-                {isEditing ? <input value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} className={fieldClass} /> : <p className={readClass}>{form.firstName || "—"}</p>}
+                {isEditing ? <input maxLength={80} value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} className={fieldClass} /> : <p className={readClass}>{form.firstName || "—"}</p>}
               </Field>
               <Field label={t("adopter_last_name")} icon={User}>
-                {isEditing ? <input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} className={fieldClass} /> : <p className={readClass}>{form.lastName || "—"}</p>}
+                {isEditing ? <input maxLength={80} value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} className={fieldClass} /> : <p className={readClass}>{form.lastName || "—"}</p>}
               </Field>
               <Field label={t("profile_email")} icon={Mail}>
                 <p className={`${readClass} text-black/60`}>{form.email || "—"}</p>
               </Field>
               <Field label={t("profile_phone")} icon={Phone}>
-                {isEditing ? <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={fieldClass} /> : <p className={readClass}>{form.phone || "—"}</p>}
+                {isEditing ? <input maxLength={30} type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={fieldClass} /> : <p className={readClass}>{form.phone || "—"}</p>}
               </Field>
               <Field label={t("profile_address")} icon={MapPin}>
                 {isEditing ? <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} rows={3} maxLength={1000} className={`${fieldClass} resize-none sm:col-span-2`} /> : <p className={readClass}>{form.address || "—"}</p>}

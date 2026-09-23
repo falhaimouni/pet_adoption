@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import { Product, defaultSupplyImage } from "../data/products";
-import { apiFetch, resolveAssetUrl } from "../lib/api";
+import { apiFetch } from "../lib/api";
 import { useAuth } from "./AuthContext";
 
 export interface CartItem {
@@ -65,7 +65,7 @@ function mapCartItem(item: BackendCartItem): CartItem {
       category: "Store",
       subCategory: "Supply",
       price,
-      image: resolveAssetUrl(item.imageUrl) || defaultSupplyImage,
+      image: item.imageUrl || defaultSupplyImage,
       rating: 0,
       reviewCount: 0,
       inStock: item.product?.isActive ?? true,
@@ -132,6 +132,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateQuantity = useCallback(async (productId: string | number, qty: number) => {
     if (!canUseCart) return;
+    if (!Number.isSafeInteger(qty) || qty < 0) throw new Error("Quantity must be a non-negative whole number.");
     const normalizedProductId = String(productId);
     const existing = items.find((item) => String(item.product.id) === normalizedProductId);
     if (!existing) return;

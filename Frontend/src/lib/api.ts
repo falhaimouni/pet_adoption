@@ -1,4 +1,5 @@
 import { MOCK_API_ENABLED, mockApiBlobFetch, mockApiFetch } from "./mockApi";
+import { validateRequest } from "./formValidation";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 
@@ -43,7 +44,7 @@ export function clearAuthTokens() {
 
 export function resolveAssetUrl(url?: string | null) {
   if (!url) return "";
-  if (/^https?:\/\//i.test(url)) return url;
+  if (/^(https?:|blob:|data:)/i.test(url)) return url;
   if (MOCK_API_ENABLED && !url.startsWith("/uploads/")) return url;
   return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
 }
@@ -152,15 +153,18 @@ async function realApiFetch<T>(path: string, init: RequestInit = {}, allowRefres
 }
 
 export async function apiFetch<T>(path: string, init: RequestInit = {}, allowRefresh = true): Promise<T> {
+  validateRequest(path, init, MOCK_API_ENABLED);
   if (MOCK_API_ENABLED) return mockApiFetch<T>(path, init);
   return realApiFetch<T>(path, init, allowRefresh);
 }
 
 export async function apiFetchReal<T>(path: string, init: RequestInit = {}, allowRefresh = true): Promise<T> {
+  validateRequest(path, init);
   return realApiFetch<T>(path, init, allowRefresh);
 }
 
 export async function apiBlobFetch(path: string, init: RequestInit = {}, allowRefresh = true): Promise<Blob> {
+  validateRequest(path, init, MOCK_API_ENABLED);
   if (MOCK_API_ENABLED) return mockApiBlobFetch(path);
 
   const headers = new Headers(init.headers);

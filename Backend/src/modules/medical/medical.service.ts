@@ -49,6 +49,7 @@ interface MedicalRecordResponse {
     adoptionStatus: string;
   };
   entries: MedicalEntryResponse[];
+  documents: FileUpload[];
 }
 
 @Injectable()
@@ -75,12 +76,26 @@ export class MedicalService {
     file: Express.Multer.File,
   ): Promise<FileUpload> {
     let record: MedicalRecord;
+    let created = false;
 
     try {
-      record = await this.getExistingRecordForPet(petId);
+      const result = await this.findOrCreateRecord(petId);
+      record = result.record;
+      created = result.created;
     } catch (error) {
       await this.uploadsService.rollbackFileUpload(file.path);
       throw error;
+    }
+
+    if (created) {
+      await this.activityLogRepo.save(
+        this.activityLogRepo.create({
+          userId: veterinarianId,
+          action: 'MEDICAL_RECORD_CREATED',
+          entityType: 'MEDICAL_RECORD',
+          entityId: record.recordId,
+        }),
+      );
     }
 
     return this.uploadsService.createFileRecord(
@@ -96,11 +111,14 @@ export class MedicalService {
 
     const record = await this.medicalRecordRepo.findOne({
       where: { petId },
-      relations: ['pet', 'entries', 'entries.veterinarian'],
+      relations: ['pet', 'entries', 'entries.veterinarian', 'documents'],
       order: {
         entries: {
           medicalDate: 'DESC',
           createdAt: 'DESC',
+        },
+        documents: {
+          uploadedAt: 'DESC',
         },
       },
     });
@@ -217,6 +235,7 @@ export class MedicalService {
         adoptionStatus: record.pet.adoptionStatus,
       },
       entries: (record.entries ?? []).map((entry) => this.mapEntryResponse(entry)),
+      documents: record.documents ?? [],
     };
   }
 

@@ -43,7 +43,7 @@ export class StoreService{
   
     if (query.category)
     {
-      queryBuilder.andWhere('supply.category = :category',
+      queryBuilder.andWhere('LOWER(supply.category) = LOWER(:category)',
         {
           category: query.category,
         },

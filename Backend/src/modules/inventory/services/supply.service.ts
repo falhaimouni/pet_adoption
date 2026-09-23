@@ -56,9 +56,9 @@ export class SupplyService{
     }
     if (query.category)
     {
-      queryBuilder.andWhere('supply.category = :Category',
+      queryBuilder.andWhere('LOWER(supply.category) = LOWER(:category)',
         {
-          Category: query.category,
+          category: query.category,
         },
       );
     }

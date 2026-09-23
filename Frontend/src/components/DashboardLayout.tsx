@@ -4,6 +4,7 @@ import {
   LogOut, Menu, X, Syringe, BarChart2, Package, Users,
   FileText, ClipboardList, Stethoscope, Tag, Building2,
   ChevronRight, Sun, Moon, Globe, MessageCircle, ShoppingCart,
+  UserRoundCheck,
 } from "lucide-react";
 import logoImg from "../imports/MyPetopia/be6bd1f12e9a602c8830a9c39abaf73ad65d4682.png";
 import profileImg from "../imports/MyPetopia/0ade9078bed97f834442fbb8c3bc4424aaf43269.png";
@@ -12,6 +13,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { useTheme } from "../context/ThemeContext";
 import { apiFetch } from "../lib/api";
 import { useCart } from "../context/CartContext";
+import AuthenticatedImage from "./AuthenticatedImage";
 
 export type Role = "adopter" | "employee" | "vet" | "manager" | "admin";
 
@@ -33,6 +35,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "user-profile",   label: t("nav_my_profile"),    icon: <User size={16} /> },
         { id: "my-requests",    label: t("nav_my_requests"),   icon: <ClipboardList size={16} /> },
         { id: "my-adoptions",   label: t("nav_my_adoptions"),  icon: <Heart size={16} /> },
+        { id: "orders",        label: t("nav_orders"),        icon: <ShoppingCart size={16} /> },
         { id: "chats",          label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
         { id: "notifications",  label: t("nav_notifications"), icon: <Bell size={16} /> },
       ];
@@ -43,6 +46,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "staff-requests",   label: t("nav_adoption_requests"), icon: <ClipboardList size={16} /> },
         { id: "staff-adoptions",  label: t("nav_adoptions"),         icon: <Heart size={16} /> },
         { id: "staff-chats",      label: t("nav_chats"),             icon: <MessageCircle size={16} /> },
+        { id: "staff-friends",    label: t("nav_friends"),           icon: <UserRoundCheck size={16} /> },
         { id: "staff-orders",     label: t("nav_orders"),            icon: <ShoppingCart size={16} /> },
         { id: "staff-inventory",  label: t("nav_inventory"),         icon: <Package size={16} /> },
         { id: "staff-suppliers",  label: t("nav_suppliers"),         icon: <Tag size={16} /> },
@@ -55,6 +59,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "vet-pets",         label: t("dash_pets"),             icon: <Heart size={16} /> },
         { id: "vet-medical",      label: t("nav_medical_records"),   icon: <Stethoscope size={16} /> },
         { id: "vet-vaccinations", label: t("nav_vaccinations"),      icon: <Syringe size={16} /> },
+        { id: "vet-friends",      label: t("nav_friends"),           icon: <UserRoundCheck size={16} /> },
         { id: "vet-reports",      label: t("nav_reports"),           icon: <FileText size={16} /> },
         { id: "notifications",    label: t("nav_notifications"),     icon: <Bell size={16} /> },
         { id: "vet-profile",      label: t("nav_my_profile"),        icon: <User size={16} /> },
@@ -67,6 +72,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "manager-adoptions", label: t("nav_adoptions"),     icon: <Heart size={16} /> },
         { id: "manager-chats",     label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
         { id: "manager-users",     label: t("nav_users"),         icon: <Users size={16} /> },
+        { id: "manager-friends",   label: t("nav_friends"),       icon: <UserRoundCheck size={16} /> },
         { id: "manager-orders",    label: t("nav_orders"),        icon: <ShoppingCart size={16} /> },
         { id: "manager-inventory", label: t("nav_inventory"),     icon: <Package size={16} /> },
         { id: "manager-suppliers", label: t("nav_suppliers"),     icon: <Tag size={16} /> },
@@ -81,6 +87,7 @@ function getNavItems(role: Role, t: TFn): NavItem[] {
         { id: "admin-adoptions", label: t("nav_adoptions"),     icon: <Heart size={16} /> },
         { id: "admin-chats",     label: t("nav_chats"),         icon: <MessageCircle size={16} /> },
         { id: "admin-users",     label: t("nav_users"),         icon: <Users size={16} /> },
+        { id: "admin-friends",   label: t("nav_friends"),       icon: <UserRoundCheck size={16} /> },
         { id: "admin-departments", label: t("nav_departments"), icon: <Building2 size={16} /> },
         { id: "admin-orders",    label: t("nav_orders"),        icon: <ShoppingCart size={16} /> },
         { id: "admin-inventory", label: t("nav_inventory"),     icon: <Package size={16} /> },
@@ -199,16 +206,16 @@ export default function DashboardLayout({
   ];
 
   return (
-    <div className="h-screen bg-[rgba(186,216,211,0.99)] flex flex-col overflow-hidden">
+    <div className="h-dvh bg-[rgba(186,216,211,0.99)] flex flex-col overflow-hidden">
       {/* Top Navbar */}
       <header className="w-full bg-white shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] z-20 relative shrink-0">
-        <div className="flex items-center justify-between h-[80px] px-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-2 h-[80px] px-2 sm:px-4">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-3">
             <button className="lg:hidden text-black" onClick={() => setSidebarOpen((p) => !p)}>
               <Menu size={24} />
             </button>
             <button type="button" onClick={() => onNavigate(homePageForRole(role))} className="flex items-center">
-              <img src={logoImg} alt="Petopia" className="h-[70px] w-auto object-contain" />
+              <img src={logoImg} alt="Petopia" className="h-[56px] w-[56px] sm:h-[70px] sm:w-auto object-contain" />
             </button>
           </div>
 
@@ -243,15 +250,15 @@ export default function DashboardLayout({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             {/* Language toggle */}
             <button
               onClick={() => setLang(nextLang[lang])}
               aria-label={t("common_toggle_language")}
-              className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-[10px] text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all font-['Poppins',sans-serif] text-[13px] font-medium"
+              className="flex w-9 h-9 sm:w-auto items-center justify-center gap-1.5 sm:px-2.5 rounded-[10px] text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all font-['Poppins',sans-serif] text-[13px] font-medium"
             >
               <Globe size={15} />
-              <span>{langLabel[lang]}</span>
+              <span className="hidden sm:inline">{langLabel[lang]}</span>
             </button>
 
             {/* Dark / Light toggle */}
@@ -267,7 +274,7 @@ export default function DashboardLayout({
               <button
                 onClick={() => onNavigate("cart")}
                 aria-label={t("cart_title")}
-                className="relative hidden sm:flex w-9 h-9 rounded-[10px] items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
+                className="relative flex w-9 h-9 rounded-[10px] items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
               >
                 <ShoppingCart size={17} />
                 {count > 0 && (
@@ -278,7 +285,7 @@ export default function DashboardLayout({
               </button>
             )}
 
-            <button onClick={() => onNavigate("notifications")} className="relative text-black hover:text-[#089D97] transition-colors" aria-label={t("nav_notifications")}>
+            <button onClick={() => onNavigate("notifications")} className="relative flex w-9 h-9 items-center justify-center text-black hover:text-[#089D97] transition-colors" aria-label={t("nav_notifications")}>
               <Bell size={22} />
               {unreadNotifications > 0 && (
                 <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center">
@@ -287,8 +294,8 @@ export default function DashboardLayout({
               )}
             </button>
             <div className="flex items-center gap-2">
-              <div className="w-[46px] h-[46px] bg-[rgba(217,217,217,0.82)] rounded-full flex items-center justify-center overflow-hidden">
-                <img src={profileImg} alt={t("profile_avatar_alt")} className="w-full h-full object-contain" />
+              <div className="w-9 h-9 sm:w-[46px] sm:h-[46px] bg-[rgba(217,217,217,0.82)] rounded-full flex items-center justify-center overflow-hidden">
+                <AuthenticatedImage src={user?.avatar ?? profileImg} fallback={profileImg} alt={t("profile_avatar_alt")} className="w-full h-full object-contain" />
               </div>
               <div className="hidden sm:flex flex-col">
                 <span className="font-['Poppins',sans-serif] font-medium text-[13px] text-black leading-tight">{displayName}</span>
@@ -311,7 +318,7 @@ export default function DashboardLayout({
             dashboard-sidebar fixed lg:relative top-0 lg:top-auto ${isRtl ? "right-0" : "left-0"} z-40 lg:z-auto
             w-[240px] bg-[#80bdba] rounded-r-[10px] lg:rounded-[10px]
             flex flex-col pt-4 pb-4 mt-0 lg:mt-[16px] lg:ml-[14px] mb-[16px]
-            transition-transform duration-300 h-full lg:h-[calc(100vh-112px)] lg:shrink-0
+            transition-transform duration-300 h-dvh lg:h-auto min-h-0 overflow-hidden lg:shrink-0
             ${sidebarTransform}
           `}
         >
@@ -320,9 +327,9 @@ export default function DashboardLayout({
           </button>
 
           {/* Profile */}
-          <div className="flex flex-col items-center px-4 pb-4 border-b border-white/30">
+          <div className="flex shrink-0 flex-col items-center px-4 pb-4 border-b border-white/30">
             <div className="w-[56px] h-[56px] bg-[rgba(217,217,217,0.82)] rounded-full flex items-center justify-center overflow-hidden mb-2">
-              <img src={profileImg} alt={t("profile_avatar_alt")} className="w-full h-full object-contain" />
+              <AuthenticatedImage src={user?.avatar ?? profileImg} fallback={profileImg} alt={t("profile_avatar_alt")} className="w-full h-full object-contain" />
             </div>
             <p className="font-['Poppins',sans-serif] font-semibold text-[13px] text-black text-center">{displayName}</p>
             <span className="mt-1 px-3 py-0.5 bg-white/50 rounded-full font-['Poppins',sans-serif] text-[11px] text-[#047975]">
@@ -331,7 +338,7 @@ export default function DashboardLayout({
           </div>
 
           {/* Menu */}
-          <nav className="flex flex-col px-3 gap-1 mt-4 flex-1">
+          <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-3 gap-1 mt-4">
             <p className="font-['Poppins',sans-serif] font-medium text-[11px] text-black/60 mb-2 ml-1 uppercase tracking-wider">
               {t("dash_main_menu")}
             </p>
@@ -339,7 +346,7 @@ export default function DashboardLayout({
               <button
                 key={item.id}
                 onClick={() => { onNavigate(item.id); setSidebarOpen(false); }}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[13px] transition-colors text-start ${
+                className={`flex shrink-0 items-center gap-3 px-3 py-2.5 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[13px] transition-colors text-start ${
                   activePage === item.id
                     ? "bg-[#089D97] text-white"
                     : "text-black hover:bg-white/30"
@@ -357,7 +364,7 @@ export default function DashboardLayout({
           </nav>
 
           {/* Settings + Logout */}
-          <div className="px-3 flex flex-col gap-1 border-t border-white/30 pt-3 mt-3">
+          <div className="px-3 flex shrink-0 flex-col gap-1 border-t border-white/30 pt-3 mt-3">
             <button
               onClick={() => { onNavigate("settings"); setSidebarOpen(false); }}
               className={`flex items-center gap-3 px-3 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[13px] transition-colors ${
@@ -388,7 +395,7 @@ export default function DashboardLayout({
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 min-h-0 overflow-y-auto p-4 lg:p-5">
+        <main className="flex-1 min-w-0 min-h-0 overflow-y-auto p-4 lg:p-5">
           {/* Breadcrumb / Page title */}
           {(pageTitle || breadcrumbs) && (
             <div className="mb-4">

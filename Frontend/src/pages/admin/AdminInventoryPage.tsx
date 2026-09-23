@@ -1,3 +1,4 @@
+import { formSchemas, validateFields, validationMessage } from "../../lib/formValidation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Edit, EyeOff, ImagePlus, Package, Plus, Search, Settings, Trash2 } from "lucide-react";
 import Badge, { statusBadge } from "../../components/Badge";
@@ -80,6 +81,10 @@ function supplyStatusLabel(supply: Supply) {
 
 function readError(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
+}
+
+function supplyCategoryKey(category: string) {
+  return `supply_category_${category.toLowerCase()}`;
 }
 
 export default function AdminInventoryPage({ onNavigate, role = "admin", activePage = "admin-inventory" }: AdminInventoryPageProps) {
@@ -184,6 +189,9 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
   }
 
   function validateForm() {
+    const fieldErrors = validateFields(formSchemas.supply, form, t, { mockIds: true });
+    if (Object.keys(fieldErrors).length) return validationMessage(fieldErrors, t);
+
     if (!form.supplyName.trim()) return "Supply name is required.";
     if (form.supplyName.trim().length > 160) return "Supply name must be 160 characters or fewer.";
     if (!categories.includes(form.category)) return "Choose a valid category.";
@@ -324,7 +332,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
           </div>
           <select value={category} onChange={(e) => { setCategory(e.target.value); setPage(1); }} className="border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[12px] bg-white outline-none focus:border-[#089D97]">
             <option value="all">{t("report_all_categories")}</option>
-            {categories.map((item) => <option key={item} value={item}>{t(`supply_category_${item.toLowerCase()}`)}</option>)}
+            {categories.map((item) => <option key={item} value={item}>{t(supplyCategoryKey(item))}</option>)}
           </select>
           <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[12px] bg-white outline-none focus:border-[#089D97]">
             <option value="all">{t("inventory_all_stock")}</option>
@@ -347,7 +355,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
           </div>
         </div>
 
-        {error && <div className="mb-4 rounded-[10px] bg-red-50 border border-red-100 px-4 py-3 font-['Poppins',sans-serif] text-[13px] text-red-700">{error}</div>}
+        {error && <div role="alert" className="whitespace-pre-line mb-4 rounded-[10px] bg-red-50 border border-red-100 px-4 py-3 font-['Poppins',sans-serif] text-[13px] text-red-700">{error}</div>}
         {success && <div className="mb-4 rounded-[10px] bg-emerald-50 border border-emerald-100 px-4 py-3 font-['Poppins',sans-serif] text-[13px] text-emerald-700">{success}</div>}
 
         {loading ? (
@@ -375,7 +383,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
                         {(label === "OUT_OF_STOCK" || label === "LOW_STOCK") && <AlertTriangle size={12} className="text-yellow-500 inline mr-1" />}
                         {item.supplyName}
                       </td>
-                      <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60">{t(`supply_category_${item.category.toLowerCase()}`)}</td>
+                      <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60">{t(supplyCategoryKey(item.category))}</td>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] font-semibold text-[13px] text-black">{item.quantity}</td>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/50">{item.lowStockLimit}</td>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60 whitespace-nowrap">{item.supplier?.supplierName ?? item.supplierId}</td>
@@ -408,7 +416,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
 
       <Modal title={editing ? t("inventory_edit_supply") : t("inventory_add_supply")} open={addOpen} onClose={() => { setAddOpen(false); setEditing(null); }} onConfirm={saveSupply} confirmLabel={saving ? t("common_saving") : t("inventory_save_supply")} size="lg">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {formError && <div className="sm:col-span-2 rounded-[10px] bg-red-50 border border-red-100 px-4 py-3 font-['Poppins',sans-serif] text-[13px] text-red-700">{formError}</div>}
+          {formError && <div role="alert" className="whitespace-pre-line sm:col-span-2 rounded-[10px] bg-red-50 border border-red-100 px-4 py-3 font-['Poppins',sans-serif] text-[13px] text-red-700">{formError}</div>}
           {suppliers.length === 0 && (
             <div className="sm:col-span-2 rounded-[10px] bg-yellow-50 border border-yellow-100 px-4 py-3 font-['Poppins',sans-serif] text-[13px] text-yellow-800">
               {t("inventory_need_supplier")}
@@ -421,7 +429,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
           <label className="block">
             <span className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("th_category")}</span>
             <select value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97] transition-colors">
-              {categories.map((item) => <option key={item} value={item}>{t(`supply_category_${item.toLowerCase()}`)}</option>)}
+              {categories.map((item) => <option key={item} value={item}>{t(supplyCategoryKey(item))}</option>)}
             </select>
           </label>
           <label className="block">
@@ -442,10 +450,11 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
             <label key={field} className="block">
               <span className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{label}</span>
               <input
+                required={field !== "deliveryTimeDays"}
                 type="number"
                 min={min}
                 step={field.includes("Price") ? "0.01" : "1"}
-                value={form[field as keyof typeof form]}
+                value={String(form[field as keyof typeof form])}
                 onChange={(e) => setForm((f) => ({ ...f, [field]: e.target.value }))}
                 className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors"
               />

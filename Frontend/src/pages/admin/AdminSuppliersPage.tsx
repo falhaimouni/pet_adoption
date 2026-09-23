@@ -1,3 +1,4 @@
+import { formSchemas } from "../../lib/formValidation";
 import { useEffect, useState } from "react";
 import { Search, Plus, Edit, Trash2, Phone, Mail, MapPin, Eye } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -241,11 +242,11 @@ export default function AdminSuppliersPage({ onNavigate, role = "admin", activeP
 
       <Modal title={editItem ? t("supplier_edit") : t("supplier_add")} open={addOpen || !!editItem} onClose={() => { setAddOpen(false); setEditItem(null); }} onConfirm={saveSupplier} confirmLabel={saving ? t("common_saving") : t("action_save")} size="md">
         <div className="grid grid-cols-2 gap-4">
-          {formError && <p className="col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
+          {formError && <p role="alert" className="whitespace-pre-line col-span-2 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{formError}</p>}
           {supplierFormFields.map(({ labelKey, field, span, list, options }) => (
             <div key={field} className={span === 2 ? "col-span-2" : ""}>
               <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t(labelKey)}</label>
-              <input list={list} value={form[field]} onChange={(e) => setForm((f) => ({ ...f, [field]: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+              <input required={!editItem} maxLength={formSchemas.supplier[field].max} type={field === "email" ? "email" : field === "phone" ? "tel" : "text"} aria-label={t(labelKey)} list={list} value={form[field]} onChange={(e) => setForm((f) => ({ ...f, [field]: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
               {list && options && (
                 <datalist id={list}>
                   {options.map((option) => <option key={option} value={option} />)}
