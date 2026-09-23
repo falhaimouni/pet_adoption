@@ -2,6 +2,15 @@ export type Lang = "en" | "ar" | "fr";
 
 const translations: Record<Lang, Record<string, string>> = {
   "en": {
+    "verify_title": "Verify your email",
+    "verify_desc": "Check your inbox for a verification link before signing in. If it has not arrived, request a new link below.",
+    "verify_link_desc": "Confirm your email to finish creating your account.",
+    "verify_button": "Verify email",
+    "verify_resend": "Resend verification email",
+    "verify_success": "Email verified. You can now sign in.",
+    "verify_sent": "If your account needs verification, a new link has been sent.",
+    "verify_error": "Could not verify your email. Please try again.",
+
     "nav_home": "Home",
     "nav_pets": "Pets",
     "nav_shop": "Shop",
@@ -1232,6 +1241,15 @@ const translations: Record<Lang, Record<string, string>> = {
     "pet_status_medical_hold": "medical hold"
   },
   "ar": {
+    "verify_title": "تأكيد بريدك الإلكتروني",
+    "verify_desc": "تحقق من بريدك الوارد للحصول على رابط التأكيد قبل تسجيل الدخول. إذا لم يصلك، اطلب رابطاً جديداً أدناه.",
+    "verify_link_desc": "أكد بريدك الإلكتروني لإكمال إنشاء حسابك.",
+    "verify_button": "تأكيد البريد الإلكتروني",
+    "verify_resend": "إعادة إرسال رسالة التأكيد",
+    "verify_success": "تم تأكيد بريدك الإلكتروني. يمكنك تسجيل الدخول الآن.",
+    "verify_sent": "إذا كان حسابك يحتاج إلى تأكيد، فقد تم إرسال رابط جديد.",
+    "verify_error": "تعذر تأكيد بريدك الإلكتروني. حاول مرة أخرى.",
+
     "nav_home": "الرئيسية",
     "nav_pets": "الحيوانات",
     "nav_shop": "المتجر",
@@ -2466,6 +2484,15 @@ const translations: Record<Lang, Record<string, string>> = {
     "pet_status_medical_hold": "حجز طبي"
   },
   "fr": {
+    "verify_title": "Vérifiez votre adresse e-mail",
+    "verify_desc": "Consultez votre boîte de réception pour vérifier votre adresse avant de vous connecter. Vous pouvez demander un nouveau lien ci-dessous.",
+    "verify_link_desc": "Confirmez votre adresse pour terminer la création de votre compte.",
+    "verify_button": "Vérifier mon adresse",
+    "verify_resend": "Renvoyer le lien de vérification",
+    "verify_success": "Adresse vérifiée. Vous pouvez vous connecter.",
+    "verify_sent": "Si votre compte nécessite une vérification, un nouveau lien a été envoyé.",
+    "verify_error": "Impossible de vérifier votre adresse. Réessayez.",
+
     "nav_home": "Accueil",
     "nav_pets": "Animaux",
     "nav_shop": "Boutique",

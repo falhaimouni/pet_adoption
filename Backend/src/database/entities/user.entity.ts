@@ -69,6 +69,15 @@ export class User {
   @Column({ type: 'varchar', length: 40, default: 'active' })
   status!: string;
 
+  @Column({ name: 'email_verified', type: 'boolean', default: true })
+  emailVerified!: boolean;
+
+  @Column({ name: 'email_verification_hash', type: 'varchar', length: 64, nullable: true, select: false })
+  emailVerificationHash?: string | null;
+
+  @Column({ name: 'email_verification_expires_at', type: 'timestamp', nullable: true, select: false })
+  emailVerificationExpiresAt?: Date | null;
+
   @Column({ name: 'refresh_token_version', type: 'integer', default: 0 })
   refreshTokenVersion!: number;
 
