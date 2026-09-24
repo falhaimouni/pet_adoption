@@ -7,6 +7,7 @@ import {
   Logger,
   NotFoundException,
   OnModuleInit,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -98,10 +99,16 @@ export class AuthService implements OnModuleInit {
         );
       }
 
+      if (existing.emailVerified === false && existing.status === 'active') {
+        await this.refreshVerificationLink(existing);
+        return { message: 'Verification email sent. Check your inbox before signing in.' };
+      }
+
       throw new ConflictException(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const verificationToken = randomBytes(32).toString('hex');
 
     try {
       await this.dataSource.transaction(async (manager) => {
@@ -115,6 +122,9 @@ export class AuthService implements OnModuleInit {
             role: this.adopterRole,
             status: 'active',
             provider: 'LOCAL',
+            emailVerified: false,
+            emailVerificationHash: this.hashResetToken(verificationToken),
+            emailVerificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
           }),
         );
 
@@ -141,7 +151,8 @@ export class AuthService implements OnModuleInit {
       throw error;
     }
 
-    return { message: 'User created successfully' };
+    await this.deliverVerificationEmail(dto.email, verificationToken);
+    return { message: 'Account created. Verification email sent.' };
   }
 
   async login(dto: LoginDto) {
@@ -168,6 +179,10 @@ export class AuthService implements OnModuleInit {
 
     if (!isPasswordValid) {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+    }
+
+    if (user.emailVerified === false) {
+      throw new ForbiddenException('Please verify your email before signing in.');
     }
 
     if (user.status !== 'active') {
@@ -356,6 +371,64 @@ export class AuthService implements OnModuleInit {
     return genericResponse;
   }
 
+  async resendVerification(email: string) {
+    const user = await this.userRepo.findOne({ where: { email } });
+    if (user && user.emailVerified === false && user.status === 'active') {
+      await this.refreshVerificationLink(user);
+    }
+    return { message: 'If your account needs verification, a new link has been sent.' };
+  }
+
+  async verifyEmail(token: string) {
+    const result = await this.userRepo.createQueryBuilder()
+      .update(User)
+      .set({ emailVerified: true, emailVerificationHash: null, emailVerificationExpiresAt: null })
+      .where('email_verification_hash = :hash', { hash: this.hashResetToken(token) })
+      .andWhere('email_verified = false')
+      .andWhere('email_verification_expires_at > :now', { now: new Date() })
+      .execute();
+    if (!result.affected) throw new BadRequestException('Invalid or expired verification link. Request a new link.');
+    return { message: 'Email verified. You can now sign in.' };
+  }
+
+  private async sendVerificationEmail(email: string, token: string) {
+    const url = new URL(this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5173');
+    url.hash = `/verify-email?token=${token}`;
+    await this.mailService.sendVerificationEmail(email, url.toString());
+  }
+
+  private async refreshVerificationLink(user: User) {
+    const token = randomBytes(32).toString('hex');
+    await this.userRepo.update({ userId: user.userId, emailVerified: false }, {
+      emailVerificationHash: this.hashResetToken(token),
+      emailVerificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
+    await this.deliverVerificationEmail(user.email, token);
+  }
+
+  private async deliverVerificationEmail(email: string, token: string) {
+    try {
+      await this.sendVerificationEmail(email, token);
+    } catch (error) {
+      this.logger.error(
+        `Verification email delivery failed for ${email}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw new ServiceUnavailableException(
+        'Account was saved, but we could not send the verification email. Please try resend verification in a moment.',
+      );
+    }
+  }
+
+  async passwordResetContext(token: string) {
+    const record = await this.passwordResetTokenRepo.findOne({
+      where: { tokenHash: this.hashResetToken(token) }, relations: ['user'],
+    });
+    if (!record || record.usedAt || record.expiresAt.getTime() <= Date.now() || !record.user) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+    return { email: record.user.email };
+  }
+
   async resetPassword(dto: ResetPasswordDto) {
     const { token, newPassword, confirmPassword } = dto;
 
@@ -428,6 +501,9 @@ export class AuthService implements OnModuleInit {
   }
 
   private issueTokens(user: User) {
+    if (user.emailVerified === false) {
+      throw new ForbiddenException('Please verify your email before signing in.');
+    }
     const basePayload = {
       sub: user.userId,
       email: user.email,

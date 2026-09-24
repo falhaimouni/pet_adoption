@@ -14,7 +14,13 @@ export function useNotificationSocket(userId?: string) {
       auth: (callback) => callback({ token: getAccessToken() }),
     });
     socket.on("chatInboxChanged", () => window.dispatchEvent(new Event("petopia:chat-inbox-changed")));
-    socket.on("connect", () => window.dispatchEvent(new Event("petopia:notifications-changed")));
+    socket.on("connect", () => {
+      window.dispatchEvent(new Event("petopia:notifications-changed"));
+      window.dispatchEvent(new Event("petopia:realtime-connected"));
+    });
+    for (const event of [SOCKET_EVENTS.DIRECT_MESSAGE, SOCKET_EVENTS.DIRECT_MESSAGES_READ, SOCKET_EVENTS.FRIEND_PRESENCE]) {
+      socket.on(event, (detail: unknown) => window.dispatchEvent(new CustomEvent(`petopia:${event}`, { detail })));
+    }
     socket.on(SOCKET_EVENTS.NEW_NOTIFICATION, (notification: { title: string; type: string; message: string }) => {
       window.dispatchEvent(new Event("petopia:notifications-changed"));
       if (notification.type === "MESSAGE") {

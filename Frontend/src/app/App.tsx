@@ -14,6 +14,7 @@ import PrivacyPolicyPage from "../pages/PrivacyPolicyPage";
 import LoginPage from "../pages/LoginPage";
 import OAuthCallbackPage from "../pages/OAuthCallbackPage";
 import SignUpPage from "../pages/SignUpPage";
+import VerifyEmailPage from "../pages/VerifyEmailPage";
 import ForgotPasswordPage from "../pages/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/ResetPasswordPage";
 import PetsListPage from "../pages/PetsListPage";
@@ -78,7 +79,7 @@ function RouteLoadingFallback() {
 const PUBLIC_PAGES = new Set<string>([
   "home", "login", "signup", "status", "about", "terms",
   "privacy", "forgot-password", "reset-password", "pets", "pet-detail",
-  "oauth-callback",
+  "oauth-callback", "verify-email",
 ]);
 
 // Pages restricted to specific roles.
@@ -274,7 +275,8 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "login": return <LoginPage onNavigate={navigate} />;
     case "oauth-callback": return <OAuthCallbackPage onNavigate={navigate} code={params.code as string | undefined} />;
     case "signup": return <SignUpPage onNavigate={navigate} />;
-    case "forgot-password": return <ForgotPasswordPage onNavigate={navigate} />;
+    case "verify-email": return <VerifyEmailPage onNavigate={navigate} token={params.token as string | undefined} email={params.email as string | undefined} />;
+    case "forgot-password": return <ForgotPasswordPage onNavigate={navigate} email={params.email as string | undefined} />;
     case "reset-password": return <ResetPasswordPage onNavigate={navigate} token={params.token as string | undefined} />;
     case "pets": return userRole === "adopter"
       ? <DashboardLayout role="adopter" activePage="pets" onNavigate={navigate}><PetsListPage onNavigate={navigate} embedded /></DashboardLayout>

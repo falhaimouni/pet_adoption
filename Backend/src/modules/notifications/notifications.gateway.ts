@@ -10,7 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SOCKET_EVENTS } from '@shared/events';
 import { Server, Socket } from 'socket.io';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 import { User } from '../../database/entities';
 import { NotificationResponse } from './notifications.service';
@@ -24,6 +24,8 @@ type AccessTokenPayload = {
 };
 
 @WebSocketGateway({
+  pingInterval: 5000,
+  pingTimeout: 5000,
   cors: {
     origin: true,
     credentials: true,
@@ -38,6 +40,7 @@ export class NotificationsGateway
   private readonly socketsByUser = new Map<string, Set<string>>();
 
   constructor(
+    private readonly db: DataSource,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
 
@@ -66,9 +69,11 @@ export class NotificationsGateway
 
     client.join(this.userRoom(user.userId));
 
+    const wasOnline = this.isOnline(user.userId);
     const sockets = this.socketsByUser.get(user.userId) ?? new Set<string>();
     sockets.add(client.id);
     this.socketsByUser.set(user.userId, sockets);
+    if (!wasOnline) void this.broadcastPresence(user.userId);
   }
 
   handleDisconnect(client: Socket): void {
@@ -83,6 +88,30 @@ export class NotificationsGateway
 
     if (sockets?.size === 0) {
       this.socketsByUser.delete(userId);
+      void this.broadcastPresence(userId);
+    }
+  }
+
+  isOnline(userId: string): boolean {
+    return Boolean(this.socketsByUser.get(userId)?.size);
+  }
+
+  emitToUsers(userIds: string[], event: string, payload: unknown): void {
+    if (!userIds.length) return;
+    this.server?.to(userIds.map((id) => this.userRoom(id))).emit(event, payload);
+  }
+
+  private async broadcastPresence(userId: string): Promise<void> {
+    try {
+      const friends: { userId: string }[] = await this.db.query(
+        'SELECT CASE WHEN user1_id=$1 THEN user2_id ELSE user1_id END AS "userId" FROM friendships WHERE user1_id=$1 OR user2_id=$1',
+        [userId],
+      );
+      this.emitToUsers(friends.map((friend) => friend.userId), SOCKET_EVENTS.FRIEND_PRESENCE, {
+        userId, online: this.isOnline(userId),
+      });
+    } catch {
+      // Presence is transient; the next friends refresh reconciles a missed event.
     }
   }
 

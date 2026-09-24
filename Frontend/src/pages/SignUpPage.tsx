@@ -61,12 +61,12 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
         body: JSON.stringify({
           firstName,
           lastName: lastNameParts.join(" "),
-          email: email.trim(),
+          email: email.trim().toLowerCase(),
           password,
           confirmPassword,
         }),
       });
-      onNavigate("login");
+      onNavigate("verify-email", { email: email.trim().toLowerCase() });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("signup_create_error"));
     } finally {

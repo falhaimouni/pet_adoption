@@ -1,8 +1,8 @@
 import { useState } from "react";
 import {
-  User, Palette, Globe, Lock, Shield, HelpCircle,
+  User, Palette, Globe, Lock, Shield,
   ChevronRight, Moon, Sun, LogOut, Eye, EyeOff,
-  CheckCircle, AlertTriangle, ExternalLink,
+  CheckCircle, AlertTriangle,
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import BackHomeButton from "../components/BackHomeButton";
@@ -17,7 +17,7 @@ interface SettingsPageProps {
   embedded?: boolean;
 }
 
-type SettingsTab = "account" | "appearance" | "language" | "security" | "help";
+type SettingsTab = "account" | "appearance" | "language" | "security";
 
 export default function SettingsPage({ onNavigate, embedded = false }: SettingsPageProps) {
   const { user } = useAuth();
@@ -30,7 +30,6 @@ export default function SettingsPage({ onNavigate, embedded = false }: SettingsP
     { id: "appearance",    label: t("settings_appearance"),    icon: Palette },
     { id: "language",      label: t("settings_language"),      icon: Globe },
     { id: "security",      label: t("settings_security"),      icon: Shield },
-    { id: "help",          label: t("settings_help"),          icon: HelpCircle },
   ];
   const [activeTab, setActiveTab] = useState<SettingsTab>("account");
 
@@ -211,33 +210,6 @@ export default function SettingsPage({ onNavigate, embedded = false }: SettingsP
                   </div>
                 </div>
                 )}
-              </Section>
-            )}
-
-            {activeTab === "help" && (
-              <Section title={t("settings_help")}>
-                <div className="space-y-3">
-                  {[
-                    { label: t("help_faq"), desc: t("help_faq_desc"), icon: HelpCircle },
-                    { label: t("help_contact_label"), desc: t("help_contact_desc"), icon: ExternalLink },
-                    { label: t("help_bug"), desc: t("help_bug_desc"), icon: AlertTriangle },
-                  ].map(({ label, desc, icon: Icon }) => (
-                    <button key={label} className="w-full flex items-center gap-4 p-4 rounded-[14px] bg-[#f0f8f7] hover:bg-[#e0f2f0] transition-colors text-start">
-                      <div className="w-10 h-10 rounded-[12px] bg-white flex items-center justify-center shadow-sm flex-shrink-0">
-                        <Icon size={18} className="text-[#089D97]" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-['Poppins',sans-serif] font-medium text-[14px] text-[#1a2e2d]">{label}</p>
-                        <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87]">{desc}</p>
-                      </div>
-                      <ChevronRight size={16} className="text-[#5a8a87]" />
-                    </button>
-                  ))}
-                </div>
-                <div className="mt-6 p-4 bg-[#e0f2f0] rounded-[14px] border border-[#bae0dd]">
-                  <p className="font-['Poppins',sans-serif] text-[13px] text-[#047975] font-medium">{t("help_version")}</p>
-                  <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87]">{t("help_copyright")}</p>
-                </div>
               </Section>
             )}
           </div>

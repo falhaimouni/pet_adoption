@@ -19,17 +19,16 @@ services:
     restart: unless-stopped
 
   backend:
+    image: pet_adoption-backend
     container_name: pet_adoption_backend
     build:
       context: .
       dockerfile: Backend/Dockerfile
-    ports:
-      - "${BACKEND_PORT:-3000}:3000"
-    env_file:
-      - ${ENV_FILE:-.env.development}
     environment:
       - POSTGRES_HOST=postgres
       - NODE_ENV=production
+    env_file:
+      - .env.production
     depends_on:
       postgres:
         condition: service_healthy
@@ -98,7 +97,7 @@ services:
     image: pet_adoption-backend
     container_name: pet_adoption_db_seed
     env_file:
-      - ${ENV_FILE:-.env.development}
+      - .env.production
     environment:
       - POSTGRES_HOST=postgres
       - NODE_ENV=production

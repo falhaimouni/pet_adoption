@@ -9,6 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import type { UserRole } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import { useLanguage } from "../context/LanguageContext";
+import { isEmail } from "../lib/validation";
 import { API_BASE_URL } from "../lib/api";
 
 interface LoginPageProps {
@@ -165,8 +166,9 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
               <div className="flex items-center justify-end">
                 <button
                   type="button"
-                  onClick={() => onNavigate("forgot-password")}
-                  className="font-['Inter',sans-serif] text-[15px] text-[rgba(8,157,151,0.99)] hover:underline"
+                  disabled={loading || !isEmail(email.trim())}
+                  onClick={() => onNavigate("forgot-password", { email: email.trim().toLowerCase() })}
+                  className="font-['Inter',sans-serif] text-[15px] text-[rgba(8,157,151,0.99)] hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {t("login_forgot")}
                 </button>

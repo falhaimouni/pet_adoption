@@ -8,13 +8,16 @@ import {
 import { DataSource, EntityManager } from "typeorm";
 import { CommunityMessageDto } from "./community.dto";
 
+import { NotificationsGateway } from "../notifications/notifications.gateway";
+import { SOCKET_EVENTS } from "@shared/events";
+
 type Actor = { userId: string; role: string; tokenVersion?: number };
 const STAFF = ["ADMIN", "MANAGER", "EMPLOYEE"];
 const PERSON = `json_build_object('id',u.user_id,'name',concat_ws(' ',u.first_name,u.last_name),'avatar',u.avatar,'role',r.role_name)`;
 
 @Injectable()
 export class CommunityService {
-  constructor(private readonly db: DataSource) {}
+  constructor(private readonly db: DataSource, private readonly realtime: NotificationsGateway) {}
   staff(actor: Actor) {
     if (!STAFF.includes(actor.role))
       throw new ForbiddenException("Staff access required");
@@ -195,14 +198,15 @@ export class CommunityService {
   }
   async friends(actor: Actor) {
     this.adopter(actor);
-    return this.db.query(
+    const rows = await this.db.query(
       `SELECT f.friendship_id AS id,${PERSON} AS friend,
-      COALESCE(p.last_seen_at > now()-interval '45 seconds',false) AS online,p.last_seen_at AS "lastSeenAt"
+      p.last_seen_at AS "lastSeenAt"
       FROM friendships f JOIN users u ON u.user_id=CASE WHEN f.user1_id=$1 THEN f.user2_id ELSE f.user1_id END
       JOIN roles r ON r.role_id=u.role_id LEFT JOIN user_presence p ON p.user_id=u.user_id
       WHERE (f.user1_id=$1 OR f.user2_id=$1) AND r.role_name='ADOPTER' AND u.status='active' AND r.is_active=true ORDER BY u.first_name`,
       [actor.userId],
     );
+    return rows.map((row: { friend: { id: string } }) => ({ ...row, online: this.realtime.isOnline(row.friend.id) }));
   }
   async pairLock(manager: EntityManager, a: string, b: string) {
     await manager.query(
@@ -361,7 +365,7 @@ export class CommunityService {
   }
   async sendDirect(actor: Actor, id: string, text: string) {
     if (!text.trim()) throw new BadRequestException("Write a message");
-    return this.db.transaction(async (m) => {
+    const result = await this.db.transaction(async (m) => {
       const c = await this.conversation(actor, id, m);
       await this.pairLock(m, c.user1_id, c.user2_id);
       if (
@@ -376,18 +380,24 @@ export class CommunityService {
           "Private chat requires an accepted friendship",
         );
       const [message] = await m.query(
-        "INSERT INTO direct_messages(conversation_id,sender_id,text) VALUES($1,$2,$3) RETURNING id",
+        "INSERT INTO direct_messages(conversation_id,sender_id,text) VALUES($1,$2,$3) RETURNING id,sender_id AS \"senderId\",text,created_at AS \"createdAt\",read_at AS \"readAt\"",
         [id, actor.userId, text.trim()],
       );
-      return message;
+      return { message, userIds: [c.user1_id, c.user2_id] };
     });
+    this.realtime.emitToUsers(result.userIds, SOCKET_EVENTS.DIRECT_MESSAGE, { conversationId: id, message: result.message });
+    return result.message;
   }
   async read(actor: Actor, id: string) {
-    await this.conversation(actor, id);
-    await this.db.query(
-      "UPDATE direct_messages SET read_at=now() WHERE conversation_id=$1 AND sender_id<>$2 AND read_at IS NULL",
+    const c = await this.conversation(actor, id);
+    const rows = await this.db.query(
+      "UPDATE direct_messages SET read_at=now() WHERE conversation_id=$1 AND sender_id<>$2 AND read_at IS NULL RETURNING id,read_at AS \"readAt\"",
       [id, actor.userId],
     );
+    const updated = rows[0];
+    if (updated.length) this.realtime.emitToUsers([c.user1_id, c.user2_id], SOCKET_EVENTS.DIRECT_MESSAGES_READ, {
+      conversationId: id, messages: updated,
+    });
     return { ok: true };
   }
 }

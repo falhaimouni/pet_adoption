@@ -1,6 +1,6 @@
 import Navbar from "../components/Navbar";
 import { useLanguage } from "../context/LanguageContext";
-import { Heart, Home, CheckCircle, Users, Globe, ArrowRight, Mail, Phone, MapPin, PawPrint } from "lucide-react";
+import { Heart, Home, CheckCircle, Users, Globe, ArrowRight, Mail, PawPrint } from "lucide-react";
 
 interface AboutPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
@@ -9,13 +9,6 @@ interface AboutPageProps {
 
 export default function AboutPage({ onNavigate, embedded = false }: AboutPageProps) {
   const { t } = useLanguage();
-
-  const stats = [
-    { value: "12,400+", label: t("about_stats_adopted") },
-    { value: "98%",     label: t("about_stats_families") },
-    { value: "85+",     label: t("about_stats_shelters") },
-    { value: "6",       label: t("about_stats_countries") },
-  ];
 
   const benefits = [
     { icon: Heart,       title: t("about_b1_title"), desc: t("about_b1_desc") },
@@ -64,18 +57,6 @@ export default function AboutPage({ onNavigate, embedded = false }: AboutPagePro
           >
             {t("about_find_pet")} <ArrowRight size={16} />
           </button>
-        </div>
-      </section>
-
-      {/* Stats bar */}
-      <section className="bg-white border-b border-[rgba(8,157,151,0.1)] py-10 px-5">
-        <div className="max-w-4xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map(({ value, label }) => (
-            <div key={label} className="text-center">
-              <p className="font-['Prata',serif] text-[36px] text-[#089D97] leading-none">{value}</p>
-              <p className="font-['Poppins',sans-serif] text-[13px] text-[#5a8a87] mt-1">{label}</p>
-            </div>
-          ))}
         </div>
       </section>
 

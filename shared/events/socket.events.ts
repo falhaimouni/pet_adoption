@@ -1,4 +1,7 @@
 export const SOCKET_EVENTS = {
+  DIRECT_MESSAGE: "directMessage",
+  DIRECT_MESSAGES_READ: "directMessagesRead",
+  FRIEND_PRESENCE: "friendPresence",
   SEND_MESSAGE: "sendMessage",
   RECEIVE_MESSAGE: "newMessage",
 
