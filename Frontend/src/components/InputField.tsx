@@ -37,8 +37,8 @@ export default function InputField({
   const responsiveClasses = responsive
     ? "xl:h-[clamp(48px,3vw,90px)] xl:px-[clamp(12px,1vw,28px)] xl:gap-[clamp(8px,0.7vw,20px)] xl:[&_svg]:size-[clamp(18px,1.1vw,30px)]"
     : "";
-    const textClasses = variant === "light" ? "text-[#8A9199] placeholder:text-[#B3B9BF]"
-    : "text-[#384048] placeholder:text-[#384048]";
+    const textClasses = variant === "default" ? "text-[#8A9199] placeholder:text-[#B3B9BF]"
+    : "text-black placeholder:text-[#384048]";
   return (
     <div className="relative w-full">
       {/* Floating label */}
@@ -58,6 +58,7 @@ export default function InputField({
           type={inputType}
           placeholder={placeholder}
           value={value}
+          spellCheck={type === "email" ? false : undefined}
           onChange={(e) => onChange?.(e.target.value)}
           className={`flex-1 min-w-0 bg-transparent outline-none font-['Inter',sans-serif] text-[16px] ${textClasses} ${responsive ? "xl:text-[clamp(16px,1vw,28px)]" : ""}`}
         />
