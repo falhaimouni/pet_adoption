@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Edit, Trash2, ArrowLeft, Stethoscope, Upload, Download, FileText } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import Modal from "../../components/Modal";
+import MedicalDataImport from "../../components/MedicalDataImport";
+import BulkDocumentDelete from "../../components/BulkDocumentDelete";
 import Badge from "../../components/Badge";
 import EmptyState from "../../components/EmptyState";
 import { apiFetch, PaginatedResponse, PetResponse } from "../../lib/api";
@@ -234,7 +236,7 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
         {!routePetId && (
           <div className="bg-white rounded-[15px] shadow-md p-5 mb-5">
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("req_pet")}</label>
-            <select value={selectedPetId} onChange={(e) => setSelectedPetId(e.target.value)} disabled={petsLoading || pets.length === 0} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] bg-white transition-colors disabled:opacity-60">
+            <select value={selectedPetId} onChange={(e) => setSelectedPetId(e.target.value)} disabled={petsLoading || pets.length === 0 || saving} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] bg-white transition-colors disabled:opacity-60">
               <option value="">{petsLoading ? t("loading_pets") : pets.length === 0 ? t("no_pets_available") : t("choose_pet")}</option>
               {pets.map((item) => <option key={item.petId} value={item.petId}>{item.name} - {item.species}{item.breed ? `, ${item.breed}` : ""}</option>)}
             </select>
@@ -270,13 +272,16 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
           </div>
         )}
 
+        <MedicalDataImport key={effectivePetId} petId={effectivePetId} onImported={loadRecord} disabled={saving} onBusyChange={setSaving} />
+
         <div className="bg-white rounded-[15px] shadow-md p-5 mt-5">
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <div>
               <p className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black">Medical documents</p>
               <p className="font-['Poppins',sans-serif] text-[12px] text-black/50">PDF documents up to 10 MB</p>
             </div>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <BulkDocumentDelete key={effectivePetId} documents={documents} onDeleted={loadRecord} disabled={saving || loading} onBusyChange={setSaving} />
               <input
                 ref={documentInputRef}
                 type="file"
