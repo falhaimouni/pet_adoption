@@ -1,8 +1,10 @@
+import { Transform } from 'class-transformer';
 import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { StrongPassword } from '../validators/strong-password.validator';
 import { Match } from '../validators/match.validator';
 
 export class LoginDto {
+  @Transform(({ value }) => typeof value === 'string' ? value.trim().toLowerCase() : value)
   @IsEmail()
   email!: string;
 
@@ -23,6 +25,7 @@ export class RegisterDto {
   @MaxLength(80)
   lastName!: string;
 
+  @Transform(({ value }) => typeof value === 'string' ? value.trim().toLowerCase() : value)
   @IsEmail()
   email!: string;
 

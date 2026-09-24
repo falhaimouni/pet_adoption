@@ -14,7 +14,7 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { randomBytes, createHash } from 'crypto';
 import * as bcrypt from 'bcrypt';
-import { DataSource, QueryFailedError, Repository } from 'typeorm';
+import { DataSource, QueryFailedError, Raw, Repository } from 'typeorm';
 
 import { ERROR_MESSAGES } from '@shared/constants/error-messages.constants';
 import { ChangePasswordDto } from '@shared/dto/change-password.dto';
@@ -80,6 +80,7 @@ export class AuthService implements OnModuleInit {
   }
 
   async signup(dto: SignupDto) {
+    const email = dto.email.trim().toLowerCase();
     if (!this.adopterRole) {
       await this.onModuleInit();
       if (!this.adopterRole) {
@@ -88,7 +89,7 @@ export class AuthService implements OnModuleInit {
     }
 
     const existing = await this.userRepo.findOne({
-      where: { email: dto.email },
+      where: { email: Raw((column) => 'LOWER(BTRIM(' + column + ')) = :email', { email }) },
     });
 
     if (existing) {
@@ -109,7 +110,7 @@ export class AuthService implements OnModuleInit {
           manager.getRepository(User).create({
             firstName: dto.firstName,
             lastName: dto.lastName,
-            email: dto.email,
+            email,
             password: hashedPassword,
             phone: dto.phone,
             role: this.adopterRole,
@@ -145,8 +146,9 @@ export class AuthService implements OnModuleInit {
   }
 
   async login(dto: LoginDto) {
+    const email = dto.email.trim().toLowerCase();
     const user = await this.userRepo.findOne({
-      where: { email: dto.email },
+      where: { email: Raw((column) => 'LOWER(BTRIM(' + column + ')) = :email', { email }) },
       relations: ['role'],
     });
 
@@ -313,7 +315,8 @@ export class AuthService implements OnModuleInit {
   }
 
   async forgotPassword(dto: ForgotPasswordDto) {
-    const user = await this.userRepo.findOne({ where: { email: dto.email } });
+    const email = dto.email.trim().toLowerCase();
+    const user = await this.userRepo.findOne({ where: { email: Raw((column) => 'LOWER(BTRIM(' + column + ')) = :email', { email }) } });
 
     //ALWAYS return the same success response to avoid revealing account existence
     const genericResponse = {
