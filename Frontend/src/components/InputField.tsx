@@ -12,6 +12,7 @@ interface InputFieldProps {
   responsive?: boolean;
   maxLength?: number;
   required?: boolean;
+  readOnly?: boolean;
 }
 
 export default function InputField({
@@ -24,6 +25,7 @@ export default function InputField({
   responsive = false,
   maxLength,
   required = true,
+  readOnly = false,
 }: InputFieldProps) {
   const id = useId();
   const [showPassword, setShowPassword] = useState(false);
@@ -48,6 +50,7 @@ export default function InputField({
         <input
           id={id}
           required={required}
+          readOnly={readOnly}
           maxLength={maxLength ?? (type === "email" ? 254 : type === "password" ? 255 : 161)}
           type={inputType}
           placeholder={placeholder}

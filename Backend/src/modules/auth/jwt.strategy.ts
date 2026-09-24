@@ -49,7 +49,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       relations: ['role'],
     });
 
-    if (!user || user.status !== 'active' || !user.role || user.role.isActive === false) {
+    if (!user || user.emailVerified === false || user.status !== 'active' || !user.role || user.role.isActive === false) {
       throw new UnauthorizedException('Inactive or invalid account');
     }
 

@@ -298,10 +298,10 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
 
       {/* Category chips */}
       <div className="max-w-6xl mx-auto px-5 py-5">
-        <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+        <div className="flex flex-wrap gap-3 pb-1">
           <button
             onClick={() => { setPage(1); setFilters((f) => ({ ...f, species: [] })); }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-[20px] font-['Poppins',sans-serif] text-[13px] font-medium whitespace-nowrap transition-all ${filters.species.length === 0 ? "bg-[#089D97] text-white shadow-md" : "bg-white text-[#1a2e2d] hover:bg-[#e0f2f0]"}`}
+            className={`flex shrink-0 items-center gap-2 px-4 py-2 rounded-[20px] font-['Poppins',sans-serif] text-[13px] font-medium whitespace-nowrap transition-all ${filters.species.length === 0 ? "bg-[#089D97] text-white shadow-md" : "bg-white text-[#1a2e2d] hover:bg-[#e0f2f0]"}`}
           >
             🐾 {t("pets_all")}
           </button>
@@ -309,7 +309,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
             <button
               key={s}
               onClick={() => { setPage(1); setFilters((f) => ({ ...f, species: [s] })); }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-[20px] font-['Poppins',sans-serif] text-[13px] font-medium whitespace-nowrap transition-all ${filters.species.length === 1 && filters.species[0] === s ? "bg-[#089D97] text-white shadow-md" : "bg-white text-[#1a2e2d] hover:bg-[#e0f2f0]"}`}
+              className={`flex shrink-0 items-center gap-2 px-4 py-2 rounded-[20px] font-['Poppins',sans-serif] text-[13px] font-medium whitespace-nowrap transition-all ${filters.species.length === 1 && filters.species[0] === s ? "bg-[#089D97] text-white shadow-md" : "bg-white text-[#1a2e2d] hover:bg-[#e0f2f0]"}`}
             >
               {SPECIES_ICONS[s]} {t(SPECIES_KEY_PL[s])}
             </button>

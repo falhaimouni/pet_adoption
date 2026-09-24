@@ -1,7 +1,7 @@
 import { Body, Controller, Post, Get, UseGuards, Req } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
-import { LoginDto, RefreshTokenDto, SignupDto } from '@shared/dto/auth.dto';
+import { EmailTokenDto, LoginDto, RefreshTokenDto, SignupDto } from '@shared/dto/auth.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RequestWithUser } from '@shared/types/auth.types';
 import { ChangePasswordDto } from '@shared/dto/change-password.dto';
@@ -54,6 +54,22 @@ export class AuthController {
   @Post(['forgot-password', 'forget-password'])
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
+  }
+
+  @Post('verify-email')
+  verifyEmail(@Body() dto: EmailTokenDto) {
+    return this.authService.verifyEmail(dto.token);
+  }
+
+  @Throttle({ default: { ttl: 60_000, limit: 3 } })
+  @Post('resend-verification')
+  resendVerification(@Body() dto: ForgotPasswordDto) {
+    return this.authService.resendVerification(dto.email);
+  }
+
+  @Post('reset-password-context')
+  passwordResetContext(@Body() dto: EmailTokenDto) {
+    return this.authService.passwordResetContext(dto.token);
   }
 
   @Post('reset-password')
