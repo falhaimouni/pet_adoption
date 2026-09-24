@@ -5,7 +5,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { apiBlobFetch, apiFetch } from "../../lib/api";
 
 type ReportType = "adoptions" | "pets" | "inventory";
-type ExportFmt = "csv" | "pdf";
+type ExportFmt = "csv" | "pdf" | "xml";
 interface ReportData { summary: Record<string, string | number>; data: Record<string, unknown>[]; }
 function filtersToQuery(obj: Record<string, string>): string { const p = new URLSearchParams(); Object.entries(obj).forEach(([k,v])=>{if(v)p.set(k,v);}); const s=p.toString(); return s?`?${s}`:""; }
 function FilterSelect({label,value,onChange,options}:{label:string;value:string;onChange:(v:string)=>void;options:{value:string;label:string}[]}) { return (<div className="flex flex-col gap-1"><label className="font-['Poppins',sans-serif] text-[11px] text-black/50 uppercase tracking-wider">{label}</label><div className="relative"><select value={value} onChange={e=>onChange(e.target.value)} className="w-full appearance-none pl-3 pr-8 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] bg-white transition-colors">{options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select><ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none"/></div></div>); }
@@ -48,7 +48,7 @@ export default function AdminReportsPage({ onNavigate, role = "admin", activePag
   }
 
   async function exportReport(fmt: ExportFmt) {
-    setExporting(fmt);
+    setExporting(fmt); setError("");
     try {
       const blob = await apiBlobFetch(`/reports/${reportType}/export/${fmt}${activeQ()}`);
       const url = window.URL.createObjectURL(blob);
@@ -102,6 +102,9 @@ export default function AdminReportsPage({ onNavigate, role = "admin", activePag
             {reportData&&<>
               <button onClick={()=>exportReport("csv")} disabled={!!exporting} className="flex items-center gap-2 px-4 py-2 border border-[#089D97] text-[#089D97] rounded-[10px] font-['Poppins',sans-serif] text-[13px] font-medium hover:bg-[rgba(8,157,151,0.06)] transition-colors disabled:opacity-60">
                 <Download size={14}/>{exporting==="csv"?t("report_exporting"):t("report_export_csv")}
+              </button>
+              <button onClick={()=>exportReport("xml")} disabled={!!exporting} className="flex items-center gap-2 px-4 py-2 border border-[#089D97] text-[#089D97] rounded-[10px] text-[13px] disabled:opacity-60">
+                <Download size={14}/>{exporting==="xml"?t("report_exporting"):t("report_export_xml")}
               </button>
               <button onClick={()=>exportReport("pdf")} disabled={!!exporting} className="flex items-center gap-2 px-4 py-2 border border-gray-200 text-black/70 rounded-[10px] font-['Poppins',sans-serif] text-[13px] font-medium hover:bg-gray-50 transition-colors disabled:opacity-60">
                 <Download size={14}/>{exporting==="pdf"?t("report_exporting"):t("report_export_pdf")}

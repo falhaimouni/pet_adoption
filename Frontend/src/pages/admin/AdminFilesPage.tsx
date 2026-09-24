@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Search, Trash2, Download, FileText, Image, File, FolderOpen, RefreshCw } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import Modal from "../../components/Modal";
+import BulkDocumentDelete from "../../components/BulkDocumentDelete";
 import EmptyState from "../../components/EmptyState";
 import Pagination from "../../components/Pagination";
 import { useLanguage } from "../../context/LanguageContext";
@@ -106,6 +107,7 @@ export default function AdminFilesPage({ onNavigate }: AdminFilesPageProps) {
           </div>
         </div>
 
+        <div className="mb-4"><BulkDocumentDelete documents={filtered.filter(file => file.category === "DOCUMENT")} onDeleted={loadFiles} disabled={loading} /></div>
         {error && <p className="mb-4 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{error}</p>}
         {loading ? (
           <div className="h-[180px] rounded-[12px] bg-gray-50 animate-pulse" />

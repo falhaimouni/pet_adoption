@@ -128,7 +128,7 @@ export function validateRequest(path: string, init: RequestInit, mockIds = false
   if (init.body instanceof FormData) {
     for (const value of init.body.values()) {
       if (!(value instanceof File)) continue;
-      const error = /medical-record\/documents/.test(path) ? validateDocumentFile(value) : validateImageFile(value, t);
+      const error = /^\/pets\/[^/]+\/medical-record\/(?:documents|import(?:\/bulk)?)$/.test(url.pathname) ? validateDocumentFile(value) : validateImageFile(value, t);
       if (error) throw new Error(error);
     }
     return;
