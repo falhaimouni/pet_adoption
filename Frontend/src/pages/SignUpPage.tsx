@@ -148,6 +148,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               icon={<User size={18} />}
               value={fullName}
               onChange={setFullName}
+              variant="light"
             />
 
             <InputField
@@ -157,6 +158,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               icon={<Mail size={18} />}
               value={email}
               onChange={setEmail}
+              variant="light"
             />
 
             <InputField
@@ -166,6 +168,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               icon={<Lock size={18} />}
               value={password}
               onChange={setPassword}
+              variant="light"
             />
 
             <InputField
@@ -175,6 +178,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               icon={<Lock size={18} />}
               value={confirmPassword}
               onChange={setConfirmPassword}
+              variant="light"
             />
 
             {/* Terms checkbox */}
