@@ -314,6 +314,23 @@ export default function DashboardLayout({
             </div>
           </div>
         </div>
+        <nav aria-label="Main navigation" className="flex flex-wrap items-center gap-1 border-t border-[#e0f2f0] px-2 py-2 lg:hidden">
+          {topNavItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onNavigate(item.page)}
+              aria-current={activePage === item.page ? "page" : undefined}
+              className={`shrink-0 whitespace-nowrap rounded-[10px] px-2.5 py-2 font-['Poppins',sans-serif] text-[13px] font-medium transition-colors ${
+                activePage === item.page
+                  ? "bg-[#e0f2f0] text-[#089D97]"
+                  : "text-[#1a2e2d]/70 hover:bg-[#f0f9f8] hover:text-[#089D97]"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
       </header>
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
