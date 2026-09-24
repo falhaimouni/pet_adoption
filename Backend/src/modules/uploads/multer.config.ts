@@ -8,7 +8,7 @@ import { generateFilename } from './filename.util';
 
 import {
     UPLOAD_DIRECTORIES,
-    UPLOAD_ROOT,
+    UploadRule,
   UPLOAD_RULES,
 } from '@shared/constants/uploads.constants';
 
@@ -16,6 +16,7 @@ import { FileUploadCategory } from '@shared/enums';
 
 export function createMulterOptions(
   category: FileUploadCategory,
+  rule: UploadRule = UPLOAD_RULES[category],
 ) {
   return {
     storage: diskStorage({
@@ -74,11 +75,11 @@ export function createMulterOptions(
     }),
 
     //for file validation, checks if the file type and extension match the category
-    fileFilter: fileFilter.bind(null, category),
+    fileFilter: fileFilter.bind(null, category, rule),
 
     //5MB for images, 10MB for documents
     limits: {
-      fileSize: UPLOAD_RULES[category].maxSize,
+      fileSize: rule.maxSize,
     },
   };
 }

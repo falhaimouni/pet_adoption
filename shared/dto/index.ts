@@ -15,6 +15,7 @@ export * from './employee.dto';
 export * from './conversation.dto';
 export * from './supply.dto';
 export * from './medical-record.dto';
+export * from './medical-import.dto';
 export * from './file-upload.dto';
 export * from './supplier.dto';
 export * from './vaccination.dto';

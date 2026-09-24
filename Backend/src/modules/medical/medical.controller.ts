@@ -8,10 +8,11 @@ import {
   Post,
   Req,
   UploadedFile,
+  UploadedFiles,
   UseInterceptors,
   UseGuards,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ParseFilePipe } from '@nestjs/common';
 
 import {
@@ -26,9 +27,25 @@ import { createMulterOptions } from '../uploads/multer.config';
 import { MedicalService } from './medical.service';
 import { FileUploadCategory } from '@shared/enums';
 
+import { MAX_BULK_DOCUMENTS } from '@shared/dto/bulk-documents.dto';
+
 @Controller()
 export class MedicalController {
   constructor(private readonly medicalService: MedicalService) {}
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'MANAGER', 'VET')
+  @Post('pets/:petId/medical-record/import/bulk')
+  @UseInterceptors(
+    FilesInterceptor('files', MAX_BULK_DOCUMENTS, createMulterOptions(FileUploadCategory.DOCUMENT)),
+  )
+  importDocuments(
+    @Param('petId') petId: string,
+    @Req() req: RequestWithUser,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.medicalService.importMedicalDocuments(petId, req.user.userId, files);
+  }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'MANAGER', 'VET')
@@ -42,6 +59,21 @@ export class MedicalController {
   @Get('medical-entries/:entryId')
   findEntry(@Param('entryId') entryId: string) {
     return this.medicalService.findEntry(entryId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'MANAGER', 'VET')
+  @Post('pets/:petId/medical-record/import')
+  @UseInterceptors(
+    FileInterceptor('file', createMulterOptions(FileUploadCategory.DOCUMENT)),
+  )
+  importMedicalData(
+    @Param('petId') petId: string,
+    @Req() req: RequestWithUser,
+    @UploadedFile(new ParseFilePipe({ fileIsRequired: true }))
+    file: Express.Multer.File,
+  ) {
+    return this.medicalService.importMedicalData(petId, req.user.userId, file);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
