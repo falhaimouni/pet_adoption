@@ -61,12 +61,12 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
         body: JSON.stringify({
           firstName,
           lastName: lastNameParts.join(" "),
-          email: email.trim(),
+          email: email.trim().toLowerCase(),
           password,
           confirmPassword,
         }),
       });
-      onNavigate("login");
+      onNavigate("verify-email", { email: email.trim().toLowerCase() });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("signup_create_error"));
     } finally {
@@ -148,6 +148,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               icon={<User size={18} />}
               value={fullName}
               onChange={setFullName}
+              variant="light"
             />
 
             <InputField
@@ -157,6 +158,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               icon={<Mail size={18} />}
               value={email}
               onChange={setEmail}
+              variant="light"
             />
 
             <InputField
@@ -166,6 +168,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               icon={<Lock size={18} />}
               value={password}
               onChange={setPassword}
+              variant="light"
             />
 
             <InputField
@@ -175,6 +178,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               icon={<Lock size={18} />}
               value={confirmPassword}
               onChange={setConfirmPassword}
+              variant="light"
             />
 
             {/* Terms checkbox */}

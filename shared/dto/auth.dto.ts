@@ -66,3 +66,9 @@ export interface AuthResponseDto {
     roleName: string;
   };
 }
+
+export class EmailTokenDto {
+  @IsString()
+  @Matches(/^[a-f0-9]{64}$/)
+  token!: string;
+}

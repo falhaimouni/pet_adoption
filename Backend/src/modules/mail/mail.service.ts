@@ -5,6 +5,15 @@ import { MailerService } from '@nestjs-modules/mailer';
 export class MailService {
   constructor(private readonly mailerService: MailerService) {}
 
+  async sendVerificationEmail(email: string, link: string) {
+    await this.mailerService.sendMail({
+      to: email,
+      subject: 'Verify your Petopia email',
+      text: `Welcome to Petopia! Verify your email to sign in: ${link}\nThis link expires in 24 hours. If you did not sign up, ignore this email.`,
+      html: `<h2>Welcome to Petopia</h2><p>Verify your email to sign in:</p><p><a href="${link}">Verify email</a></p><p>This link expires in 24 hours. If you did not sign up, ignore this email.</p>`,
+    });
+  }
+
   async sendPasswordResetEmail(email: string, resetLink: string) {
     await this.mailerService.sendMail({
       to: email,
