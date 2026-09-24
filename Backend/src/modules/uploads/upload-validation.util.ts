@@ -5,6 +5,7 @@ import { extname } from 'path';
 import { FileUploadCategory } from '@shared/enums';
 import {
   isUploadMimeExtensionMatch,
+  UploadRule,
   UPLOAD_RULES,
 } from '@shared/constants';
 
@@ -30,14 +31,28 @@ function hasSignature(content: Buffer, mimeType: string): boolean {
     return content.length >= 5 && content.subarray(0, 5).toString('ascii') === '%PDF-';
   }
 
+  if (mimeType === 'application/json' || mimeType === 'text/json') {
+    const text = content.toString('utf8').trimStart();
+    return text.startsWith('{') || text.startsWith('[');
+  }
+
+  if (
+    mimeType === 'text/csv' ||
+    mimeType === 'application/csv' ||
+    mimeType === 'application/vnd.ms-excel'
+  ) {
+    const text = content.toString('utf8').trim();
+    return text.length > 0 && /[\n\r,]/.test(text.slice(0, 200));
+  }
+
   return false;
 }
 
 export async function validateUploadedFile(
   file: Express.Multer.File,
   category: FileUploadCategory,
+  rule: UploadRule = UPLOAD_RULES[category],
 ): Promise<void> {
-  const rule = UPLOAD_RULES[category];
   const extension = extname(file.originalname).toLowerCase();
   const matchingType = isUploadMimeExtensionMatch(file.mimetype, extension);
 

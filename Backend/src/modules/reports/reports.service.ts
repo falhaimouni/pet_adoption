@@ -15,6 +15,7 @@ import {
 import { AdoptionRequest, Pet, Supplier, Supply } from '../../database/entities';
 import { generateCsv } from './generators/csv.generator';
 import { generatePdf } from './generators/pdf.generator';
+import { generateXml } from './generators/xml.generator';
 
 interface AdoptionReportRow {
   adoptionId: string;
@@ -147,6 +148,21 @@ export class ReportsService {
     });
   }
 
+  async exportAdoptionsXml(query: AdoptionReportQueryDto): Promise<Buffer> {
+    const report = await this.getAdoptionReport(query);
+    return generateXml('adoptions', 'adoption', report.data.map((row) => ({
+      adoption_id: row.adoptionId,
+      pet: row.pet,
+      species: row.species,
+      breed: row.breed,
+      adopter: row.adopter,
+      request_date: row.requestDate,
+      approval_date: row.approvalDate,
+      status: row.status,
+      approved_by: row.approvedBy,
+    })));
+  }
+
   async getInventoryReport(query: InventoryReportQueryDto) {
     const rows = await this.getInventoryRows(query);
     const lowStock = rows.filter((row) => row.status === 'LOW_STOCK').length;
@@ -227,6 +243,19 @@ export class ReportsService {
     });
   }
 
+  async exportInventoryXml(query: InventoryReportQueryDto): Promise<Buffer> {
+    const report = await this.getInventoryReport(query);
+    return generateXml('inventory', 'item', report.data.map((row) => ({
+      supply: row.supply,
+      category: row.category,
+      quantity: row.quantity,
+      minimum: row.minimum,
+      status: row.status,
+      supplier: row.supplier,
+      inventory_value: row.inventoryValue,
+    })));
+  }
+
   async getPetReport(query: PetReportQueryDto) {
     const rows = await this.getPetRows(query);
     const summary = this.countByStatus(rows.map((row) => row.status));
@@ -285,6 +314,18 @@ export class ReportsService {
         ]),
       },
     });
+  }
+
+  async exportPetsXml(query: PetReportQueryDto): Promise<Buffer> {
+    const report = await this.getPetReport(query);
+    return generateXml('pets', 'pet', report.data.map((row) => ({
+      pet: row.pet,
+      species: row.species,
+      breed: row.breed,
+      age: row.age,
+      status: row.status,
+      health: row.health,
+    })));
   }
 
   private async getAdoptionRows(query: AdoptionReportQueryDto): Promise<AdoptionReportRow[]> {
