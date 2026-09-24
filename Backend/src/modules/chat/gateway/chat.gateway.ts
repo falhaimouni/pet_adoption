@@ -19,6 +19,8 @@ import { validateOrReject } from 'class-validator';
 import { Message } from '../../../database/entities';
 
 @WebSocketGateway({
+        pingInterval: 5000,
+        pingTimeout: 5000,
         cors:{
                 origin: '*',
         },

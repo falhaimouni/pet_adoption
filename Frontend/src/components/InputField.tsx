@@ -13,7 +13,6 @@ interface InputFieldProps {
   maxLength?: number;
   required?: boolean;
   readOnly?: boolean;
-  variant?: "default" | "light" ;
 }
 
 export default function InputField({

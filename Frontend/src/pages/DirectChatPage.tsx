@@ -1,3 +1,4 @@
+import { SOCKET_EVENTS } from "@shared/events/socket.events";
 import AuthenticatedImage from "../components/AuthenticatedImage";
 import fallback from "../assets/default-avatar.svg";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
@@ -43,6 +44,8 @@ export default function DirectChatPage({
   const [loading, setLoading] = useState(true);
   const [older, setOlder] = useState(false);
   const [profile, setProfile] = useState<string>();
+  const activeConversation = useRef(conversationId);
+  activeConversation.current = conversationId;
   const messagesRef = useRef<HTMLDivElement>(null);
   const latestMessageId = messages[messages.length - 1]?.id;
   useEffect(() => {
@@ -56,15 +59,17 @@ export default function DirectChatPage({
         apiFetch<Conversation[]>("/direct-conversations"),
         apiFetch<{ friend: Person; online: boolean }[]>("/friends"),
       ]);
+      if (activeConversation.current !== conversationId) return;
       setConversations(chats);
       setFriends(people);
       if (conversationId) {
         const rows = await apiFetch<Message[]>(
           `/direct-conversations/${conversationId}/messages`,
         );
+        if (activeConversation.current !== conversationId) return;
         setMessages((prev) => {
           const map = new Map(prev.map((m) => [m.id, m]));
-          rows.forEach((m) => map.set(m.id, m));
+          rows.forEach((m) => map.set(m.id, { ...m, readAt: m.readAt ?? map.get(m.id)?.readAt }));
           return [...map.values()].sort(
             (a, b) =>
               a.createdAt.localeCompare(b.createdAt) ||
@@ -77,9 +82,9 @@ export default function DirectChatPage({
         });
       }
     } catch (e) {
-      setError((e as Error).message);
+      if (activeConversation.current === conversationId) setError((e as Error).message);
     } finally {
-      setLoading(false);
+      if (activeConversation.current === conversationId) setLoading(false);
     }
   }, [conversationId]);
   useEffect(() => {
@@ -90,18 +95,56 @@ export default function DirectChatPage({
     const timer = setInterval(refresh, 4000);
     return () => clearInterval(timer);
   }, [refresh]);
+  useEffect(() => {
+    function receive(event: Event) {
+      const detail = (event as CustomEvent<{ conversationId: string; message: Message }>).detail;
+      setConversations((chats) => chats.map((chat) => chat.id === detail.conversationId ? { ...chat, lastMessage: detail.message.text } : chat));
+      if (detail.conversationId !== conversationId) {
+        void refresh();
+        return;
+      }
+      setMessages((rows) => [...new Map([...rows, { ...detail.message, readAt: detail.message.readAt ?? rows.find((m) => m.id === detail.message.id)?.readAt }].map((m) => [m.id, m])).values()]
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)));
+      if (detail.message.senderId !== user?.id) {
+        void apiFetch(`/direct-conversations/${conversationId}/read`, { method: "PATCH" }).catch(() => undefined);
+      }
+    }
+    function read(event: Event) {
+      const detail = (event as CustomEvent<{ conversationId: string; messages: { id: string; readAt: string }[] }>).detail;
+      if (detail.conversationId !== conversationId) return;
+      const receipts = new Map(detail.messages.map((m) => [m.id, m.readAt]));
+      setMessages((rows) => rows.map((m) => receipts.has(m.id) ? { ...m, readAt: receipts.get(m.id) } : m));
+    }
+    function presence(event: Event) {
+      const { userId, online } = (event as CustomEvent<{ userId: string; online: boolean }>).detail;
+      setFriends((rows) => rows.map((row) => row.friend.id === userId ? { ...row, online } : row));
+    }
+    window.addEventListener(`petopia:${SOCKET_EVENTS.DIRECT_MESSAGE}`, receive);
+    window.addEventListener(`petopia:${SOCKET_EVENTS.DIRECT_MESSAGES_READ}`, read);
+    window.addEventListener(`petopia:${SOCKET_EVENTS.FRIEND_PRESENCE}`, presence);
+    window.addEventListener("petopia:realtime-connected", refresh);
+    return () => {
+      window.removeEventListener(`petopia:${SOCKET_EVENTS.DIRECT_MESSAGE}`, receive);
+      window.removeEventListener(`petopia:${SOCKET_EVENTS.DIRECT_MESSAGES_READ}`, read);
+      window.removeEventListener(`petopia:${SOCKET_EVENTS.FRIEND_PRESENCE}`, presence);
+      window.removeEventListener("petopia:realtime-connected", refresh);
+    };
+  }, [conversationId, refresh, user?.id]);
+
   async function send(e: FormEvent) {
     e.preventDefault();
     if (!conversationId || busy || !text.trim() || !current?.canSend) return;
     setBusy(true);
     setError("");
     try {
-      await apiFetch(`/direct-conversations/${conversationId}/messages`, {
+      const sent = await apiFetch<Message>(`/direct-conversations/${conversationId}/messages`, {
         method: "POST",
         body: JSON.stringify({ text }),
       });
+      if (activeConversation.current !== conversationId) return;
+      setMessages((rows) => [...new Map([...rows, { ...sent, readAt: sent.readAt ?? rows.find((m) => m.id === sent.id)?.readAt }].map((m) => [m.id, m])).values()]);
+      setConversations((chats) => chats.map((chat) => chat.id === conversationId ? { ...chat, lastMessage: sent.text } : chat));
       setText("");
-      await refresh();
     } catch (e) {
       setError((e as Error).message);
     } finally {
