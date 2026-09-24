@@ -45,6 +45,14 @@ export class ReportsController {
     return this.file(buffer, 'adoption-report.pdf', 'application/pdf');
   }
 
+  @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE)
+  @Get('adoptions/export/xml')
+  @Header('Content-Type', 'application/xml')
+  async exportAdoptionsXml(@Query() query: AdoptionReportQueryDto) {
+    const buffer = await this.reportsService.exportAdoptionsXml(query);
+    return this.file(buffer, 'adoption-report.xml', 'application/xml');
+  }
+
   @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER)
   @Get('inventory')
   getInventory(@Query() query: InventoryReportQueryDto) {
@@ -67,6 +75,14 @@ export class ReportsController {
     return this.file(buffer, 'inventory-report.pdf', 'application/pdf');
   }
 
+  @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER)
+  @Get('inventory/export/xml')
+  @Header('Content-Type', 'application/xml')
+  async exportInventoryXml(@Query() query: InventoryReportQueryDto) {
+    const buffer = await this.reportsService.exportInventoryXml(query);
+    return this.file(buffer, 'inventory-report.xml', 'application/xml');
+  }
+
   @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE, RolesEnum.VET)
   @Get('pets')
   getPets(@Query() query: PetReportQueryDto) {
@@ -87,6 +103,14 @@ export class ReportsController {
   async exportPetsPdf(@Query() query: PetReportQueryDto) {
     const buffer = await this.reportsService.exportPetsPdf(query);
     return this.file(buffer, 'pet-report.pdf', 'application/pdf');
+  }
+
+  @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE, RolesEnum.VET)
+  @Get('pets/export/xml')
+  @Header('Content-Type', 'application/xml')
+  async exportPetsXml(@Query() query: PetReportQueryDto) {
+    const buffer = await this.reportsService.exportPetsXml(query);
+    return this.file(buffer, 'pet-report.xml', 'application/xml');
   }
 
   private file(buffer: Buffer, filename: string, type: string): StreamableFile {

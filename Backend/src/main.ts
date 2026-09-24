@@ -4,7 +4,6 @@ import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { resolveUploadRoot } from './modules/uploads/upload-path.util';
 import helmet from 'helmet';
 
 
@@ -18,11 +17,6 @@ async function bootstrap() {
   app.use(helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
   }));
-
-  // Serve uploaded files from the uploads folder
-  app.useStaticAssets(resolveUploadRoot(), {
-    prefix: '/uploads/',
-  });
 
   // Crucial: This enables the @IsEmail, @MinLength, etc. validations in your DTOs
   app.useGlobalPipes(new ValidationPipe({

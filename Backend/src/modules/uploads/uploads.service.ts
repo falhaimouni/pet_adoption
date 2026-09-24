@@ -1,4 +1,6 @@
 import {
+  BadRequestException,
+  HttpException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -16,10 +18,12 @@ import { PetImage } from '../../database/entities/pet-image.entity';
 import { Supply } from '../../database/entities/supply.entity';
 import { User } from '../../database/entities/user.entity';
 import { FileUploadCategory } from '@shared/enums';
-import { UPLOAD_DIRECTORIES } from '@shared/constants';
+import { UPLOAD_DIRECTORIES, UploadRule, UPLOAD_RULES } from '@shared/constants';
 import { RequestWithUser } from '@shared/types/auth.types';
 import { validateUploadedFile } from './upload-validation.util';
 import { resolveUploadRoot } from './upload-path.util';
+
+import { MAX_BULK_DOCUMENTS } from '@shared/dto/bulk-documents.dto';
 
 export interface StoredFileBackup {
   fileId: string;
@@ -44,9 +48,10 @@ export class UploadsService {
     category: FileUploadCategory,
     userId?: string,
     medicalRecordId?: string,
+    validationRule: UploadRule = UPLOAD_RULES[category],
   ) {
     try {
-      await validateUploadedFile(file, category);
+      await validateUploadedFile(file, category, validationRule);
 
       //folder name is the same as category
       const folder = UPLOAD_DIRECTORIES[category];
@@ -84,6 +89,36 @@ export class UploadsService {
     const filePath = await this.resolveSafeStoredFilePath(file);
 
     return { file, filePath };
+  }
+
+  async deleteDocuments(fileIds: string[], user: RequestWithUser['user']) {
+    if (!['ADMIN', 'MANAGER', 'VET'].includes(user.role)) {
+      throw new ForbiddenException('You are not allowed to delete documents');
+    }
+    if (!Array.isArray(fileIds) || fileIds.length === 0 || fileIds.length > MAX_BULK_DOCUMENTS || new Set(fileIds).size !== fileIds.length) {
+      throw new BadRequestException('Provide between 1 and 20 unique document IDs.');
+    }
+    const results: Array<{ fileId: string; success: boolean; statusCode?: number; error?: string | object }> = [];
+    for (const fileId of fileIds) {
+      try {
+        const file = await this.fileRepo.findOne({ where: { fileId } });
+        if (!file) throw new NotFoundException('File not found');
+        if (file.category !== FileUploadCategory.DOCUMENT || file.mimeType !== 'application/pdf') {
+          throw new BadRequestException('Only PDF documents can be deleted with this endpoint.');
+        }
+        await this.dataSource.transaction((manager) => this.authorizeDeletion(manager, file, user));
+        await this.deleteStoredFile(file);
+        results.push({ fileId, success: true });
+      } catch (error) {
+        results.push({
+          fileId, success: false,
+          statusCode: error instanceof HttpException ? error.getStatus() : 500,
+          error: error instanceof HttpException ? error.getResponse() : 'Unable to delete document.',
+        });
+      }
+    }
+    const deleted = results.filter((result) => result.success).length;
+    return { total: fileIds.length, deleted, failed: fileIds.length - deleted, results };
   }
 
   async deleteFile(

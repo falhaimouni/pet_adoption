@@ -14,7 +14,7 @@ export const UPLOAD_MAX_FILE_SIZES = {
   DOCUMENT: 10 * 1024 * 1024,
 } as const;
 
-interface UploadRule {
+export interface UploadRule {
   mimeTypes: string[];
   extensions: string[];
   maxSize: number;
@@ -25,11 +25,14 @@ export const UPLOAD_MIME_EXTENSIONS: Record<string, string[]> = {
   'image/png': ['.png'],
   'image/webp': ['.webp'],
   'application/pdf': ['.pdf'],
+  'application/json': ['.json'],
+  'text/json': ['.json'],
+  'text/csv': ['.csv'],
+  'application/csv': ['.csv'],
+  'application/vnd.ms-excel': ['.csv'],
 };
 
 const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const DOCUMENT_MIME_TYPES = ['application/pdf'];
-
 export function isUploadMimeExtensionMatch(
   mimeType: string,
   extension: string,
@@ -46,10 +49,8 @@ export const IMAGE_UPLOAD_RULE: UploadRule = {
 };
 
 export const DOCUMENT_UPLOAD_RULE: UploadRule = {
-  mimeTypes: DOCUMENT_MIME_TYPES,
-  extensions: DOCUMENT_MIME_TYPES.flatMap(
-    (mimeType) => UPLOAD_MIME_EXTENSIONS[mimeType],
-  ),
+  mimeTypes: ['application/pdf'],
+  extensions: ['.pdf'],
   maxSize: UPLOAD_MAX_FILE_SIZES.DOCUMENT,
 };
 

@@ -6,11 +6,13 @@ import { extname } from 'path';
 import { FileUploadCategory } from '@shared/enums';
 import {
   isUploadMimeExtensionMatch,
+  UploadRule,
   UPLOAD_RULES,
 } from '@shared/constants';
 
 export function fileFilter(
   category: FileUploadCategory,
+  rule: UploadRule = UPLOAD_RULES[category],
   req: Request,
   file: Express.Multer.File,
   //a function that is called later
@@ -20,7 +22,6 @@ export function fileFilter(
     acceptFile: boolean,
   ) => void,
 ) {
-  const rule = UPLOAD_RULES[category];
   //extension is the part after the file name
   const extension = extname(file.originalname).toLowerCase();
   //mime is the type of the file

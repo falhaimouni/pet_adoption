@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -15,9 +16,21 @@ import { Roles } from '../roles/roles.decorator';
 import { RolesGuard } from '../roles/roles.guard';
 import { UploadsService } from './uploads.service';
 
+import { BulkDeleteDocumentsDto } from '@shared/dto/bulk-documents.dto';
+
 @Controller('files')
 export class UploadsController {
   constructor(private readonly uploadsService: UploadsService) {}
+
+  @Delete('documents/bulk')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'MANAGER', 'VET')
+  deleteDocuments(
+    @Body() dto: BulkDeleteDocumentsDto,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.uploadsService.deleteDocuments(dto.fileIds, req.user);
+  }
 
   @Get(':fileId')
   @UseGuards(JwtAuthGuard, RolesGuard)
