@@ -6,7 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { randomBytes } from 'crypto';
-import { DataSource, QueryFailedError, Repository } from 'typeorm';
+import { DataSource, QueryFailedError, Raw, Repository } from 'typeorm';
 
 import { User } from '../../database/entities/user.entity';
 import { Adopter } from '../../database/entities/adopter.entity';
@@ -71,12 +71,13 @@ export class OAuthService {
   async validateGoogleUser(googleUser: GoogleUserData) {
     const {
       providerUserId,
-      email,
+      email: providedEmail,
       emailVerified,
       firstName,
       lastName,
       avatar,
     } = googleUser;
+    const email = providedEmail.trim().toLowerCase();
 
     if (!emailVerified) {
       throw new UnauthorizedException(
@@ -118,7 +119,7 @@ export class OAuthService {
 
     //google account is new but the email already belongs to a user
     const existingUser = await this.userRepo.findOne({
-      where: { email },
+      where: { email: Raw((column) => 'LOWER(BTRIM(' + column + ')) = :email', { email }) },
       relations: ['role'],
     });
 

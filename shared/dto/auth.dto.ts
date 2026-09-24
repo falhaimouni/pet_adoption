@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, Matches, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { StrongPassword } from '../validators/strong-password.validator';
 import { Match } from '../validators/match.validator';
 
