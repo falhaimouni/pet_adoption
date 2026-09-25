@@ -138,7 +138,7 @@ services:
 
         if [ "$$USERS_COUNT" = "0" ]; then
           echo "Database is empty. Running full seed..."
-          node dist/Backend/src/database/seeding/main.seed.js
+          node dist/Backend/src/database/seeding/production.seed.js
           echo "Database seeding completed successfully."
         else
           echo "Database already contains users. Skipping seed."
