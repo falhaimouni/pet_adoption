@@ -1,3 +1,5 @@
+import { SupplyStatusEnum } from '../enums';
+
 export class StoreSupplyDto{
   
   supplyId!: string;
@@ -9,6 +11,10 @@ export class StoreSupplyDto{
   category!: string;
 
   sellingPrice!: string;
+
+  quantity!: number;
+
+  status!: SupplyStatusEnum;
 
   inStock!: boolean;
 

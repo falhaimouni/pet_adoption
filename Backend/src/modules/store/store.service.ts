@@ -24,13 +24,10 @@ export class StoreService{
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.supplyRepo.createQueryBuilder('supply');
-    queryBuilder.andWhere('supply.status = :status', {status: SupplyStatusEnum.AVAILABLE})
-      .andWhere('supply.quantity > 0')
-      .andWhere('supply.isActive = :active', {active: true})
+    queryBuilder.andWhere('supply.isActive = :active', {active: true})
       .andWhere('supply.storeListed = :storeListed', {storeListed: true})
       .innerJoin('supply.product', 'product')
-      .leftJoinAndSelect('supply.imageFile', 'imageFile')
-      .andWhere('product.isActive = :productActive', { productActive: true });
+      .leftJoinAndSelect('supply.imageFile', 'imageFile');
 
     if (query.search)
     {
@@ -86,7 +83,9 @@ export class StoreService{
       supplyName: supply.supplyName,
       category: supply.category,
       sellingPrice: supply.sellingPrice,
-      inStock: supply.quantity > 0,
+      quantity: supply.quantity,
+      status: supply.status,
+      inStock: supply.status === SupplyStatusEnum.AVAILABLE && supply.quantity > 0,
       storeListed: supply.storeListed,
       imageUrl: supply.imageFile
         ? /^https?:\/\//i.test(supply.imageFile.fileUrl)
@@ -103,11 +102,8 @@ export class StoreService{
       .where('supply.supplyId = :id', {id})
       .andWhere('supply.isActive = :active', {active: true})
       .andWhere('supply.storeListed = :storeListed', {storeListed: true})
-      .andWhere('supply.status = :status', {status: SupplyStatusEnum.AVAILABLE})
-      .andWhere('supply.quantity > 0')
       .innerJoin('supply.product', 'product')
       .leftJoinAndSelect('supply.imageFile', 'imageFile')
-      .andWhere('product.isActive = :productActive', { productActive: true })
       .getOne();
     if (!supply)
     {
@@ -121,7 +117,8 @@ export class StoreService{
       category: supply.category,
       sellingPrice: supply.sellingPrice,
       quantity: supply.quantity,
-      inStock: supply.quantity > 0,
+      status: supply.status,
+      inStock: supply.status === SupplyStatusEnum.AVAILABLE && supply.quantity > 0,
       storeListed: supply.storeListed,
       imageUrl: supply.imageFile
         ? /^https?:\/\//i.test(supply.imageFile.fileUrl)
