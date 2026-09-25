@@ -133,12 +133,12 @@ const LEGAL_LINKS = [
         </button>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-1">
           {visibleNavLinks.map(({ label, page }) => (
             <button
               key={page}
               onClick={() => nav(page === "home" && isAuthenticated ? dashboardPage : page)}
-              className={`px-4 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[15px] transition-all ${
+              className={`whitespace-nowrap px-4 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[15px] transition-all ${
                 activePage === page
                   ? "bg-secondary text-primary"
                   : "text-foreground/70 hover:text-primary hover:bg-[#f0f9f8]"
@@ -147,12 +147,12 @@ const LEGAL_LINKS = [
               {tx(label)}
             </button>
           ))}
-          <div className="hidden md:flex items-center border-s border-secondary ms-2 ps-2">
+          <div className="hidden lg:flex items-center border-s border-secondary ms-2 ps-2">
             {LEGAL_LINKS.map(({ label, page }) => (
               <button
                 key={page}
                 onClick={() => nav(page)}
-                className={`px-2.5 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[12px] transition-all ${
+                className={`whitespace-nowrap px-2.5 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[12px] transition-all ${
                   activePage === page
                     ? "bg-secondary text-primary"
                     : "text-foreground/55 hover:text-primary hover:bg-[#f0f9f8]"
@@ -165,7 +165,7 @@ const LEGAL_LINKS = [
         </nav>
 
         {/* Right actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {/* Language toggle */}
           <LanguageSwitcher />
 
@@ -258,7 +258,7 @@ const LEGAL_LINKS = [
 
           {/* Auth area — desktop */}
           {isAuthenticated && user ? (
-            <div className="relative hidden md:block" ref={dropdownRef}>
+            <div className="relative hidden lg:block" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-[12px] hover:bg-[#f0f9f8] transition-colors"
@@ -307,7 +307,7 @@ const LEGAL_LINKS = [
               )}
             </div>
           ) : (
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-2">
               <button
                 onClick={() => nav("login")}
                 className="px-4 py-2 font-['Poppins',sans-serif] font-medium text-[14px] text-primary hover:bg-[#f0f9f8] rounded-[10px] transition-colors"
@@ -326,7 +326,7 @@ const LEGAL_LINKS = [
           {/* Mobile hamburger */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden w-9 h-9 rounded-[10px] flex items-center justify-center text-foreground/60 hover:bg-[#f0f9f8] transition-colors"
+            className="lg:hidden w-9 h-9 rounded-[10px] flex items-center justify-center text-foreground/60 hover:bg-[#f0f9f8] transition-colors"
           >
             {menuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
@@ -335,7 +335,7 @@ const LEGAL_LINKS = [
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden bg-white border-t border-[rgba(8,157,151,0.1)] px-5 py-3 flex flex-col gap-1">
+        <div className="lg:hidden bg-white border-t border-[rgba(8,157,151,0.1)] px-5 py-3 flex flex-col gap-1">
           {visibleNavLinks.map(({ label, page }) => (
             <button
               key={page}

@@ -4,6 +4,8 @@ Pet Adoption Management System is a full-stack web application for managing pet 
 
 The project is built as a TypeScript monorepo with a React/Vite frontend, a NestJS backend, shared DTOs/types/constants, PostgreSQL, TypeORM migrations, and Docker support.
 
+For evaluation preparation and a full feature-by-feature implementation explanation, see [docs/PROJECT_STUDY_GUIDE.md](docs/PROJECT_STUDY_GUIDE.md).
+
 ## Problem Statement
 
 Animal shelters need a reliable way to publish adoptable pets, process adoption requests, manage adopter communication, track pet health records, and handle daily operational tasks such as inventory, orders, reports, departments, and staff access control. This system centralizes those workflows in one role-based platform so each user can access the tools they need without exposing unrelated management features.
