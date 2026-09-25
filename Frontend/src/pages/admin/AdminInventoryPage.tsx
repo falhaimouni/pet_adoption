@@ -10,6 +10,7 @@ import Pagination from "../../components/Pagination";
 import { apiFetch } from "../../lib/api";
 import { validateImageFile } from "../../lib/validation";
 import { useLanguage } from "../../context/LanguageContext";
+import { SUPPLY_CATEGORIES } from "@shared/constants/supply-categories.constants";
 
 type SupplyStatus = "AVAILABLE" | "OUT_OF_STOCK" | "EXPIRED" | "DAMAGED" | "DISCONTINUED";
 
@@ -49,8 +50,18 @@ interface AdminInventoryPageProps {
   activePage?: string;
 }
 
-const categories = ["FOOD", "MEDICAL", "TOYS", "BEDDING", "CLEANING", "EQUIPMENT", "OTHER"];
+const categories = Object.values(SUPPLY_CATEGORIES);
 const statuses: SupplyStatus[] = ["AVAILABLE", "OUT_OF_STOCK", "EXPIRED", "DAMAGED", "DISCONTINUED"];
+const legacyCategoryMap: Record<string, string> = {
+  Food: SUPPLY_CATEGORIES.FOOD,
+  Medical: SUPPLY_CATEGORIES.MEDICAL,
+  Toys: SUPPLY_CATEGORIES.TOYS,
+  Bedding: SUPPLY_CATEGORIES.BEDDING,
+  Cleaning: SUPPLY_CATEGORIES.CLEANING,
+  Care: SUPPLY_CATEGORIES.CLEANING,
+  Equipment: SUPPLY_CATEGORIES.EQUIPMENT,
+  Other: SUPPLY_CATEGORIES.OTHER,
+};
 
 const blankForm = {
   supplyName: "",
@@ -85,7 +96,11 @@ function readError(error: unknown, fallback: string) {
 }
 
 function supplyCategoryKey(category: string) {
-  return `supply_category_${category.toLowerCase()}`;
+  return `supply_category_${normalizeCategory(category).toLowerCase()}`;
+}
+
+function normalizeCategory(category: string) {
+  return legacyCategoryMap[category] ?? category;
 }
 
 export default function AdminInventoryPage({ onNavigate, role = "admin", activePage = "admin-inventory" }: AdminInventoryPageProps) {
@@ -148,7 +163,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
       order: "ASC",
     });
     if (search.trim()) params.set("search", search.trim());
-    if (category !== "all") params.set("category", category);
+    if (category !== "all") params.set("category", normalizeCategory(category));
 
     setLoading(true);
     setError("");
@@ -175,7 +190,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
     setEditing(item);
     setForm({
       supplyName: item.supplyName,
-      category: item.category,
+      category: normalizeCategory(item.category),
       quantity: String(item.quantity),
       sellingPrice: String(item.sellingPrice),
       purchasePrice: String(item.purchasePrice),
@@ -196,7 +211,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
 
     if (!form.supplyName.trim()) return tx("Supply name is required.");
     if (form.supplyName.trim().length > 160) return tx("Supply name must be 160 characters or fewer.");
-    if (!categories.includes(form.category)) return tx("Choose a valid category.");
+    if (!categories.includes(normalizeCategory(form.category))) return tx("Choose a valid category.");
     if (!form.supplierId) return tx("Choose a supplier before adding a supply.");
     if (!Number.isInteger(Number(form.quantity)) || toInteger(form.quantity) < 0) return tx("Quantity must be a whole number of 0 or more.");
     if (!Number.isInteger(Number(form.lowStockLimit)) || toInteger(form.lowStockLimit) < 0) return tx("Low stock limit must be a whole number of 0 or more.");
@@ -217,7 +232,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
 
     const body = {
       supplyName: form.supplyName.trim(),
-      category: form.category,
+      category: normalizeCategory(form.category),
       quantity: toInteger(form.quantity),
       sellingPrice: Number(toMoney(form.sellingPrice)),
       purchasePrice: Number(toMoney(form.purchasePrice)),
