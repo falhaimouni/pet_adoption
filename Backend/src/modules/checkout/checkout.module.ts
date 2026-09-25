@@ -9,12 +9,14 @@ import { Payment } from '../../database/entities/payment.entity';
 import { Product } from '../../database/entities/product.entity';
 import { User } from '../../database/entities/user.entity';
 import { ActivityLog } from '../../database/entities/activity-log.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 import { CheckoutController } from './checkout.controller';
 import { CheckoutService } from './checkout.service';
 
 @Module({
   imports: [
+    NotificationsModule,
     TypeOrmModule.forFeature([
       Cart,
       CartItem,

@@ -123,7 +123,7 @@ export class NotificationsService {
       where: {
         status: 'active',
         role: {
-          roleName: In([RolesEnum.ADMIN, RolesEnum.MANAGER]),
+          roleName: In([RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE]),
         },
       },
       relations: ['role'],
@@ -146,20 +146,24 @@ export class NotificationsService {
       order: { createdAt: 'DESC' },
     });
 
-    return notifications.map((notification) =>
-      this.mapNotification(notification),
-    );
+    return notifications
+      .filter((notification) => this.canViewNotificationType(user.role, notification.type))
+      .map((notification) => this.mapNotification(notification));
   }
 
   async getUnreadCount(user: RequestUser): Promise<{ count: number }> {
-    const count = await this.notificationRepo.count({
+    const notifications = await this.notificationRepo.find({
       where: {
         userId: user.userId,
         isRead: false,
       },
     });
 
-    return { count };
+    return {
+      count: notifications.filter((notification) =>
+        this.canViewNotificationType(user.role, notification.type),
+      ).length,
+    };
   }
 
   async markAsRead(
@@ -178,6 +182,10 @@ export class NotificationsService {
       throw new ForbiddenException('You can only update your own notifications');
     }
 
+    if (!this.canViewNotificationType(user.role, notification.type)) {
+      throw new NotFoundException('Notification not found');
+    }
+
     notification.isRead = true;
     const saved = await this.notificationRepo.save(notification);
 
@@ -185,10 +193,23 @@ export class NotificationsService {
   }
 
   async markAllAsRead(user: RequestUser): Promise<{ updated: number }> {
-    const result = await this.notificationRepo.update(
-      {
+    const notifications = await this.notificationRepo.find({
+      where: {
         userId: user.userId,
         isRead: false,
+      },
+    });
+    const visibleIds = notifications
+      .filter((notification) => this.canViewNotificationType(user.role, notification.type))
+      .map((notification) => notification.notificationId);
+
+    if (visibleIds.length === 0) {
+      return { updated: 0 };
+    }
+
+    const result = await this.notificationRepo.update(
+      {
+        notificationId: In(visibleIds),
       },
       {
         isRead: true,
@@ -208,5 +229,15 @@ export class NotificationsService {
       isRead: notification.isRead,
       createdAt: notification.createdAt,
     };
+  }
+
+  private canViewNotificationType(role: string, type: string): boolean {
+    if (type !== NotificationTypeEnum.INVENTORY) {
+      return true;
+    }
+
+    return [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE].includes(
+      role.toUpperCase() as RolesEnum,
+    );
   }
 }

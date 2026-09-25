@@ -37,6 +37,11 @@ function bgFor(type: string) {
   }
 }
 
+function canViewNotificationType(role: Role, type: string) {
+  if (type.toUpperCase() !== "INVENTORY") return true;
+  return role === "admin" || role === "manager" || role === "employee";
+}
+
 interface NotificationsPageProps {
   onNavigate: (page: string) => void;
   role?: Role;
@@ -57,19 +62,25 @@ export default function NotificationsPage({ onNavigate, role }: NotificationsPag
     setError("");
     let active = true;
     const refresh = () => apiFetch<NotificationItem[]>("/notifications")
-      .then(data => { if (active) setItems(data); })
+      .then(data => {
+        if (active) {
+          setItems(data.filter((item) => canViewNotificationType(resolvedRole, item.type)));
+        }
+      })
       .catch((err) => setError(err instanceof Error ? err.message : t("notif_load_error")))
       .finally(() => { if (active) setLoading(false); });
     void refresh();
     window.addEventListener("petopia:notifications-changed", refresh);
     return () => { active = false; window.removeEventListener("petopia:notifications-changed", refresh); };
-  }, [t]);
+  }, [resolvedRole, t]);
 
   const filters = [
     { key: "all", label: t("notif_all") },
     { key: "MESSAGE", label: t("nav_chats") },
     { key: "ADOPTION", label: t("notif_adoptions") },
-    { key: "INVENTORY", label: t("notif_inventory") },
+    ...(canViewNotificationType(resolvedRole, "INVENTORY")
+      ? [{ key: "INVENTORY", label: t("notif_inventory") }]
+      : []),
   ];
   const locale = lang === "ar" ? "ar-JO" : lang === "fr" ? "fr-FR" : "en-US";
 

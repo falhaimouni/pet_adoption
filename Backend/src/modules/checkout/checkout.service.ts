@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 
@@ -11,6 +12,8 @@ import { CartItem } from '../../database/entities/cart-item.entity';
 import { Order } from '../../database/entities/order.entity';
 import { OrderItem } from '../../database/entities/order-item.entity';
 import { Payment } from '../../database/entities/payment.entity';
+import { Product } from '../../database/entities/product.entity';
+import { Supply } from '../../database/entities/supply.entity';
 import { User } from '../../database/entities/user.entity';
 import { ActivityLog } from '../../database/entities/activity-log.entity';
 
@@ -18,9 +21,18 @@ import { CreateOrderDto } from '@shared/dto/order.dto';
 import { PaymentMethodEnum } from '@shared/enums/payment-method.enum';
 import { PaymentStatusEnum } from '@shared/enums/payment-status.enum';
 import { OrderStatusEnum } from '@shared/enums/order-status.enum';
+import { SupplyStatusEnum } from '@shared/enums/supply-status.enum';
+import { NotificationsService } from '../notifications/notifications.service';
+
+type InventoryAlert = {
+  title: string;
+  message: string;
+};
 
 @Injectable()
 export class CheckoutService {
+  private readonly logger = new Logger(CheckoutService.name);
+
   private readonly orderRelations = [
     'orderItems',
     'orderItems.product',
@@ -31,6 +43,7 @@ export class CheckoutService {
 
   constructor(
     private readonly dataSource: DataSource,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async checkout(
@@ -116,6 +129,13 @@ export class CheckoutService {
             `Invalid quantity for product "${product.productName}"`,
           );
         }
+
+        await this.validateAvailableStock(
+          manager,
+          product.productId,
+          product.productName,
+          cartItem.quantity,
+        );
 
         total += unitPrice * cartItem.quantity;
       }
@@ -221,7 +241,7 @@ export class CheckoutService {
   }
 
   async pay(userId: string, orderId: string) {
-    const order = await this.dataSource.transaction(async (manager) => {
+    const { order, alerts } = await this.dataSource.transaction(async (manager) => {
       const lockedOrder = await manager
         .getRepository(Order)
         .createQueryBuilder('order')
@@ -246,6 +266,50 @@ export class CheckoutService {
         throw new BadRequestException('Order already has a payment');
       }
 
+      const orderItems = await manager.getRepository(OrderItem).find({
+        where: { orderId },
+        relations: ['product'],
+      });
+      const inventoryAlerts: InventoryAlert[] = [];
+
+      for (const item of orderItems) {
+        const productName = item.product?.productName ?? 'Store item';
+        const supply = await this.validateAvailableStock(
+          manager,
+          item.productId,
+          productName,
+          item.quantity,
+          true,
+        );
+
+        const wasLowStock = this.isLowStock(supply);
+        supply.quantity -= item.quantity;
+        if (supply.quantity <= 0) {
+          supply.quantity = 0;
+          supply.status = SupplyStatusEnum.OUT_OF_STOCK;
+        }
+
+        await manager.getRepository(Supply).save(supply);
+        await manager.getRepository(Product).update(supply.productId, {
+          isActive:
+            supply.isActive &&
+            supply.storeListed &&
+            supply.status === SupplyStatusEnum.AVAILABLE &&
+            supply.quantity > 0,
+        });
+
+        const isNowLowStock = this.isLowStock(supply);
+        if (!wasLowStock && isNowLowStock) {
+          inventoryAlerts.push(this.buildInventoryAlert(supply));
+        } else if (
+          wasLowStock &&
+          supply.quantity === 0 &&
+          supply.status === SupplyStatusEnum.OUT_OF_STOCK
+        ) {
+          inventoryAlerts.push(this.buildInventoryAlert(supply));
+        }
+      }
+
       await manager.getRepository(Payment).save(
         manager.getRepository(Payment).create({
           orderId,
@@ -268,11 +332,27 @@ export class CheckoutService {
         await manager.getRepository(Cart).delete({ cartId: cart.cartId });
       }
 
-      return this.findOrder(manager, orderId);
+      return {
+        order: await this.findOrder(manager, orderId),
+        alerts: inventoryAlerts,
+      };
     });
 
     if (!order) {
       throw new NotFoundException('Order could not be paid');
+    }
+
+    try {
+      await Promise.all(
+        alerts.map((alert) =>
+          this.notificationsService.createInventoryAlert(alert.title, alert.message),
+        ),
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send inventory alert for order ${orderId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
     }
 
     return order;
@@ -296,6 +376,58 @@ export class CheckoutService {
     }
 
     return order;
+  }
+
+  private async validateAvailableStock(
+    manager: EntityManager,
+    productId: string,
+    productName: string,
+    quantity: number,
+    lock = false,
+  ) {
+    let query = manager
+      .getRepository(Supply)
+      .createQueryBuilder('supply')
+      .where('supply.productId = :productId', { productId })
+      .andWhere('supply.isActive = :isActive', { isActive: true })
+      .andWhere('supply.storeListed = :storeListed', { storeListed: true });
+
+    if (lock) {
+      query = query.setLock('pessimistic_write');
+    }
+
+    const supply = await query.getOne();
+
+    if (!supply || supply.status !== SupplyStatusEnum.AVAILABLE) {
+      throw new BadRequestException(
+        `Product "${productName}" is no longer available`,
+      );
+    }
+
+    if (supply.quantity < quantity) {
+      throw new BadRequestException(
+        `Only ${supply.quantity} item(s) available for "${productName}"`,
+      );
+    }
+
+    return supply;
+  }
+
+  private isLowStock(supply: Supply): boolean {
+    return (
+      supply.status === SupplyStatusEnum.AVAILABLE ||
+      supply.status === SupplyStatusEnum.OUT_OF_STOCK
+    ) && supply.quantity <= supply.lowStockLimit;
+  }
+
+  private buildInventoryAlert(supply: Supply): InventoryAlert {
+    const title =
+      supply.quantity <= 0 ? 'Supply out of stock' : 'Supply low stock';
+    const message =
+      `${supply.supplyName} has quantity ${supply.quantity}. ` +
+      `Minimum stock is ${supply.lowStockLimit}.`;
+
+    return { title, message };
   }
 
 }
