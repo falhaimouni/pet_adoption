@@ -73,12 +73,20 @@ up:
 	@printf "\n"
 	@printf "%b\n" "$(CYAN)▶ Starting Pet Adoption...$(RESET)"
 	@$(COMPOSE) up -d --build
+
 	@printf "\n"
+	@printf "%b\n" "$(CYAN)▶ Waiting for Petopia to be ready...$(RESET)"
+	@until [ "$$(docker inspect -f '{{.State.Health.Status}}' pet_adoption_frontend 2>/dev/null)" = "healthy" ]; do \
+		sleep 2; \
+	done
+
 	@printf "%b\n" "$(GREEN)✔ Project is running$(RESET)"
 	@printf "%b\n" "$(BLUE)→ $(URL)$(RESET)"
+
 	@printf "\n"
-	@printf "%b\n" "Run $(GREEN)make open$(RESET) to open Petopia in the browser."
-	@printf "\n"
+	@printf "%b\n" "$(CYAN)▶ Opening Petopia...$(RESET)"
+
+	@bash -c 'sleep 2; ./scripts/open-petopia.sh' &
 
 
 # ============================================================
