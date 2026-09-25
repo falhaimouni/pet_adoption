@@ -1,3 +1,4 @@
+import { useText } from "../../i18n/useText";
 import { useEffect, useState } from "react";
 import { Building2, Edit, Eye, Power, Plus, Search, Users } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -48,6 +49,7 @@ function employeeCount(department: DepartmentRecord) {
 }
 
 export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page: string) => void }) {
+  const tx = useText();
   const { t } = useLanguage();
   const [departments, setDepartments] = useState<DepartmentRecord[]>([]);
   const [search, setSearch] = useState("");
@@ -171,15 +173,15 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
       <div className="bg-white rounded-[15px] shadow-md p-5">
         <div className="flex flex-wrap gap-3 mb-5 items-center">
           <div className="flex-1 min-w-[200px] relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
+            <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
             <input
               placeholder={t("departments_search")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors"
+              className="w-full ps-8 pe-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors"
             />
           </div>
-          <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 bg-[#089D97] text-white font-['Poppins',sans-serif] font-medium text-[13px] rounded-[10px] hover:bg-[#047975] transition-colors ml-auto">
+          <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 bg-[#089D97] text-white font-['Poppins',sans-serif] font-medium text-[13px] rounded-[10px] hover:bg-[#047975] transition-colors ms-auto">
             <Plus size={15} /> {t("action_add_department")}
           </button>
         </div>
@@ -192,7 +194,7 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
           <EmptyState icon={<Building2 size={26} />} title={t("departments_empty_title")} description={t("departments_empty_desc")} />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-start">
               <thead>
                 <tr className="border-b border-gray-100">
                   {[t("table_department"), t("table_description"), t("table_manager"), t("table_employees"), t("table_created"), t("table_status"), t("table_actions")].map((h) => (
@@ -283,7 +285,7 @@ export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page
               {(viewItem.employees ?? []).length === 0 ? (
                 <div className="flex items-center gap-2 text-[13px] font-['Poppins',sans-serif] text-black/50"><Users size={14} className="text-[#089D97]" /> {t("no_assigned_employees")}</div>
               ) : (
-                <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1">
+                <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pe-1">
                   {viewItem.employees?.map((employee) => (
                     <div key={employee.employeeId ?? employee.userId} className="flex items-center justify-between gap-3 rounded-[10px] bg-gray-50 px-3 py-2">
                       <span className="font-['Poppins',sans-serif] text-[13px] text-black">{fullName(employee.user)}</span>

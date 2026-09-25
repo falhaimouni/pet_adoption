@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { DirectionProvider } from "@radix-ui/react-direction";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import translations, { Lang } from "../i18n/translations";
 import { useAuth } from "./AuthContext";
 
@@ -15,7 +16,7 @@ const DEFAULT_LANG: Lang = "en";
 const LEGACY_LANG_KEY = "petopia_lang";
 
 function isLang(value: string | null): value is Lang {
-  return Boolean(value && value in translations);
+  return value === "en" || value === "ar" || value === "fr";
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
@@ -26,18 +27,23 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const isRtl = lang === "ar";
 
   function setLang(newLang: Lang) {
+    document.documentElement.lang = newLang;
+    document.documentElement.dir = newLang === "ar" ? "rtl" : "ltr";
     setLangState(newLang);
     sessionStorage.setItem(storageKey, newLang);
   }
 
-  function t(key: string): string {
+  const t = useCallback((key: string): string => {
     return translations[lang][key] ?? translations["en"][key] ?? key;
-  }
+  }, [lang]);
 
   useEffect(() => {
     localStorage.removeItem(LEGACY_LANG_KEY);
     const stored = sessionStorage.getItem(storageKey);
-    setLangState(isLang(stored) ? stored : DEFAULT_LANG);
+    const next = isLang(stored) ? stored : DEFAULT_LANG;
+    document.documentElement.lang = next;
+    document.documentElement.dir = next === "ar" ? "rtl" : "ltr";
+    setLangState(next);
   }, [storageKey]);
 
   useEffect(() => {
@@ -49,7 +55,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   return (
     <LanguageContext.Provider value={{ lang, setLang, t, isRtl }}>
-      {children}
+      <DirectionProvider dir={isRtl ? "rtl" : "ltr"}>{children}</DirectionProvider>
     </LanguageContext.Provider>
   );
 }

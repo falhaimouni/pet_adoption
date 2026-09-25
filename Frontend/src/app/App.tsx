@@ -1,3 +1,5 @@
+import { useText } from "../i18n/useText";
+import UploadProgress from "../components/UploadProgress";
 import { lazy, Suspense, useState, useEffect } from "react";
 import { Toaster } from "sonner";
 import { CartProvider } from "../context/CartContext";
@@ -68,10 +70,9 @@ const AdminOrdersPage = lazy(() => import("../pages/admin/AdminOrdersPage"));
 export type Role = UserRole;
 
 function RouteLoadingFallback() {
+  const tx = useText();
   return (
-    <div className="min-h-screen bg-[#f0f8f7] flex items-center justify-center font-['Poppins',sans-serif] text-[#089D97]">
-      Loading...
-    </div>
+    <div className="min-h-screen bg-[#f0f8f7] flex items-center justify-center font-['Poppins',sans-serif] text-[#089D97]">{tx("Loading...")}</div>
   );
 }
 
@@ -380,6 +381,7 @@ export default function App() {
       <ThemeProvider>
         <LanguageProvider>
           <CartProvider>
+            <UploadProgress />
             <Toaster position="top-center" richColors />
             <Suspense fallback={<RouteLoadingFallback />}>
               <AppRouter />

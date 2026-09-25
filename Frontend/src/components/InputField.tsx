@@ -41,7 +41,7 @@ export default function InputField({
   return (
     <div className="relative w-full">
       {/* Floating label */}
-      <label htmlFor={id} className="absolute -top-[9px] left-3 bg-white px-1 text-[12px] font-['Inter',sans-serif] text-[#5e6368] z-10">
+      <label htmlFor={id} className="absolute -top-[9px] start-3 bg-white px-1 text-[12px] font-['Inter',sans-serif] text-[#5e6368] z-10">
         {label}
       </label>
 
@@ -54,6 +54,7 @@ export default function InputField({
           required={required}
           readOnly={readOnly}
           maxLength={maxLength ?? (type === "email" ? 254 : type === "password" ? 255 : 161)}
+          dir={type === "email" || isPassword ? "ltr" : undefined}
           type={inputType}
           placeholder={placeholder}
           value={value}

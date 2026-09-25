@@ -1,3 +1,4 @@
+import { useText } from "../i18n/useText";
 import { useState } from "react";
 import {
   User, Palette, Globe, Lock, Shield,
@@ -20,6 +21,7 @@ interface SettingsPageProps {
 type SettingsTab = "account" | "appearance" | "language" | "security";
 
 export default function SettingsPage({ onNavigate, embedded = false }: SettingsPageProps) {
+  const tx = useText();
   const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const { lang, setLang, t } = useLanguage();
@@ -88,7 +90,7 @@ export default function SettingsPage({ onNavigate, embedded = false }: SettingsP
                 >
                   <Icon size={16} />
                   {label}
-                  {activeTab !== id && <ChevronRight size={14} className="ml-auto opacity-40" />}
+                  {activeTab !== id && <ChevronRight size={14} className="ms-auto opacity-40" />}
                 </button>
               ))}
             </div>
@@ -136,7 +138,7 @@ export default function SettingsPage({ onNavigate, embedded = false }: SettingsP
                 <p className="font-['Poppins',sans-serif] text-[13px] text-[#5a8a87] mb-4">{t("language_desc")}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
-                    { code: "en", label: t("lang_english"), native: "English", flag: "🇺🇸" },
+                    { code: "en", label: t("lang_english"), native: tx("English"), flag: "🇺🇸" },
                     { code: "ar", label: t("lang_arabic"), native: "العربية", flag: "🇸🇦" },
                     { code: "fr", label: t("lang_french"), native: "Français", flag: "🇫🇷" },
                   ].map(({ code, label, native, flag }) => (
@@ -146,7 +148,7 @@ export default function SettingsPage({ onNavigate, embedded = false }: SettingsP
                         <p className="font-['Poppins',sans-serif] font-semibold text-[14px] text-[#1a2e2d]">{label}</p>
                         <p className="font-['Poppins',sans-serif] text-[13px] text-[#5a8a87]">{native}</p>
                       </div>
-                      {lang === code && <CheckCircle size={18} className="ml-auto text-[#089D97]" />}
+                      {lang === code && <CheckCircle size={18} className="ms-auto text-[#089D97]" />}
                     </button>
                   ))}
                 </div>
@@ -190,10 +192,10 @@ export default function SettingsPage({ onNavigate, embedded = false }: SettingsP
                           value={pwForm[key as keyof typeof pwForm]}
                           onChange={(e) => setPwForm((f) => ({ ...f, [key]: e.target.value }))}
                           placeholder={placeholder}
-                          className="w-full px-4 py-3 pr-12 rounded-[12px] bg-[#f0f8f7] border border-transparent focus:border-[#089D97] outline-none font-['Poppins',sans-serif] text-[14px] text-[#1a2e2d] placeholder-gray-400 transition-colors"
+                          className="w-full px-4 py-3 pe-12 rounded-[12px] bg-[#f0f8f7] border border-transparent focus:border-[#089D97] outline-none font-['Poppins',sans-serif] text-[14px] text-[#1a2e2d] placeholder-gray-400 transition-colors"
                         />
                         {key === "current" && (
-                          <button onClick={() => setPwShow(!pwShow)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#5a8a87]">
+                          <button onClick={() => setPwShow(!pwShow)} className="absolute end-4 top-1/2 -translate-y-1/2 text-[#5a8a87]">
                             {pwShow ? <EyeOff size={16} /> : <Eye size={16} />}
                           </button>
                         )}
@@ -244,14 +246,14 @@ function Divider() {
 function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
   return (
     <button onClick={onToggle} className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${enabled ? "bg-[#089D97]" : "bg-gray-300"}`}>
-      <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${enabled ? "translate-x-5" : "translate-x-0"}`} />
+      <span className={`absolute top-0.5 start-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${enabled ? "translate-x-5" : "translate-x-0"}`} />
     </button>
   );
 }
 
 function ThemePreview({ label, active, onClick, dark }: { label: string; active: boolean; onClick: () => void; dark?: boolean }) {
   return (
-    <button onClick={onClick} className={`p-4 rounded-[14px] border-2 transition-all text-left ${active ? "border-[#089D97]" : "border-gray-200 hover:border-[#bae0dd]"}`}>
+    <button onClick={onClick} className={`p-4 rounded-[14px] border-2 transition-all text-start ${active ? "border-[#089D97]" : "border-gray-200 hover:border-[#bae0dd]"}`}>
       <div className={`w-full h-16 rounded-[10px] mb-3 overflow-hidden ${dark ? "bg-[#0f1f1e]" : "bg-[#f0f8f7]"}`}>
         <div className={`h-4 ${dark ? "bg-[#162a29]" : "bg-white"} mb-1.5`} />
         <div className={`mx-2 h-2 ${dark ? "bg-[#1e3a39]" : "bg-[#e0f2f0]"} rounded mb-1`} />

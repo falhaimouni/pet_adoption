@@ -1,3 +1,5 @@
+import { translateActivityValue } from "../../i18n/activity";
+import { useText } from "../../i18n/useText";
 import { useEffect, useState } from "react";
 import { Heart, ClipboardList, ShoppingCart, Package, AlertTriangle } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -14,6 +16,7 @@ type DashboardData = ManagerDashboardDto;
 interface ManagerDashboardPageProps { onNavigate: (page: string) => void; }
 
 export default function ManagerDashboardPage({ onNavigate }: ManagerDashboardPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const [data, setData] = useState<DashboardData | null>(null);
   const [activityAnalytics, setActivityAnalytics] = useState<UserActivityAnalyticsDto | null>(null);
@@ -101,9 +104,9 @@ export default function ManagerDashboardPage({ onNavigate }: ManagerDashboardPag
               <div key={a.item} className="flex items-center justify-between p-3 rounded-[10px] bg-[rgba(8,157,151,0.04)] border border-[rgba(8,157,151,0.1)]">
                 <div>
                   <p className="font-['Poppins',sans-serif] font-medium text-[13px] text-black">{a.item}</p>
-                  <p className="font-['Poppins',sans-serif] text-[11px] text-black/50">{a.qty} / {a.min} min</p>
+                  <p className="font-['Poppins',sans-serif] text-[11px] text-black/50">{a.qty} / {a.min}{tx("min")}</p>
                 </div>
-                <Badge label={a.status} variant={a.status === "critical" ? "rejected" : "warning"} />
+                <Badge label={tx(a.status)} variant={a.status === "critical" ? "rejected" : "warning"} />
               </div>
             ))}
           </div>
@@ -125,7 +128,7 @@ export default function ManagerDashboardPage({ onNavigate }: ManagerDashboardPag
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {(activityAnalytics?.actions ?? []).length === 0 && <p className="font-['Poppins',sans-serif] text-[13px] text-black/40">{t("admin_no_activity_analytics")}</p>}
             {(activityAnalytics?.actions ?? []).map((item) => (
-              <MetricRow key={item.name} label={item.name.replaceAll("_", " ")} value={item.count} />
+              <MetricRow key={item.name} label={translateActivityValue(item.name, "action", t)} value={item.count} />
             ))}
           </div>
         </div>
@@ -140,8 +143,8 @@ export default function ManagerDashboardPage({ onNavigate }: ManagerDashboardPag
             <div key={a.logId} className="flex items-start gap-3 py-3">
               <div className="w-2 h-2 rounded-full mt-2 shrink-0 bg-[#089D97]" />
               <div className="flex-1">
-                <p className="font-['Poppins',sans-serif] font-medium text-[13px] text-black">{a.action}</p>
-                <p className="font-['Poppins',sans-serif] text-[12px] text-black/50">{a.entityType} {a.user ? `by ${a.user.firstName} ${a.user.lastName}` : ""}</p>
+                <p className="font-['Poppins',sans-serif] font-medium text-[13px] text-black">{translateActivityValue(a.action, "action", t)}</p>
+                <p className="font-['Poppins',sans-serif] text-[12px] text-black/50">{translateActivityValue(a.entityType, "entity", t)} {a.user ? `${t("admin_activity_by")} ${a.user.firstName} ${a.user.lastName}` : ""}</p>
               </div>
               <span className="font-['Poppins',sans-serif] text-[11px] text-black/40 shrink-0">{a.createdAt.slice(0, 10)}</span>
             </div>

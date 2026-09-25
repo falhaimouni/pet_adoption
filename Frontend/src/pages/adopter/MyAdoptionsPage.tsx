@@ -1,3 +1,4 @@
+import { useText } from "../../i18n/useText";
 import { useEffect, useState } from "react";
 import { Heart, PawPrint } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -16,6 +17,7 @@ interface Adoption {
 interface MyAdoptionsPageProps { onNavigate: (page: string) => void; }
 
 export default function MyAdoptionsPage({ onNavigate }: MyAdoptionsPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const [adoptions, setAdoptions] = useState<Adoption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,12 +28,12 @@ export default function MyAdoptionsPage({ onNavigate }: MyAdoptionsPageProps) {
     setError("");
     apiFetch<Adoption[]>("/adoption/adoptions")
       .then(setAdoptions)
-      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load adoptions."))
+      .catch((err) => setError(err instanceof Error ? err.message : tx("Unable to load adoptions.")))
       .finally(() => setLoading(false));
   }, []);
 
   return (
-    <DashboardLayout role="adopter" activePage="my-adoptions" onNavigate={onNavigate} pageTitle="My Adoptions" breadcrumbs={["My Petopia", "My Adoptions"]}>
+    <DashboardLayout role="adopter" activePage="my-adoptions" onNavigate={onNavigate} pageTitle={tx("My Adoptions")} breadcrumbs={["My Petopia", "My Adoptions"]}>
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {[1, 2, 3].map((n) => <div key={n} className="h-[240px] rounded-[15px] bg-white animate-pulse" />)}
@@ -56,7 +58,7 @@ export default function MyAdoptionsPage({ onNavigate }: MyAdoptionsPageProps) {
                   <h3 className="font-['Poppins',sans-serif] font-semibold text-[18px] text-black">{a.pet.name}</h3>
                   <Badge label={a.contractStatus.toLowerCase()} variant={statusBadge(a.contractStatus.toLowerCase())} />
                 </div>
-                <p className="font-['Poppins',sans-serif] text-[13px] text-black/60 mb-1">{a.pet.species}</p>
+                <p className="font-['Poppins',sans-serif] text-[13px] text-black/60 mb-1">{tx(a.pet.species)}</p>
                 <p className="font-['Poppins',sans-serif] text-[12px] text-[#089D97] mt-3">{t("adoptions_adopted_on")} {a.adoptionDate}</p>
               </div>
             </div>

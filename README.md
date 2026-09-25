@@ -120,24 +120,34 @@ The team used feature-based development: each major module was planned, implemen
 | DevOps | Docker, Docker Compose | Runs frontend, backend, and PostgreSQL consistently across machines. |
 | Shared Code | Workspace package with DTOs, enums, constants, validators, and shared types | Reduces duplication between frontend and backend contracts. |
 
-## Chosen Modules, Justification, And Point Calculation
+## Subject modules and application scope
 
-The system was divided into modules to match the project subject and evaluation requirements. The point calculation below shows the relative effort and importance of each module in a 100-point project scope.
+The supplied subject awards 1 point per minor module and 2 per major module;
+application features do not have independent invented weights. The three frontend
+modules implemented and documented here support a **3-point module claim**, subject
+to evaluation and the subject’s mandatory requirements:
 
-| Module | Justification | Points |
-| --- | --- | ---: |
-| Authentication and role-based access | Required to separate public visitors, adopters, employees, vets, managers, and admins. | 12 |
-| Pet catalog and pet management | Core subject of the system; users must browse, view, create, update, and manage pets. | 12 |
-| Adoption requests and adoption records | Main business workflow for submitting, reviewing, approving, rejecting, and tracking adoptions. | 14 |
-| Medical records and vaccinations | Important shelter workflow for pet health tracking and vet responsibilities. | 10 |
-| User, role, employee, and department management | Needed for administration, staff organization, and access control. | 8 |
-| Store, cart, checkout, orders, inventory, and suppliers | Adds operational and commerce support for supplies and shelter resources. | 12 |
-| Dashboards, analytics, reports, and activity logs | Helps managers and admins monitor performance, activity, and operational status. | 10 |
-| Notifications and chat pages | Improves communication between adopters and shelter staff. | 6 |
-| File uploads and pet images | Supports pet media, documents, and admin file management. | 5 |
-| Frontend UI/UX and responsive role-based pages | Makes the system usable for all roles with consistent navigation and design. | 7 |
-| Docker, environment configuration, and deployment readiness | Ensures the project can be run and evaluated consistently. | 4 |
-| Total | Complete project scope | 100 |
+| Minor module | Points | Implementation and demonstration |
+| --- | ---: | --- |
+| Three languages | 1 | English, Arabic and French; [translation coverage and checks](docs/internationalization.md) |
+| Complete RTL support | 1 | Arabic layout mirroring and seamless direction switching; [RTL verification](docs/internationalization.md) |
+| Custom design system | 1 | Palette, typography, icon rules and 17 reusable custom components; [component catalog](docs/design-system.md) |
+
+The following describes the application's functional scope, not an official score:
+
+| Application area | Justification |
+| --- | --- |
+| Authentication and role-based access | Required to separate public visitors, adopters, employees, vets, managers, and admins. |
+| Pet catalog and pet management | Core subject of the system; users must browse, view, create, update, and manage pets. |
+| Adoption requests and adoption records | Main business workflow for submitting, reviewing, approving, rejecting, and tracking adoptions. |
+| Medical records and vaccinations | Important shelter workflow for pet health tracking and vet responsibilities. |
+| User, role, employee, and department management | Needed for administration, staff organization, and access control. |
+| Store, cart, checkout, orders, inventory, and suppliers | Adds operational and commerce support for supplies and shelter resources. |
+| Dashboards, analytics, reports, and activity logs | Helps managers and admins monitor performance, activity, and operational status. |
+| Notifications and chat pages | Improves communication between adopters and shelter staff. |
+| File uploads and pet images | Supports pet media, documents, and admin file management. |
+| Frontend UI/UX and responsive role-based pages | Makes the system usable for all roles with consistent navigation and design. |
+| Docker, environment configuration, and deployment readiness | Ensures the project can be run and evaluated consistently. |
 
 ## Repository Structure
 
@@ -540,3 +550,6 @@ docs/screenshots/
 ## Project Status
 
 The project currently includes a working full-stack structure with role-based frontend pages, NestJS backend modules, shared TypeScript contracts, database migrations/seeds, and Docker Compose support. The README is intended to help evaluators, developers, and team members install, run, understand, and assess the system quickly.
+
+See [File upload and management](docs/file-management.md) for access rules, previews,
+upload progress, verification commands and the live demonstration workflow.

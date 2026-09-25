@@ -1,3 +1,4 @@
+import { useText } from "../i18n/useText";
 import Navbar from "../components/Navbar";
 import { useLanguage } from "../context/LanguageContext";
 import goldenDogImg from "../imports/Home/6873b1dc8519e91f8d65e08b4fbf144707066349.png";
@@ -13,6 +14,7 @@ interface HomePageProps {
 }
 
 export default function HomePage({ onNavigate }: HomePageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   return (
     <div className="min-h-screen bg-[rgba(186,216,211,0.99)] flex flex-col">
@@ -25,7 +27,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           {/* Left: Text Content */}
           <div className="flex-1 z-10 max-w-[600px]">
             {/* Decorative bird near top */}
-            <div className="hidden lg:block absolute left-[540px] top-[90px] w-[108px] h-[89px] pointer-events-none">
+            <div className="hidden lg:block absolute start-[540px] top-[90px] w-[108px] h-[89px] pointer-events-none">
               <img src={birdImg} alt="" className="w-full h-full object-cover" />
             </div>
 
@@ -69,40 +71,40 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             {/* Golden dog — main hero image */}
             <img
               src={goldenDogImg}
-              alt="Golden Retriever"
+              alt={tx("Golden Retriever")}
               className="relative z-10 w-[min(72vw,320px)] sm:w-[380px] lg:w-[448px] h-auto object-contain drop-shadow-lg my-[-22px]"
             />
 
             {/* Cat — bottom right decorative */}
             <img
               src={catImg}
-              alt="Cat"
-              className="absolute bottom-[-24px] right-[4%] lg:right-[-20px] w-[150px] sm:w-[220px] lg:w-[260px] h-auto object-contain z-20 pointer-events-none my-[10px]"
+              alt={tx("Cat")}
+              className="absolute bottom-[-24px] end-[4%] lg:end-[-20px] w-[150px] sm:w-[220px] lg:w-[260px] h-auto object-contain z-20 pointer-events-none my-[10px]"
             />
 
             {/* Adobe Express sticker — top right */}
             <img
               src={adobeExpressImg}
               alt=""
-              className="absolute top-[10px] right-[10px] w-[80px] h-auto object-contain pointer-events-none hidden lg:block"
+              className="absolute top-[10px] end-[10px] w-[80px] h-auto object-contain pointer-events-none hidden lg:block"
             />
 
             {/* Paw/leaf decorations */}
             <img
               src={pawLeafImg}
               alt=""
-              className="absolute top-[-10px] left-[0px] w-[140px] h-auto object-contain pointer-events-none opacity-80 hidden lg:block"
+              className="absolute top-[-10px] start-[0px] w-[140px] h-auto object-contain pointer-events-none opacity-80 hidden lg:block"
             />
             <img
               src={pawLeafImg}
               alt=""
-              className="absolute bottom-[60px] left-[-20px] w-[120px] h-auto -rotate-90 object-contain pointer-events-none opacity-80 hidden lg:block"
+              className="absolute bottom-[60px] start-[-20px] w-[120px] h-auto -rotate-90 object-contain pointer-events-none opacity-80 hidden lg:block"
             />
           </div>
         </div>
 
         {/* Bottom wave decoration */}
-        <div className="absolute bottom-0 left-0 right-0 h-[60px] pointer-events-none overflow-hidden">
+        <div className="absolute bottom-0 start-0 end-0 h-[60px] pointer-events-none overflow-hidden">
           <svg
             viewBox="0 0 1360 60"
             preserveAspectRatio="none"

@@ -1,3 +1,5 @@
+import LanguageSwitcher from "./LanguageSwitcher";
+import { useText } from "../i18n/useText";
 import { useEffect, useState } from "react";
 import {
   Home, User, Heart, Bell, Settings,
@@ -25,8 +27,6 @@ export interface NavItem {
 }
 
 type TFn = (key: string) => string;
-const nextLang = { en: "ar", ar: "fr", fr: "en" } as const;
-const langLabel = { en: "ع", ar: "FR", fr: "EN" } as const;
 
 function getNavItems(role: Role, t: TFn): NavItem[] {
   switch (role) {
@@ -152,6 +152,7 @@ export default function DashboardLayout({
   pageTitle,
   breadcrumbs,
 }: DashboardLayoutProps) {
+  const tx = useText();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuth();
   const { t, lang, setLang, isRtl } = useLanguage();
@@ -167,7 +168,7 @@ export default function DashboardLayout({
     return () => window.clearInterval(timer);
   }, [user?.id]);
   const canUseShopping = role === "adopter";
-  const navItems = getNavItems(role, t).map((item) =>
+  const navItems = getNavItems(role, t).map(item => ({ ...item, label: tx(item.label) })).map((item) =>
     item.id === "notifications" && unreadNotifications > 0
       ? { ...item, badge: unreadNotifications }
       : item
@@ -216,12 +217,12 @@ export default function DashboardLayout({
 
   return (
     <div className="h-dvh bg-[rgba(186,216,211,0.99)] flex flex-col overflow-hidden">
-      {role === "adopter" && activePage !== "chats" && activePage !== "support-chat" && <button type="button" onClick={() => onNavigate("support-chat")} className="fixed bottom-5 end-5 z-40 flex items-center gap-2 rounded-full bg-[#087f79] px-5 py-3 text-white shadow-lg" aria-label="Open Support Chat"><MessageCircle size={20} /> Support Chat</button>}
+      {role === "adopter" && activePage !== "chats" && activePage !== "support-chat" && <button type="button" onClick={() => onNavigate("support-chat")} className="fixed bottom-5 end-5 z-40 flex items-center gap-2 rounded-full bg-[#087f79] px-5 py-3 text-white shadow-lg" aria-label={tx("Open Support Chat")}><MessageCircle size={20} />{tx("Support Chat")}</button>}
       {/* Top Navbar */}
       <header className="w-full bg-white shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] z-20 relative shrink-0">
         <div className="flex items-center justify-between gap-2 h-[80px] px-2 sm:px-4">
           <div className="flex shrink-0 items-center gap-1 sm:gap-3">
-            <button className="lg:hidden text-black" onClick={() => setSidebarOpen((p) => !p)}>
+            <button aria-label={t("dash_main_menu")} className="lg:hidden text-black" onClick={() => setSidebarOpen((p) => !p)}>
               <Menu size={24} />
             </button>
             <button type="button" onClick={() => onNavigate(homePageForRole(role))} className="flex items-center">
@@ -236,22 +237,22 @@ export default function DashboardLayout({
                 onClick={() => onNavigate(item.page)}
                 className={`px-4 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[15px] transition-all ${
                   activePage === item.page
-                    ? "bg-[#e0f2f0] text-[#089D97]"
-                    : "text-[#1a2e2d]/70 hover:text-[#089D97] hover:bg-[#f0f9f8]"
+                    ? "bg-secondary text-primary"
+                    : "text-foreground/70 hover:text-primary hover:bg-[#f0f9f8]"
                 }`}
               >
                 {item.label}
               </button>
             ))}
-            <div className="hidden lg:flex items-center border-l border-[#e0f2f0] ml-2 pl-2">
+            <div className="hidden lg:flex items-center border-s border-secondary ms-2 ps-2">
               {legalLinks.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => onNavigate(item.page)}
                   className={`px-2.5 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[12px] transition-all ${
                     activePage === item.page
-                      ? "bg-[#e0f2f0] text-[#089D97]"
-                      : "text-[#1a2e2d]/55 hover:text-[#089D97] hover:bg-[#f0f9f8]"
+                      ? "bg-secondary text-primary"
+                      : "text-foreground/55 hover:text-primary hover:bg-[#f0f9f8]"
                   }`}
                 >
                   {item.label}
@@ -262,20 +263,13 @@ export default function DashboardLayout({
 
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             {/* Language toggle */}
-            <button
-              onClick={() => setLang(nextLang[lang])}
-              aria-label={t("common_toggle_language")}
-              className="flex w-9 h-9 sm:w-auto items-center justify-center gap-1.5 sm:px-2.5 rounded-[10px] text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all font-['Poppins',sans-serif] text-[13px] font-medium"
-            >
-              <Globe size={15} />
-              <span className="hidden sm:inline">{langLabel[lang]}</span>
-            </button>
+            <LanguageSwitcher />
 
             {/* Dark / Light toggle */}
             <button
               onClick={toggleTheme}
               aria-label={t("common_toggle_theme")}
-              className="w-9 h-9 rounded-[10px] flex items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
+              className="w-9 h-9 rounded-[10px] flex items-center justify-center text-foreground/60 hover:text-primary hover:bg-[#f0f9f8] transition-all"
             >
               {isDark ? <Sun size={17} /> : <Moon size={17} />}
             </button>
@@ -284,21 +278,21 @@ export default function DashboardLayout({
               <button
                 onClick={() => onNavigate("cart")}
                 aria-label={t("cart_title")}
-                className="relative flex w-9 h-9 rounded-[10px] items-center justify-center text-[#1a2e2d]/60 hover:text-[#089D97] hover:bg-[#f0f9f8] transition-all"
+                className="relative flex w-9 h-9 rounded-[10px] items-center justify-center text-foreground/60 hover:text-primary hover:bg-[#f0f9f8] transition-all"
               >
                 <ShoppingCart size={17} />
                 {count > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-[#089D97] text-white text-[10px] font-bold flex items-center justify-center">
+                  <span className="absolute -top-1 -end-1 min-w-4 h-4 px-1 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center">
                     {count}
                   </span>
                 )}
               </button>
             )}
 
-            <button onClick={() => onNavigate("notifications")} className="relative flex w-9 h-9 items-center justify-center text-black hover:text-[#089D97] transition-colors" aria-label={t("nav_notifications")}>
+            <button onClick={() => onNavigate("notifications")} className="relative flex w-9 h-9 items-center justify-center text-black hover:text-primary transition-colors" aria-label={t("nav_notifications")}>
               <Bell size={22} />
               {unreadNotifications > 0 && (
-                <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center">
+                <span className="absolute -top-2 -end-2 min-w-4 h-4 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center">
                   {unreadNotifications}
                 </span>
               )}
@@ -309,12 +303,12 @@ export default function DashboardLayout({
               </div>
               <div className="hidden sm:flex flex-col">
                 <span className="font-['Poppins',sans-serif] font-medium text-[13px] text-black leading-tight">{displayName}</span>
-                <span className="font-['Poppins',sans-serif] text-[11px] text-[#089D97]">{getRoleLabel(role, t)}</span>
+                <span className="font-['Poppins',sans-serif] text-[11px] text-primary">{getRoleLabel(role, t)}</span>
               </div>
             </div>
           </div>
         </div>
-        <nav aria-label="Main navigation" className="flex flex-wrap items-center gap-1 border-t border-[#e0f2f0] px-2 py-2 lg:hidden">
+        <nav aria-label={tx("Main navigation")} className="flex flex-wrap items-center gap-1 border-t border-secondary px-2 py-2 lg:hidden">
           {topNavItems.map((item) => (
             <button
               key={item.id}
@@ -323,8 +317,8 @@ export default function DashboardLayout({
               aria-current={activePage === item.page ? "page" : undefined}
               className={`shrink-0 whitespace-nowrap rounded-[10px] px-2.5 py-2 font-['Poppins',sans-serif] text-[13px] font-medium transition-colors ${
                 activePage === item.page
-                  ? "bg-[#e0f2f0] text-[#089D97]"
-                  : "text-[#1a2e2d]/70 hover:bg-[#f0f9f8] hover:text-[#089D97]"
+                  ? "bg-secondary text-primary"
+                  : "text-foreground/70 hover:bg-[#f0f9f8] hover:text-primary"
               }`}
             >
               {item.label}
@@ -342,14 +336,14 @@ export default function DashboardLayout({
         {/* Sidebar */}
         <aside
           className={`
-            dashboard-sidebar fixed lg:relative top-0 lg:top-auto ${isRtl ? "right-0" : "left-0"} z-40 lg:z-auto
-            w-[240px] bg-[#80bdba] rounded-r-[10px] lg:rounded-[10px]
-            flex flex-col pt-4 pb-4 mt-0 lg:mt-[16px] lg:ml-[14px] mb-[16px]
+            dashboard-sidebar fixed lg:relative top-0 lg:top-auto start-0 z-40 lg:z-auto
+            w-[240px] bg-[#80bdba] rounded-e-[10px] lg:rounded-[10px]
+            flex flex-col pt-4 pb-4 mt-0 lg:mt-[16px] lg:ms-[14px] mb-[16px]
             transition-transform duration-300 h-dvh lg:h-auto min-h-0 overflow-hidden lg:shrink-0
             ${sidebarTransform}
           `}
         >
-          <button className={`lg:hidden absolute top-3 ${isRtl ? "left-3" : "right-3"} text-black`} onClick={() => setSidebarOpen(false)}>
+          <button aria-label={t("action_close")} className={`lg:hidden absolute top-3 end-3 text-black`} onClick={() => setSidebarOpen(false)}>
             <X size={20} />
           </button>
 
@@ -359,14 +353,14 @@ export default function DashboardLayout({
               <AuthenticatedImage src={user?.avatar ?? profileImg} fallback={profileImg} alt={t("profile_avatar_alt")} className="w-full h-full object-contain" />
             </div>
             <p className="font-['Poppins',sans-serif] font-semibold text-[13px] text-black text-center">{displayName}</p>
-            <span className="mt-1 px-3 py-0.5 bg-white/50 rounded-full font-['Poppins',sans-serif] text-[11px] text-[#047975]">
+            <span className="mt-1 px-3 py-0.5 bg-white/50 rounded-full font-['Poppins',sans-serif] text-[11px] text-primary-hover">
               {getRoleLabel(role, t)}
             </span>
           </div>
 
           {/* Menu */}
           <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-3 gap-1 mt-4">
-            <p className="font-['Poppins',sans-serif] font-medium text-[11px] text-black/60 mb-2 ml-1 uppercase tracking-wider">
+            <p className="font-['Poppins',sans-serif] font-medium text-[11px] text-black/60 mb-2 ms-1 uppercase tracking-wider">
               {t("dash_main_menu")}
             </p>
             {navItems.map((item) => (
@@ -375,14 +369,14 @@ export default function DashboardLayout({
                 onClick={() => { onNavigate(item.id); setSidebarOpen(false); }}
                 className={`flex shrink-0 items-center gap-3 px-3 py-2.5 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[13px] transition-colors text-start ${
                   activePage === item.id
-                    ? "bg-[#089D97] text-white"
+                    ? "bg-primary text-white"
                     : "text-black hover:bg-white/30"
                 }`}
               >
                 {item.icon}
                 <span className="flex-1">{item.label}</span>
                 {item.badge !== undefined && (
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${activePage === item.id ? "bg-white text-[#089D97]" : "bg-[#089D97] text-white"}`}>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${activePage === item.id ? "bg-white text-primary" : "bg-primary text-white"}`}>
                     {item.badge}
                   </span>
                 )}
@@ -395,7 +389,7 @@ export default function DashboardLayout({
             <button
               onClick={() => { onNavigate("settings"); setSidebarOpen(false); }}
               className={`flex items-center gap-3 px-3 py-2 rounded-[10px] font-['Poppins',sans-serif] font-medium text-[13px] transition-colors ${
-                activePage === "settings" ? "bg-[#089D97] text-white" : "text-black hover:bg-white/30"
+                activePage === "settings" ? "bg-primary text-white" : "text-black hover:bg-white/30"
               }`}
             >
               <Settings size={16} />
@@ -430,8 +424,8 @@ export default function DashboardLayout({
                 <div className="flex items-center gap-1 mb-1">
                   {breadcrumbs.map((crumb, i) => (
                     <span key={i} className="flex items-center gap-1">
-                      {i > 0 && <ChevronRight size={14} className="text-[#089D97]" />}
-                      <span className={`font-['Poppins',sans-serif] text-[12px] ${i === breadcrumbs.length - 1 ? "text-[#089D97] font-medium" : "text-black/60"}`}>
+                      {i > 0 && <ChevronRight size={14} className="text-primary" />}
+                      <span className={`font-['Poppins',sans-serif] text-[12px] ${i === breadcrumbs.length - 1 ? "text-primary font-medium" : "text-black/60"}`}>
                         {crumb}
                       </span>
                     </span>
@@ -446,9 +440,8 @@ export default function DashboardLayout({
 
           {role === "adopter" && activePage === "chats" && (
             <div className="mb-3 flex justify-end">
-              <button type="button" onClick={() => onNavigate("support-chat")} className="flex items-center gap-2 rounded-full bg-[#087f79] px-4 py-2 text-sm text-white shadow-sm hover:bg-[#047975] transition-colors" aria-label="Open Support Chat">
-                <MessageCircle size={18} /> Support Chat
-              </button>
+              <button type="button" onClick={() => onNavigate("support-chat")} className="flex items-center gap-2 rounded-full bg-[#087f79] px-4 py-2 text-sm text-white shadow-sm hover:bg-primary-hover transition-colors" aria-label={tx("Open Support Chat")}>
+                <MessageCircle size={18} />{tx("Support Chat")}</button>
             </div>
           )}
           {children}

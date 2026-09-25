@@ -171,7 +171,7 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
           <button
             key={id}
             onClick={() => onNavigate(id)}
-            className="group bg-white rounded-[8px] p-5 shadow-sm hover:shadow-md transition-all text-left rtl:text-right border border-transparent hover:border-[#bae0dd]"
+            className="group bg-white rounded-[8px] p-5 shadow-sm hover:shadow-md transition-all text-start rtl:text-end border border-transparent hover:border-[#bae0dd]"
           >
             <div className="flex items-start justify-between mb-3">
               <div className={`w-11 h-11 rounded-[8px] ${bg} flex items-center justify-center`}>
@@ -245,7 +245,7 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
                   <div key={entry.name} className="flex items-center gap-2">
                     <div className="h-3 w-3 shrink-0 rounded-full" style={{ background: COLORS[index % COLORS.length] }} />
                     <span className="font-['Poppins',sans-serif] text-[12px] text-black/70">{entry.name}</span>
-                    <span className="ml-auto font-['Poppins',sans-serif] text-[12px] font-semibold text-black">{numberFormatter.format(entry.count)}</span>
+                    <span className="ms-auto font-['Poppins',sans-serif] text-[12px] font-semibold text-black">{numberFormatter.format(entry.count)}</span>
                   </div>
                 ))}
               </div>

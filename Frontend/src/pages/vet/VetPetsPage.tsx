@@ -1,3 +1,4 @@
+import { useText } from "../../i18n/useText";
 import { useEffect, useMemo, useState } from "react";
 import { Search, Stethoscope, Syringe } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -10,6 +11,7 @@ import { useLanguage } from "../../context/LanguageContext";
 interface VetPetsPageProps { onNavigate: (page: string, params?: Record<string, any>) => void; }
 
 export default function VetPetsPage({ onNavigate }: VetPetsPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const [pets, setPets] = useState<PetResponse[]>([]);
   const [search, setSearch] = useState("");
@@ -39,8 +41,8 @@ export default function VetPetsPage({ onNavigate }: VetPetsPageProps) {
     <DashboardLayout role="vet" activePage="vet-pets" onNavigate={onNavigate} pageTitle={t("vet_pets_under_care")} breadcrumbs={[t("role_vet"), t("dash_pets")]}>
       <div className="bg-white rounded-[15px] shadow-md p-5">
         <div className="relative mb-5 max-w-xs">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
-          <input placeholder={t("vet_search_pets")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+          <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
+          <input placeholder={t("vet_search_pets")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full ps-8 pe-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
         </div>
         {loading ? (
           <div className="space-y-2">{[1, 2, 3].map((n) => <div key={n} className="h-[58px] rounded-[10px] bg-gray-50 animate-pulse" />)}</div>
@@ -50,7 +52,7 @@ export default function VetPetsPage({ onNavigate }: VetPetsPageProps) {
           <EmptyState icon={<Stethoscope size={28} />} title={t("pets_no_found")} description={t("pets_no_search_match")} />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-start">
               <thead>
                 <tr className="border-b border-gray-100">
                   {[t("th_name"), t("th_species"), t("th_breed"), t("th_age"), t("th_status"), t("report_health"), t("th_actions")].map((h) => (
@@ -62,7 +64,7 @@ export default function VetPetsPage({ onNavigate }: VetPetsPageProps) {
                 {filtered.map((p) => (
                   <tr key={p.petId} className="border-b border-gray-50 hover:bg-[rgba(8,157,151,0.03)] transition-colors">
                     <td className="py-3 px-3 font-['Poppins',sans-serif] font-medium text-[14px] text-black">{p.name}</td>
-                    <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{p.species}</td>
+                    <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{tx(p.species)}</td>
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{p.breed ?? "-"}</td>
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{p.age == null ? "-" : `${p.age} ${p.age === 1 ? t("common_year") : t("common_years")}`}</td>
                     <td className="py-3 px-3"><Badge label={p.adoptionStatus.toLowerCase()} variant={statusBadge(p.adoptionStatus.toLowerCase())} /></td>

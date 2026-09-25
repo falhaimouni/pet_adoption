@@ -1,3 +1,4 @@
+import { useText } from "../i18n/useText";
 import { useEffect, useState } from "react";
 import { ArrowLeft, CheckCircle, PawPrint, X } from "lucide-react";
 import Navbar from "../components/Navbar";
@@ -33,6 +34,7 @@ interface PetFullResponse extends PetResponse {
 
 export default function PetDetailPage({ onNavigate, petId, embedded = false }: PetDetailPageProps) {
   const { isAuthenticated, user } = useAuth();
+  const tx = useText();
   const { t } = useLanguage();
   const [pet, setPet] = useState<PetFullResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -124,7 +126,7 @@ export default function PetDetailPage({ onNavigate, petId, embedded = false }: P
                   onError={() => setImageError(true)}
                   className="w-full h-full object-contain"
                 />
-                <span className={`absolute top-4 left-4 px-3 py-1 rounded-full font-['Poppins',sans-serif] text-[12px] font-semibold capitalize ${status === "AVAILABLE" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                <span className={`absolute top-4 start-4 px-3 py-1 rounded-full font-['Poppins',sans-serif] text-[12px] font-semibold capitalize ${status === "AVAILABLE" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
                   {statusLabel(pet.adoptionStatus, t)}
                 </span>
               </div>
@@ -133,16 +135,16 @@ export default function PetDetailPage({ onNavigate, petId, embedded = false }: P
             <div className="flex flex-col gap-5">
               <div>
                 <h1 className="font-['Prata',serif] text-[36px] text-[#1a2e2d] leading-tight">{pet.name}</h1>
-                <p className="font-['Poppins',sans-serif] text-[16px] text-[#5a8a87] mt-1">{pet.breed || pet.species}</p>
+                <p className="font-['Poppins',sans-serif] text-[16px] text-[#5a8a87] mt-1">{pet.breed || tx(pet.species)}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { label: t("pet_stat_age"), value: pet.age == null ? "-" : `${pet.age} ${pet.age === 1 ? t("common_year") : t("common_years")}` },
-                  { label: t("pet_stat_gender"), value: valueOrDash(pet.gender) },
-                  { label: t("pet_stat_color"), value: valueOrDash(pet.color) },
+                  { label: t("pet_stat_gender"), value: tx(valueOrDash(pet.gender)) },
+                  { label: t("pet_stat_color"), value: tx(valueOrDash(pet.color)) },
                   { label: t("pet_stat_weight"), value: pet.weight == null ? "-" : `${pet.weight} kg` },
-                  { label: t("pet_stat_health"), value: valueOrDash(pet.healthStatus) },
+                  { label: t("pet_stat_health"), value: tx(valueOrDash(pet.healthStatus)) },
                   { label: t("pet_arrival"), value: valueOrDash(pet.arrivalDate) },
                 ].map(({ label, value }) => (
                   <div key={label} className="bg-white rounded-[14px] p-3 shadow-sm">

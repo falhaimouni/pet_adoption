@@ -8,14 +8,14 @@ interface PrivacyPolicyPageProps {
 const UPDATED = "August 24, 2026";
 
 export default function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   return (
     <div className="min-h-screen bg-[#f0f8f7]">
       <Navbar activePage="privacy" onNavigate={onNavigate} />
       <main className="max-w-4xl mx-auto px-5 py-10 pb-16">
         <article className="bg-white rounded-[20px] shadow-sm p-6 md:p-10 font-['Poppins',sans-serif] text-[#1a2e2d]">
-          <p className="text-[13px] text-[#5a8a87] mb-2">{t("privacy_last_updated").replace("{date}", UPDATED)}</p>
+          <p className="text-[13px] text-[#5a8a87] mb-2">{t("privacy_last_updated").replace("{date}", new Date(UPDATED).toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" }))}</p>
           <h1 className="font-['Prata',serif] text-[34px] mb-5">{t("privacy_title")}</h1>
           <div className="space-y-5 text-[14px] leading-relaxed">
             <p>{t("privacy_intro")}</p>

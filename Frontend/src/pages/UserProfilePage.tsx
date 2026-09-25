@@ -173,7 +173,7 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
               </div>
             )}
             {isEditing && (
-              <button onClick={() => fileRef.current?.click()} className="absolute bottom-0 right-0 w-8 h-8 bg-[#089D97] text-white rounded-full flex items-center justify-center shadow-md hover:bg-[#047975] transition-colors">
+              <button onClick={() => fileRef.current?.click()} className="absolute bottom-0 end-0 w-8 h-8 bg-[#089D97] text-white rounded-full flex items-center justify-center shadow-md hover:bg-[#047975] transition-colors">
                 <Camera size={14} />
               </button>
             )}
@@ -184,7 +184,7 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
             <h1 className="font-['Prata',serif] text-2xl text-[#1a2e2d]">{displayName}</h1>
             {displayHandle && <p className="font-['Poppins',sans-serif] text-[14px] text-[#5a8a87]">@{displayHandle}</p>}
             <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <span className="inline-flex items-center px-3 py-0.5 rounded-full bg-[#e0f2f0] text-[#047975] text-[12px] font-['Poppins',sans-serif] font-medium capitalize">{user?.role}</span>
+              <span className="inline-flex items-center px-3 py-0.5 rounded-full bg-[#e0f2f0] text-[#047975] text-[12px] font-['Poppins',sans-serif] font-medium capitalize">{user?.role ? t(`role_${user.role}`) : ""}</span>
               <span className="font-['Poppins',sans-serif] text-[12px] text-gray-400">· {t("profile_member_since")} {joinLabel}</span>
             </div>
           </div>
@@ -211,7 +211,7 @@ export default function UserProfilePage({ onNavigate, embedded = false }: UserPr
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           {stats.map(({ icon: Icon, label, page, color, bg }) => (
-            <button key={label} onClick={() => onNavigate(page)} className="bg-white rounded-[16px] p-4 shadow-sm flex items-center gap-3 text-left hover:shadow-md transition-shadow">
+            <button key={label} onClick={() => onNavigate(page)} className="bg-white rounded-[16px] p-4 shadow-sm flex items-center gap-3 text-start hover:shadow-md transition-shadow">
               <div className={`w-10 h-10 rounded-[12px] ${bg} flex items-center justify-center`}>
                 <Icon size={18} className={color} />
               </div>

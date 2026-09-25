@@ -1,3 +1,4 @@
+import { useText } from "../i18n/useText";
 import { useState } from "react";
 import { Mail } from "lucide-react";
 import Navbar from "../components/Navbar";
@@ -12,6 +13,7 @@ interface ForgotPasswordPageProps {
 }
 
 export default function ForgotPasswordPage({ onNavigate, email = "" }: ForgotPasswordPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");

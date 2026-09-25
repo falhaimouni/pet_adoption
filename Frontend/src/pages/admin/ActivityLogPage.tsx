@@ -1,3 +1,5 @@
+import { translateActivityValue } from "../../i18n/activity";
+import { useText } from "../../i18n/useText";
 import { useEffect, useState } from "react";
 import { Search, Filter, ChevronRight, X } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -20,6 +22,7 @@ const severityStyles: Record<LogEntry["severity"], string> = {
 interface ActivityLogPageProps { onNavigate: (page: string) => void; }
 
 export default function ActivityLogPage({ onNavigate }: ActivityLogPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const [severityFilter, setSeverityFilter] = useState("all");
@@ -37,14 +40,14 @@ export default function ActivityLogPage({ onNavigate }: ActivityLogPageProps) {
         if (!active) return;
         setLogs(dashboard.activity.recentActivityLogs.map((item, index) => ({
           id: index + 1,
-          user: item.user ? `${item.user.firstName} ${item.user.lastName}` : "System",
+          user: item.user ? `${item.user.firstName} ${item.user.lastName}` : tx("System"),
           role: "-",
-          action: item.action,
-          resource: item.entityType,
+          action: translateActivityValue(item.action, "action", t),
+          resource: translateActivityValue(item.entityType, "entity", t),
           resourceId: item.entityId ?? "-",
           ip: "-",
           timestamp: formatTimestamp(item.createdAt),
-          details: `${item.action} on ${item.entityType}${item.entityId ? ` #${item.entityId}` : ""}`,
+          details: tx("{action} on {resource}", { action: translateActivityValue(item.action, "action", t), resource: translateActivityValue(item.entityType, "entity", t) }) + (item.entityId ? ` #${item.entityId}` : ""),
           severity: "info",
         })));
       })
@@ -57,26 +60,26 @@ export default function ActivityLogPage({ onNavigate }: ActivityLogPageProps) {
     return () => {
       active = false;
     };
-  }, [t]);
+  }, [t, tx]);
 
   const filtered = logs.filter((l) => {
     const ms = l.user.toLowerCase().includes(search.toLowerCase()) || l.action.toLowerCase().includes(search.toLowerCase()) || l.resource.toLowerCase().includes(search.toLowerCase());
     const msev = severityFilter === "all" || l.severity === severityFilter;
-    const mr = roleFilter === "all" || l.role === roleFilter;
-    return ms && msev && mr;
+    const matchesRole = roleFilter === "all" || l.role === roleFilter;
+    return ms && msev && matchesRole;
   });
 
   return (
     <DashboardLayout role="admin" activePage="admin-activity" onNavigate={onNavigate} pageTitle={t("admin_activity_log")} breadcrumbs={[t("role_admin"), t("admin_activity_log")]}>
       <div className="flex gap-5 relative">
         {/* Main log */}
-        <div className={`flex-1 min-w-0 transition-all ${drawer ? "lg:mr-[320px]" : ""}`}>
+        <div className={`flex-1 min-w-0 transition-all ${drawer ? "lg:me-[320px]" : ""}`}>
           <div className="bg-white rounded-[15px] shadow-md p-5">
             {/* Filters */}
             <div className="flex flex-wrap gap-3 mb-5 items-center">
               <div className="flex-1 min-w-[200px] relative">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
-                <input placeholder={t("admin_search_activity")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+                <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
+                <input placeholder={t("admin_search_activity")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full ps-8 pe-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
               </div>
               <div className="flex gap-2 flex-wrap">
                 {["all", "info", "warning", "critical"].map((s) => (
@@ -91,7 +94,7 @@ export default function ActivityLogPage({ onNavigate }: ActivityLogPageProps) {
             {error && <p className="font-['Poppins',sans-serif] text-[13px] text-red-600 mb-4">{error}</p>}
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="w-full text-start">
                 <thead>
                   <tr className="border-b border-gray-100">
                     {[t("th_timestamp"), t("th_user"), t("th_role"), t("th_action"), t("th_resource"), t("th_severity"), ""].map((h) => (
@@ -119,7 +122,7 @@ export default function ActivityLogPage({ onNavigate }: ActivityLogPageProps) {
               </table>
             </div>
             <div className="flex items-center justify-between mt-3">
-              <p className="font-['Poppins',sans-serif] text-[12px] text-black/40">{filtered.length} entries</p>
+              <p className="font-['Poppins',sans-serif] text-[12px] text-black/40">{filtered.length}{tx("entries")}</p>
               <Pagination page={page} totalPages={1} onPage={setPage} />
             </div>
           </div>
@@ -127,10 +130,10 @@ export default function ActivityLogPage({ onNavigate }: ActivityLogPageProps) {
 
         {/* Detail drawer */}
         {drawer && (
-          <div className="hidden lg:block fixed right-0 top-0 w-[320px] h-full bg-white shadow-xl z-30 p-6 overflow-y-auto border-l border-gray-100">
+          <div className="hidden lg:block fixed end-0 top-0 w-[320px] h-full bg-white shadow-xl z-30 p-6 overflow-y-auto border-s border-gray-100">
             <div className="flex items-center justify-between mb-5">
               <p className="font-['Poppins',sans-serif] font-semibold text-[15px] text-black">{t("activity_event_detail")}</p>
-              <button onClick={() => setDrawer(null)} className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"><X size={14} /></button>
+              <button aria-label={t("action_close")} onClick={() => setDrawer(null)} className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"><X size={14} /></button>
             </div>
             <div className="space-y-4">
               <div>
@@ -139,7 +142,7 @@ export default function ActivityLogPage({ onNavigate }: ActivityLogPageProps) {
               </div>
               {[
                 [t("th_user"), drawer.user],
-                [t("th_role"), t(`role_${drawer.role}`)],
+                [t("th_role"), drawer.role === "-" ? "-" : t(`role_${drawer.role}`)],
                 [t("th_resource"), `${drawer.resource} #${drawer.resourceId}`],
                 [t("activity_ip_address"), drawer.ip],
                 [t("th_timestamp"), drawer.timestamp],

@@ -1,3 +1,4 @@
+import { useText } from "../i18n/useText";
 import { useEffect, useState } from "react";
 import { Search, SlidersHorizontal, X, ChevronDown, ChevronUp, PawPrint } from "lucide-react";
 import Navbar from "../components/Navbar";
@@ -115,6 +116,7 @@ interface PetsListPageProps {
 }
 
 export default function PetsListPage({ onNavigate, embedded = false }: PetsListPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const { isAuthenticated } = useAuth();
   const [search, setSearch] = useState("");
@@ -280,15 +282,15 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
 
           {/* Search bar */}
           <div className="max-w-xl relative">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#089D97]" />
+            <Search size={18} className="absolute start-4 top-1/2 -translate-y-1/2 text-[#089D97]" />
             <input
               placeholder={t("pets_search_placeholder")}
               value={search}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 rounded-[14px] bg-white text-[#1a2e2d] font-['Poppins',sans-serif] text-[14px] shadow-lg outline-none focus:ring-2 focus:ring-white/50 transition-all placeholder-gray-400"
+              className="w-full ps-12 pe-4 py-3.5 rounded-[14px] bg-white text-[#1a2e2d] font-['Poppins',sans-serif] text-[14px] shadow-lg outline-none focus:ring-2 focus:ring-white/50 transition-all placeholder-gray-400"
             />
             {search && (
-              <button onClick={() => setSearchQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <button onClick={() => setSearchQuery("")} className="absolute end-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 <X size={16} />
               </button>
             )}
@@ -415,7 +417,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
-          <div className="relative ml-auto w-[min(88vw,320px)] h-full bg-white shadow-2xl overflow-y-auto p-5">
+          <div className="relative ms-auto w-[min(88vw,320px)] h-full bg-white shadow-2xl overflow-y-auto p-5">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-[#1a2e2d]">{t("pets_filters")}</h2>
               <button onClick={() => setSidebarOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
@@ -451,7 +453,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
                   </div>
                   <div>
                     <h3 className="font-['Poppins',sans-serif] font-semibold text-[18px] text-[#1a2e2d]">{t("pet_adopt_btn")} {adoptModalPet.name}</h3>
-                    <p className="font-['Poppins',sans-serif] text-[13px] text-[#5a8a87]">{adoptModalPet.breed || adoptModalPet.species}</p>
+                    <p className="font-['Poppins',sans-serif] text-[13px] text-[#5a8a87]">{adoptModalPet.breed || tx(adoptModalPet.species)}</p>
                   </div>
                 </div>
                 <div className="space-y-4">

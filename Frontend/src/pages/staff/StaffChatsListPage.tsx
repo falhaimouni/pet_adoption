@@ -25,7 +25,7 @@ interface StaffChatsListPageProps {
 }
 
 export default function StaffChatsListPage({ onNavigate, role = "employee", activePage = "staff-chats", detailPage = "staff-chat-detail", readOnly = false }: StaffChatsListPageProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [search, setSearch] = useState("");
   const [items, setItems] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,8 +62,8 @@ export default function StaffChatsListPage({ onNavigate, role = "employee", acti
         )}
         <div className="p-4 border-b border-gray-100">
           <div className="relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
-            <input placeholder={t("chats_search_ph")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-8 pr-3 py-2 bg-[rgba(8,157,151,0.06)] rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:ring-1 focus:ring-[#089D97] transition-all" />
+            <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
+            <input placeholder={t("chats_search_ph")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full ps-8 pe-3 py-2 bg-[rgba(8,157,151,0.06)] rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:ring-1 focus:ring-[#089D97] transition-all" />
           </div>
         </div>
         {loading ? (
@@ -74,12 +74,12 @@ export default function StaffChatsListPage({ onNavigate, role = "employee", acti
           <EmptyState icon={<MessageCircle size={28} />} title={t("chats_no_conv")} description={t("chat_no_conversations_match")} />
         ) : (
           filtered.map((c) => (
-            <button key={c.conversationId} onClick={() => onNavigate(detailPage, { conversationId: c.conversationId })} className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-gray-50 hover:bg-[rgba(8,157,151,0.04)] transition-colors text-left">
+            <button key={c.conversationId} onClick={() => onNavigate(detailPage, { conversationId: c.conversationId })} className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-gray-50 hover:bg-[rgba(8,157,151,0.04)] transition-colors text-start">
               <div className="w-[44px] h-[44px] bg-[#e0f2f0] rounded-full flex items-center justify-center shrink-0"><MessageCircle size={18} className="text-[#089D97]" /></div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-['Poppins',sans-serif] text-[13px] font-semibold text-black truncate">{c.adopter.user.firstName} {c.adopter.user.lastName}</p>
-                  <span className="font-['Poppins',sans-serif] text-[11px] text-black/40">{new Date(c.updatedAt).toLocaleDateString()}</span>
+                  <span className="font-['Poppins',sans-serif] text-[11px] text-black/40">{new Date(c.updatedAt).toLocaleDateString(lang)}</span>
                 </div>
                 {c.isInProgress && <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2 py-0.5 my-1 text-[11px] font-semibold text-amber-800"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" />{t("chat_in_progress")}</span>}
                 {(c.unreadCount ?? 0) > 0 && <p className="text-[12px] font-bold text-[#089D97]">{t("chat_new_message")}</p>}

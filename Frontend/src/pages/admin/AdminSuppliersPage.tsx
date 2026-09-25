@@ -1,3 +1,4 @@
+import { useText } from "../../i18n/useText";
 import { formSchemas } from "../../lib/formValidation";
 import { useEffect, useState } from "react";
 import { Search, Plus, Edit, Trash2, Phone, Mail, MapPin, Eye } from "lucide-react";
@@ -49,6 +50,7 @@ interface AdminSuppliersPageProps {
 }
 
 export default function AdminSuppliersPage({ onNavigate, role = "admin", activePage = "admin-suppliers" }: AdminSuppliersPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [search, setSearch] = useState("");
@@ -158,10 +160,10 @@ export default function AdminSuppliersPage({ onNavigate, role = "admin", activeP
       <div className="bg-white rounded-[15px] shadow-md p-5">
         <div className="flex flex-wrap gap-3 mb-5 items-center">
           <div className="flex-1 min-w-[200px] relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
-            <input placeholder={t("admin_search_supplier")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+            <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
+            <input placeholder={t("admin_search_supplier")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full ps-8 pe-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
           </div>
-          <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 bg-[#089D97] text-white font-['Poppins',sans-serif] font-medium text-[13px] rounded-[10px] hover:bg-[#047975] transition-colors ml-auto">
+          <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 bg-[#089D97] text-white font-['Poppins',sans-serif] font-medium text-[13px] rounded-[10px] hover:bg-[#047975] transition-colors ms-auto">
             <Plus size={15} /> {t("supplier_add")}
           </button>
         </div>
@@ -174,7 +176,7 @@ export default function AdminSuppliersPage({ onNavigate, role = "admin", activeP
           <EmptyState icon={<Mail size={26} />} title={t("suppliers_empty_title")} description={t("suppliers_empty_desc")} />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-start">
               <thead>
                 <tr className="border-b border-gray-100">
                   {[t("th_supplier"), t("field_phone"), t("field_email"), t("th_city"), t("supplier_country"), t("th_status"), t("th_actions")].map((h) => (

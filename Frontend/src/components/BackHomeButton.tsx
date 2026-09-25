@@ -14,7 +14,7 @@ export default function BackHomeButton({ onNavigate, className = "" }: BackHomeB
       onClick={() => onNavigate("home")}
       aria-label={t("back_home")}
       title={t("back_home")}
-      className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-[#047975] transition-colors hover:bg-[#e0f2f0] hover:text-[#089D97] ${className}`}
+      className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-primary-hover transition-colors hover:bg-secondary hover:text-primary ${className}`}
     >
       <ArrowLeft size={20} />
     </button>

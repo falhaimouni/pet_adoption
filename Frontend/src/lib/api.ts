@@ -1,4 +1,6 @@
+import { localizeApiMessage } from "../i18n/text";
 import { MOCK_API_ENABLED, mockApiBlobFetch, mockApiFetch } from "./mockApi";
+import { uploadRequest } from "./uploadTransport";
 import { validateRequest } from "./formValidation";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
@@ -10,7 +12,7 @@ export class ApiError extends Error {
   status: number;
 
   constructor(message: string, status: number) {
-    super(message);
+    super(localizeApiMessage(message, status));
     this.name = "ApiError";
     this.status = status;
   }
@@ -126,7 +128,9 @@ async function realApiFetch<T>(path: string, init: RequestInit = {}, allowRefres
     headers.set("Content-Type", "application/json");
   }
 
-  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  const res = init.body instanceof FormData
+    ? await uploadRequest(`${API_BASE_URL}${path}`, { ...init, headers, body: init.body })
+    : await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
   const data = await parseResponse(res);
 
   if (res.status === 401 && allowRefresh && path !== "/auth/refresh") {
