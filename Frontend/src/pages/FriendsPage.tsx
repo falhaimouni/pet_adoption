@@ -1,4 +1,5 @@
 import { useText } from "../i18n/useText";
+import { SOCKET_EVENTS } from "@shared/events/socket.events";
 import { useCallback, useEffect, useState } from "react";
 import DashboardLayout from "../components/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
@@ -55,7 +56,17 @@ export default function FriendsPage({
   useEffect(() => {
     void refresh();
     const t = setInterval(refresh, 5000);
-    return () => clearInterval(t);
+    function presence(event: Event) {
+      const { userId, online } = (event as CustomEvent<{ userId: string; online: boolean }>).detail;
+      setFriends((rows) => rows.map((row) => row.friend.id === userId ? { ...row, online } : row));
+    }
+    window.addEventListener(`petopia:${SOCKET_EVENTS.FRIEND_PRESENCE}`, presence);
+    window.addEventListener("petopia:realtime-connected", refresh);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener(`petopia:${SOCKET_EVENTS.FRIEND_PRESENCE}`, presence);
+      window.removeEventListener("petopia:realtime-connected", refresh);
+    };
   }, [refresh]);
   useEffect(() => {
     let active = true;

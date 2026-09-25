@@ -47,7 +47,8 @@ test(
         c = actors.ADOPTER2,
         admin = actors.ADMIN0,
         vet = actors.VET0;
-      const service = new CommunityService(db);
+      const onlineUsers = new Set();
+      const service = new CommunityService(db, { isOnline: id => onlineUsers.has(id), emitToUsers() {} });
       let request, conversation, message;
       await t.test("adopter search excludes self and staff and restricts callers", async () => {
         const rows=await service.searchAdopters(a,"ADOPTER");
@@ -208,13 +209,15 @@ test(
         },
       );
       await t.test(
-        "heartbeat reports online and expires to offline",
+        "friend status follows sockets instead of stale heartbeats",
         async () => {
           await service.heartbeat(b);
+          onlineUsers.add(b.userId);
           assert.equal((await service.friends(a))[0].online, true);
           await db.query(
             "UPDATE user_presence SET last_seen_at=now()-interval '60 seconds'",
           );
+          onlineUsers.delete(b.userId);
           assert.equal((await service.friends(a))[0].online, false);
         },
       );

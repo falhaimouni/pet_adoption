@@ -93,7 +93,7 @@ export default function ChatDetailPage({ onNavigate, conversationId }: ChatDetai
     <DashboardLayout role="adopter" activePage="support-chat" onNavigate={onNavigate}>
       <div className="w-full flex flex-col h-[min(720px,calc(100dvh-128px))] min-h-[420px] bg-white rounded-[15px] shadow-md overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white">
-          <button onClick={() => onNavigate("support-chat")} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label={t("chat_back_conversations")}>
+          <button onClick={() => onNavigate("home")} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label={t("back_home")}>
             <ArrowLeft size={20} />
           </button>
           <MessageCircle size={20} className="text-[#089D97]" />
