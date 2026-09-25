@@ -1,12 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 
 import { Cart } from '../../database/entities/cart.entity';
 import { CartItem } from '../../database/entities/cart-item.entity';
 import { Product } from '../../database/entities/product.entity';
+import { Supply } from '../../database/entities/supply.entity';
 import { User } from '../../database/entities/user.entity';
 import { AddCartItemDto } from './cart.dto';
+import { SupplyStatusEnum } from '@shared/enums/supply-status.enum';
 
 @Injectable()
 export class CartService {
@@ -56,14 +58,6 @@ export class CartService {
         throw new NotFoundException('User not found');
       }
 
-      const product = await manager.getRepository(Product).findOne({
-        where: { productId: dto.productId, isActive: true },
-      });
-
-      if (!product) {
-        throw new NotFoundException('Product not found');
-      }
-
       const cartRepo = manager.getRepository(Cart);
       const cartItemRepo = manager.getRepository(CartItem);
 
@@ -83,18 +77,25 @@ export class CartService {
         .setLock('pessimistic_write')
         .where('cartItem.cartId = :cartId', { cartId: cart.cartId })
         .andWhere('cartItem.productId = :productId', {
-          productId: product.productId,
+          productId: dto.productId,
         })
         .getOne();
 
-      const unitPrice = Number(product.unitPrice);
       const quantityToAdd = dto.quantity;
+      const requestedQuantity = (existingItem?.quantity ?? 0) + quantityToAdd;
+      const supply = await this.findListedStoreSupply(
+        manager,
+        dto.productId,
+        requestedQuantity,
+        true,
+      );
+      const product = supply.product;
+      const unitPrice = Number(product.unitPrice);
 
       if (existingItem) {
-        const updatedQuantity = existingItem.quantity + quantityToAdd;
-        existingItem.quantity = updatedQuantity;
+        existingItem.quantity = requestedQuantity;
         existingItem.unitPrice = unitPrice.toFixed(2);
-        existingItem.subtotal = (unitPrice * updatedQuantity).toFixed(2);
+        existingItem.subtotal = (unitPrice * requestedQuantity).toFixed(2);
         await cartItemRepo.save(existingItem);
       } else {
         const cartItem = cartItemRepo.create({
@@ -199,10 +200,20 @@ export class CartService {
         .getOne();
       if (!cartItem) throw new NotFoundException('Cart item not found');
 
+      const supply = await this.findListedStoreSupply(
+        manager,
+        productId,
+        quantity,
+        true,
+      );
       const unitPrice = Number(cartItem.product?.unitPrice ?? cartItem.unitPrice);
+      if (cartItem.product) {
+        cartItem.product.unitPrice = supply.product.unitPrice;
+      }
       cartItem.quantity = quantity;
-      cartItem.unitPrice = unitPrice.toFixed(2);
-      cartItem.subtotal = (unitPrice * quantity).toFixed(2);
+      const currentUnitPrice = Number(supply.product.unitPrice ?? unitPrice);
+      cartItem.unitPrice = currentUnitPrice.toFixed(2);
+      cartItem.subtotal = (currentUnitPrice * quantity).toFixed(2);
       await cartItemRepo.save(cartItem);
 
       const savedCart = await manager.getRepository(Cart).findOne({
@@ -247,8 +258,12 @@ export class CartService {
   private withSupplyImages(cart: Cart | null): Cart | null {
     if (!cart) return cart;
 
+    cart.cartItems = (cart.cartItems ?? []).filter((item) =>
+      this.listedStoreSupplyForProduct(item.product) !== undefined,
+    );
+
     for (const item of cart.cartItems ?? []) {
-      const imageFile = item.product?.supplies?.[0]?.imageFile;
+      const imageFile = this.listedStoreSupplyForProduct(item.product)?.imageFile;
       item.imageUrl = imageFile
         ? /^https?:\/\//i.test(imageFile.fileUrl)
           ? imageFile.fileUrl
@@ -257,5 +272,47 @@ export class CartService {
     }
 
     return cart;
+  }
+
+  private listedStoreSupplyForProduct(product?: Product | null): Supply | undefined {
+    return product?.supplies?.find((supply) =>
+      supply.isActive === true &&
+      supply.storeListed === true &&
+      supply.status === SupplyStatusEnum.AVAILABLE &&
+      Number(supply.quantity ?? 0) > 0,
+    );
+  }
+
+  private async findListedStoreSupply(
+    manager: DataSource['manager'],
+    productId: string,
+    quantity: number,
+    lock = false,
+  ): Promise<Supply> {
+    let query = manager
+      .getRepository(Supply)
+      .createQueryBuilder('supply')
+      .innerJoinAndSelect('supply.product', 'product')
+      .where('supply.productId = :productId', { productId })
+      .andWhere('supply.isActive = :isActive', { isActive: true })
+      .andWhere('supply.storeListed = :storeListed', { storeListed: true })
+      .andWhere('supply.status = :status', { status: SupplyStatusEnum.AVAILABLE });
+
+    if (lock) {
+      query = query.setLock('pessimistic_write');
+    }
+
+    const supply = await query.getOne();
+    if (!supply) {
+      throw new NotFoundException('Product not found');
+    }
+
+    if (supply.quantity < quantity) {
+      throw new BadRequestException(
+        `Only ${supply.quantity} item(s) available for "${supply.supplyName}"`,
+      );
+    }
+
+    return supply;
   }
 }

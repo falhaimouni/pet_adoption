@@ -364,9 +364,7 @@ function listStoreSupplies(params: URLSearchParams) {
   let data = supplies.filter(
     (item) =>
       item.isActive !== false &&
-      item.storeListed !== false &&
-      item.status === "AVAILABLE" &&
-      item.quantity > 0,
+      item.storeListed !== false,
   );
   data = filterByQuery(data, storeParams, ["supplyName", "category"]);
   const category = storeParams.get("category");

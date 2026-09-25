@@ -110,12 +110,6 @@ export class CheckoutService {
           );
         }
 
-        if (!product.isActive) {
-          throw new BadRequestException(
-            `Product "${product.productName}" is no longer available`,
-          );
-        }
-
         const unitPrice = Number(product.unitPrice);
 
         if (!Number.isFinite(unitPrice) || unitPrice < 0) {
