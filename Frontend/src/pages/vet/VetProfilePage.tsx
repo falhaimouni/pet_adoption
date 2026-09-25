@@ -1,3 +1,4 @@
+import { useText } from "../../i18n/useText";
 import { useState, useRef } from "react";
 import { Camera, Edit2, Save, X, Stethoscope, Award, Phone, Mail, MapPin, FileText } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -21,6 +22,7 @@ const VET_DEFAULT = {
 interface VetProfilePageProps { onNavigate: (page: string) => void; }
 
 export default function VetProfilePage({ onNavigate }: VetProfilePageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
@@ -89,7 +91,7 @@ export default function VetProfilePage({ onNavigate }: VetProfilePageProps) {
               </div>
             )}
             {isEditing && (
-              <button onClick={() => fileRef.current?.click()} className="absolute bottom-0 right-0 w-7 h-7 bg-[#089D97] text-white rounded-full flex items-center justify-center shadow hover:bg-[#047975] transition-colors">
+              <button onClick={() => fileRef.current?.click()} className="absolute bottom-0 end-0 w-7 h-7 bg-[#089D97] text-white rounded-full flex items-center justify-center shadow hover:bg-[#047975] transition-colors">
                 <Camera size={12} />
               </button>
             )}

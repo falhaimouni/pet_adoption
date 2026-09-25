@@ -1,3 +1,5 @@
+import { useText } from "../../i18n/useText";
+import FilePreview from "../../components/FilePreview";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Edit, Trash2, ArrowLeft, Stethoscope, Upload, Download, FileText } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -44,6 +46,7 @@ interface VetMedicalPageProps {
 const blank = { diagnosis: "", treatment: "", vaccinationStatus: "PENDING", medicalDate: "", notes: "" };
 
 export default function VetMedicalPage({ onNavigate, params }: VetMedicalPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const routePetId = params?.petId;
   const [selectedPetId, setSelectedPetId] = useState(routePetId ?? "");
@@ -171,7 +174,7 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
       return;
     }
     if (!file) {
-      setDocumentError("Please choose a PDF file first.");
+      setDocumentError(tx("Please choose a PDF file first."));
       return;
     }
     const validation = validateDocumentFile(file);
@@ -193,10 +196,15 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
       if (documentInputRef.current) documentInputRef.current.value = "";
       loadRecord();
     } catch (err) {
-      setDocumentError(err instanceof Error ? err.message : "Unable to upload document.");
+      setDocumentError(err instanceof Error ? err.message : tx("Unable to upload document."));
     } finally {
       setSaving(false);
     }
+  }
+
+  async function downloadDocument(fileUrl: string, fileName: string) {
+    try { await downloadFileUrl(fileUrl, fileName); }
+    catch { setDocumentError(t("files_download_error")); }
   }
 
   async function deleteDocument(fileId: string) {
@@ -206,7 +214,7 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
       await apiFetch(`/files/${fileId}`, { method: "DELETE" });
       loadRecord();
     } catch (err) {
-      setDocumentError(err instanceof Error ? err.message : "Unable to delete document.");
+      setDocumentError(err instanceof Error ? err.message : tx("Unable to delete document."));
     } finally {
       setSaving(false);
     }
@@ -227,7 +235,7 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
             <p className="font-['Poppins',sans-serif] font-semibold text-[18px] text-black">{displayPet?.name ?? t("medical_record")}</p>
             <p className="font-['Poppins',sans-serif] text-[13px] text-[#089D97]">{[displayPet?.breed ?? displayPet?.species, displayPet?.gender, displayPet?.age == null ? null : `${displayPet.age} ${displayPet.age === 1 ? t("common_year") : t("common_years")}`].filter(Boolean).join(" · ")}</p>
           </div>
-          <div className="flex gap-4 ml-auto">
+          <div className="flex gap-4 ms-auto">
             {effectivePetId && <button onClick={() => onNavigate("vet-vaccinations", { petId: effectivePetId })} className="flex items-center gap-2 px-4 py-2 border border-[#089D97] text-[#089D97] rounded-[10px] font-['Poppins',sans-serif] text-[13px] hover:bg-[rgba(8,157,151,0.1)] transition-colors">{t("vet_vaccinations")}</button>}
             <button disabled={!effectivePetId} onClick={() => { setEditTarget(null); setForm(blank); setFormError(""); setAddOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-[#089D97] text-white rounded-[10px] font-['Poppins',sans-serif] font-medium text-[13px] hover:bg-[#047975] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"><Plus size={15} /> {t("vet_add_entry")}</button>
           </div>
@@ -238,7 +246,7 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("req_pet")}</label>
             <select value={selectedPetId} onChange={(e) => setSelectedPetId(e.target.value)} disabled={petsLoading || pets.length === 0 || saving} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] bg-white transition-colors disabled:opacity-60">
               <option value="">{petsLoading ? t("loading_pets") : pets.length === 0 ? t("no_pets_available") : t("choose_pet")}</option>
-              {pets.map((item) => <option key={item.petId} value={item.petId}>{item.name} - {item.species}{item.breed ? `, ${item.breed}` : ""}</option>)}
+              {pets.map((item) => <option key={item.petId} value={item.petId}>{item.name} - {tx(item.species)}{item.breed ? `, ${item.breed}` : ""}</option>)}
             </select>
             {petsError && <p className="mt-2 font-['Poppins',sans-serif] text-[12px] text-red-600">{petsError}</p>}
           </div>
@@ -277,10 +285,10 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
         <div className="bg-white rounded-[15px] shadow-md p-5 mt-5">
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <div>
-              <p className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black">Medical documents</p>
-              <p className="font-['Poppins',sans-serif] text-[12px] text-black/50">PDF documents up to 10 MB</p>
+              <p className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black">{tx("Medical documents")}</p>
+              <p className="font-['Poppins',sans-serif] text-[12px] text-black/50">{tx("PDF documents up to 10 MB")}</p>
             </div>
-            <div className="ml-auto flex flex-wrap items-center gap-2">
+            <div className="ms-auto flex flex-wrap items-center gap-2">
               <BulkDocumentDelete key={effectivePetId} documents={documents} onDeleted={loadRecord} disabled={saving || loading} onBusyChange={setSaving} />
               <input
                 ref={documentInputRef}
@@ -294,15 +302,14 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
                 onClick={() => documentInputRef.current?.click()}
                 className="flex items-center gap-2 px-4 py-2 bg-[#089D97] text-white rounded-[10px] font-['Poppins',sans-serif] text-[13px] font-medium hover:bg-[#047975] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Upload size={15} /> Upload PDF
-              </button>
+                <Upload size={15} />{tx("Upload PDF")}</button>
             </div>
           </div>
           {documentError && <p className="mb-3 text-[13px] text-red-600 bg-red-50 rounded-[10px] px-3 py-2">{documentError}</p>}
           {documents.length === 0 ? (
             <div className="border border-dashed border-gray-200 rounded-[12px] p-4 text-center">
               <FileText size={22} className="mx-auto text-gray-300 mb-2" />
-              <p className="font-['Poppins',sans-serif] text-[13px] text-black/50">No documents uploaded.</p>
+              <p className="font-['Poppins',sans-serif] text-[13px] text-black/50">{tx("No documents uploaded.")}</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -311,11 +318,12 @@ export default function VetMedicalPage({ onNavigate, params }: VetMedicalPagePro
                   <FileText size={18} className="text-red-400 shrink-0" />
                   <div className="min-w-0">
                     <p className="font-['Poppins',sans-serif] text-[13px] font-medium text-black truncate">{doc.fileName}</p>
-                    <p className="font-['Poppins',sans-serif] text-[11px] text-black/45">{Math.max(doc.fileSize / 1024, 1).toFixed(0)} KB · {doc.uploadedAt?.slice(0, 10)}</p>
+                    <p className="font-['Poppins',sans-serif] text-[11px] text-black/45">{Math.max(doc.fileSize / 1024, 1).toFixed(0)}{tx("KB ·")}{doc.uploadedAt?.slice(0, 10)}</p>
                   </div>
-                  <div className="ml-auto flex gap-2">
-                    <button onClick={() => downloadFileUrl(doc.fileUrl, doc.fileName)} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label="Download document"><Download size={15} /></button>
-                    <button disabled={saving} onClick={() => deleteDocument(doc.fileId)} className="text-red-400 hover:text-red-600 transition-colors disabled:opacity-40" aria-label="Delete document"><Trash2 size={15} /></button>
+                  <div className="ms-auto flex gap-2">
+                    <FilePreview file={{ ...doc, mimeType: "application/pdf" }} />
+                    <button onClick={() => downloadDocument(doc.fileUrl, doc.fileName)} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label={tx("Download document")}><Download size={15} /></button>
+                    <button disabled={saving} onClick={() => deleteDocument(doc.fileId)} className="text-red-400 hover:text-red-600 transition-colors disabled:opacity-40" aria-label={tx("Delete document")}><Trash2 size={15} /></button>
                   </div>
                 </div>
               ))}

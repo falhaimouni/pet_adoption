@@ -21,3 +21,26 @@ failed items, mobile overflow, XML download, and the admin file-management contr
 API responses are fixtures; backend PDF parsing and database rollback behavior are
 covered separately by `npm test -w pet-adoption-backend` with repository doubles.
 No production data is changed by this test.
+
+Additional upload checks:
+
+```sh
+CHROME_PATH=/usr/bin/google-chrome node Frontend/test/file-management.test.cjs
+CHROME_PATH=/usr/bin/google-chrome node Frontend/test/upload-progress.test.cjs
+```
+
+See [file management verification](../../docs/file-management.md) for coverage and
+an explanation of which checks use fixtures versus real multipart transfers.
+
+Language and RTL checks (same Vite server):
+
+```sh
+npm run test:i18n -w pet-adoption-frontend
+npm run test:i18n:browser -w pet-adoption-frontend
+```
+
+These cover dictionary parity and interpolation, translated labels, 54 representative
+routes across three languages at desktop/mobile widths, sidebar mirroring,
+form-preserving language switching, language persistence and RTL popup menus.
+See [internationalization verification](../../docs/internationalization.md) and
+[the custom component catalog](../../docs/design-system.md).

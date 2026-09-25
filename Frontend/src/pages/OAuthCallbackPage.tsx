@@ -1,3 +1,4 @@
+import { useText } from "../i18n/useText";
 import { useEffect, useRef, useState } from "react";
 import { useAuth, type UserRole } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -18,6 +19,7 @@ function pageForRole(role: UserRole): string {
 }
 
 export default function OAuthCallbackPage({ onNavigate, code }: OAuthCallbackPageProps) {
+  const tx = useText();
   const { completeGoogleLogin, returnTo, setReturnTo } = useAuth();
   const { t } = useLanguage();
   const [error, setError] = useState("");
@@ -30,7 +32,7 @@ export default function OAuthCallbackPage({ onNavigate, code }: OAuthCallbackPag
 
     async function completeLogin() {
       if (!code) {
-        setError("Google sign-in did not provide a valid session.");
+        setError(tx("Google sign-in did not provide a valid session."));
         return;
       }
 
@@ -42,7 +44,7 @@ export default function OAuthCallbackPage({ onNavigate, code }: OAuthCallbackPag
         onNavigate(target);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Google sign-in failed.");
+          setError(err instanceof Error ? err.message : tx("Google sign-in failed."));
         }
       }
     }

@@ -114,12 +114,12 @@ export default function AdminOrdersPage({ onNavigate, role = "admin", activePage
       <div className="bg-white rounded-[15px] shadow-md p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
           <div className="relative max-w-sm flex-1">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
+            <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
             <input
               placeholder={t("orders_search_ph")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors"
+              className="w-full ps-8 pe-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors"
             />
           </div>
           <span className="font-['Poppins',sans-serif] text-[12px] text-black/50">{filtered.length} {t("nav_orders")}</span>
@@ -133,7 +133,7 @@ export default function AdminOrdersPage({ onNavigate, role = "admin", activePage
           <EmptyState icon={<PackageCheck size={28} />} title={t("orders_empty_title")} description={t("orders_empty_desc")} />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-start">
               <thead>
                 <tr className="border-b border-gray-100">
                   {[t("th_order"), t("th_customer"), t("th_recipient"), t("th_city"), t("th_total"), t("th_status"), t("th_date"), t("table_actions")].map((h) => (

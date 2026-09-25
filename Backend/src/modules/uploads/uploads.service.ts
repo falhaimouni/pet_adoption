@@ -43,6 +43,40 @@ export class UploadsService {
   ) {}
 
 
+  async listFiles(user: RequestWithUser['user']) {
+    if (user.role !== 'ADMIN') throw new ForbiddenException('Admin access required');
+    const files = await this.fileRepo.find({
+      relations: ['uploadedByUser'],
+      order: { uploadedAt: 'DESC', fileId: 'DESC' },
+    });
+    const result = [];
+    for (const file of files) {
+      try {
+        await this.authorizeRetrieval(file, user);
+      } catch (error) {
+        if (error instanceof ForbiddenException) continue;
+        throw error;
+      }
+      let canDelete = true;
+      try {
+        await this.authorizeDeletion(this.fileRepo.manager, file, user);
+      } catch (error) {
+        if (!(error instanceof ForbiddenException)) throw error;
+        canDelete = false;
+      }
+      // Explicit fields prevent user credentials or internal relations leaking.
+      result.push({
+        fileId: file.fileId, fileName: file.fileName, fileSize: file.fileSize,
+        mimeType: file.mimeType, category: file.category,
+        fileUrl: this.getProtectedFileUrl(file.fileId), uploadedAt: file.uploadedAt,
+        uploadedByName: file.uploadedByUser
+          ? `${file.uploadedByUser.firstName} ${file.uploadedByUser.lastName}`.trim() : null,
+        canDelete,
+      });
+    }
+    return result;
+  }
+
   async createFileRecord(
     file: Express.Multer.File,
     category: FileUploadCategory,

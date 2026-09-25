@@ -1,3 +1,4 @@
+import { translateText as tx } from "../i18n/text";
 export const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export const MAX_DOCUMENT_SIZE_BYTES = 10 * 1024 * 1024;
@@ -27,10 +28,10 @@ export function validateImageFile(file: File, t?: (key: string) => string) {
 }
 
 export function validateDocumentFile(file: File) {
-  if (file.size <= 0) return "Please choose a non-empty PDF file.";
+  if (file.size <= 0) return tx("Please choose a non-empty PDF file.");
   if (!ALLOWED_DOCUMENT_TYPES.includes(file.type) || !file.name.toLowerCase().endsWith(".pdf")) {
-    return "Only PDF documents are allowed.";
+    return tx("Only PDF documents are allowed.");
   }
-  if (file.size > MAX_DOCUMENT_SIZE_BYTES) return "Document size must be 10 MB or less.";
+  if (file.size > MAX_DOCUMENT_SIZE_BYTES) return tx("Document size must be 10 MB or less.");
   return "";
 }

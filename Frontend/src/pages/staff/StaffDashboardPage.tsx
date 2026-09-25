@@ -32,7 +32,7 @@ export default function StaffDashboardPage({ onNavigate }: StaffDashboardPagePro
           <button onClick={() => onNavigate("staff-requests")} className="font-['Poppins',sans-serif] text-[13px] text-[#089D97] hover:underline">{t("dash_view_all")}</button>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-start">
             <thead>
               <tr className="border-b border-gray-100">
                 {[t("th_adopter"), t("th_pet"), t("th_submitted"), t("th_status"), t("th_action")].map((h) => (

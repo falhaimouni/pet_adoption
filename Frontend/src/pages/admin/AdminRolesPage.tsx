@@ -1,3 +1,4 @@
+import { useText } from "../../i18n/useText";
 import { useState } from "react";
 import { Plus, Edit, Trash2, CheckSquare, XSquare } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -45,6 +46,7 @@ const pGroup: Record<string, string[]> = {
 interface AdminRolesPageProps { onNavigate: (page: string) => void; }
 
 export default function AdminRolesPage({ onNavigate }: AdminRolesPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const [selected, setSelected] = useState<RoleDef>(ROLES[0]);
   const [editOpen, setEditOpen] = useState(false);
@@ -64,7 +66,7 @@ export default function AdminRolesPage({ onNavigate }: AdminRolesPageProps) {
             <button
               key={r.id}
               onClick={() => setSelected(r)}
-              className={`flex items-center justify-between px-3 py-2.5 rounded-[10px] text-left transition-colors ${selected.id === r.id ? "bg-[#089D97] text-white" : "hover:bg-[rgba(8,157,151,0.08)] text-black"}`}
+              className={`flex items-center justify-between px-3 py-2.5 rounded-[10px] text-start transition-colors ${selected.id === r.id ? "bg-[#089D97] text-white" : "hover:bg-[rgba(8,157,151,0.08)] text-black"}`}
             >
               <div>
                 <p className="font-['Poppins',sans-serif] font-medium text-[13px]">{t(`role_${r.name}`)}</p>
@@ -93,7 +95,7 @@ export default function AdminRolesPage({ onNavigate }: AdminRolesPageProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.entries(pGroup).map(([group, perms]) => (
               <div key={group} className="border border-gray-100 rounded-[12px] p-4">
-                <p className="font-['Poppins',sans-serif] font-semibold text-[12px] text-[#089D97] uppercase tracking-wider mb-3">{group}</p>
+                <p className="font-['Poppins',sans-serif] font-semibold text-[12px] text-[#089D97] uppercase tracking-wider mb-3">{tx(group)}</p>
                 <div className="flex flex-col gap-2">
                   {perms.map((p) => {
                     const has = selected.permissions.includes(p);
@@ -103,7 +105,7 @@ export default function AdminRolesPage({ onNavigate }: AdminRolesPageProps) {
                           ? <CheckSquare size={14} className="text-[#089D97] shrink-0" />
                           : <XSquare size={14} className="text-gray-300 shrink-0" />}
                         <span className={`font-['Poppins',sans-serif] text-[12px] ${has ? "text-black" : "text-black/30"}`}>
-                          {p.replace(/_/g, " ")}
+                          {tx(p.replace(/_/g, " "))}
                         </span>
                       </div>
                     );
@@ -117,12 +119,12 @@ export default function AdminRolesPage({ onNavigate }: AdminRolesPageProps) {
 
       <Modal title={`${t("action_edit")}: ${t(`role_${selected.name}`)}`} open={editOpen} onClose={() => setEditOpen(false)} onConfirm={() => setEditOpen(false)} confirmLabel={t("roles_save_permissions")} size="lg">
         <p className="font-['Poppins',sans-serif] text-[13px] text-black/50 mb-4">{t("roles_toggle_permissions").replace("{role}", t(`role_${selected.name}`))}</p>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-2 max-h-[340px] overflow-y-auto pr-2">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-2 max-h-[340px] overflow-y-auto pe-2">
           {ALL_PERMISSIONS.map((p) => (
             <label key={p} className="flex items-center gap-2 cursor-pointer group">
               <input type="checkbox" defaultChecked={selected.permissions.includes(p)} className="w-4 h-4 accent-[#089D97]" />
               <span className="font-['Poppins',sans-serif] text-[13px] text-black group-hover:text-[#089D97] transition-colors">
-                {p.replace(/_/g, " ")}
+                {tx(p.replace(/_/g, " "))}
               </span>
             </label>
           ))}

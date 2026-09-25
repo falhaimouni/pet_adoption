@@ -15,7 +15,7 @@ export default function EmptyState({ icon, title, description, action, actionLab
   return (
     <div className="flex flex-col items-center justify-center py-10 sm:py-16 px-3 text-center min-w-0">
       {icon && (
-        <div className="w-[64px] h-[64px] bg-[rgba(8,157,151,0.12)] rounded-full flex items-center justify-center text-[#089D97] mb-4">
+        <div className="w-[64px] h-[64px] bg-[rgba(8,157,151,0.12)] rounded-full flex items-center justify-center text-primary mb-4">
           {icon}
         </div>
       )}
@@ -26,7 +26,7 @@ export default function EmptyState({ icon, title, description, action, actionLab
       {btnLabel && btnClick && (
         <button
           onClick={btnClick}
-          className="mt-5 bg-[#089D97] text-white font-['Poppins',sans-serif] font-medium text-[14px] px-6 py-2.5 rounded-[20px] hover:bg-[#047975] transition-colors"
+          className="mt-5 bg-primary text-white font-['Poppins',sans-serif] font-medium text-[14px] px-6 py-2.5 rounded-[20px] hover:bg-primary-hover transition-colors"
         >
           {btnLabel}
         </button>

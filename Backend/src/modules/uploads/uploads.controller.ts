@@ -22,6 +22,13 @@ import { BulkDeleteDocumentsDto } from '@shared/dto/bulk-documents.dto';
 export class UploadsController {
   constructor(private readonly uploadsService: UploadsService) {}
 
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  listFiles(@Req() req: RequestWithUser) {
+    return this.uploadsService.listFiles(req.user);
+  }
+
   @Delete('documents/bulk')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'MANAGER', 'VET')

@@ -151,7 +151,7 @@ export default function AdminAnalyticsPage({ onNavigate }: AdminAnalyticsPagePro
                 <div key={r.name} className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: COLORS[i] }} />
                   <span className="font-['Poppins',sans-serif] text-[12px] text-black/70">{r.name}</span>
-                  <span className="font-['Poppins',sans-serif] text-[12px] font-semibold text-black ml-auto">{r.value}</span>
+                  <span className="font-['Poppins',sans-serif] text-[12px] font-semibold text-black ms-auto">{r.value}</span>
                 </div>
               ))}
             </div>

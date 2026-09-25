@@ -1,3 +1,4 @@
+import { useText } from "../i18n/useText";
 import { useEffect, useState } from "react";
 import { Lock } from "lucide-react";
 import Navbar from "../components/Navbar";
@@ -12,6 +13,7 @@ interface ResetPasswordPageProps {
 }
 
 export default function ResetPasswordPage({ onNavigate, token }: ResetPasswordPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");

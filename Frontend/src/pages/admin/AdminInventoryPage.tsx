@@ -1,3 +1,4 @@
+import { useText } from "../../i18n/useText";
 import { formSchemas, validateFields, validationMessage } from "../../lib/formValidation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Edit, EyeOff, ImagePlus, Package, Plus, Search, Settings, Trash2 } from "lucide-react";
@@ -88,6 +89,7 @@ function supplyCategoryKey(category: string) {
 }
 
 export default function AdminInventoryPage({ onNavigate, role = "admin", activePage = "admin-inventory" }: AdminInventoryPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const [supplies, setSupplies] = useState<Supply[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -133,7 +135,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
       const data = await apiFetch<Supplier[]>("/inventory/suppliers");
       setSuppliers(data.filter((supplier) => supplier.isActive !== false));
     } catch (err) {
-      setError(readError(err, "Could not load suppliers."));
+      setError(readError(err, tx("Could not load suppliers.")));
     }
   }
 
@@ -156,7 +158,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
       setSupplies(filtered);
       setTotal(status === "all" ? response.total : filtered.length);
     } catch (err) {
-      setError(readError(err, "Could not load inventory."));
+      setError(readError(err, tx("Could not load inventory.")));
     } finally {
       setLoading(false);
     }
@@ -192,17 +194,17 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
     const fieldErrors = validateFields(formSchemas.supply, form, t, { mockIds: true });
     if (Object.keys(fieldErrors).length) return validationMessage(fieldErrors, t);
 
-    if (!form.supplyName.trim()) return "Supply name is required.";
-    if (form.supplyName.trim().length > 160) return "Supply name must be 160 characters or fewer.";
-    if (!categories.includes(form.category)) return "Choose a valid category.";
-    if (!form.supplierId) return "Choose a supplier before adding a supply.";
-    if (!Number.isInteger(Number(form.quantity)) || toInteger(form.quantity) < 0) return "Quantity must be a whole number of 0 or more.";
-    if (!Number.isInteger(Number(form.lowStockLimit)) || toInteger(form.lowStockLimit) < 0) return "Low stock limit must be a whole number of 0 or more.";
-    if (!Number.isInteger(Number(form.minimumOrderQuantity)) || toInteger(form.minimumOrderQuantity) < 1) return "Minimum order quantity must be at least 1.";
-    if (form.deliveryTimeDays && (!Number.isInteger(Number(form.deliveryTimeDays)) || toInteger(form.deliveryTimeDays) < 0)) return "Delivery time must be a whole number of 0 or more.";
-    if (!Number.isFinite(Number(form.sellingPrice)) || Number(form.sellingPrice) < 0) return "Selling price must be 0 or more.";
-    if (!Number.isFinite(Number(form.purchasePrice)) || Number(form.purchasePrice) < 0) return "Purchase price must be 0 or more.";
-    if (!statuses.includes(form.status)) return "Choose a valid status.";
+    if (!form.supplyName.trim()) return tx("Supply name is required.");
+    if (form.supplyName.trim().length > 160) return tx("Supply name must be 160 characters or fewer.");
+    if (!categories.includes(form.category)) return tx("Choose a valid category.");
+    if (!form.supplierId) return tx("Choose a supplier before adding a supply.");
+    if (!Number.isInteger(Number(form.quantity)) || toInteger(form.quantity) < 0) return tx("Quantity must be a whole number of 0 or more.");
+    if (!Number.isInteger(Number(form.lowStockLimit)) || toInteger(form.lowStockLimit) < 0) return tx("Low stock limit must be a whole number of 0 or more.");
+    if (!Number.isInteger(Number(form.minimumOrderQuantity)) || toInteger(form.minimumOrderQuantity) < 1) return tx("Minimum order quantity must be at least 1.");
+    if (form.deliveryTimeDays && (!Number.isInteger(Number(form.deliveryTimeDays)) || toInteger(form.deliveryTimeDays) < 0)) return tx("Delivery time must be a whole number of 0 or more.");
+    if (!Number.isFinite(Number(form.sellingPrice)) || Number(form.sellingPrice) < 0) return tx("Selling price must be 0 or more.");
+    if (!Number.isFinite(Number(form.purchasePrice)) || Number(form.purchasePrice) < 0) return tx("Purchase price must be 0 or more.");
+    if (!statuses.includes(form.status)) return tx("Choose a valid status.");
     return "";
   }
 
@@ -235,12 +237,12 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
         method: editing ? "PATCH" : "POST",
         body: JSON.stringify(requestBody),
       });
-      setSuccess(editing ? "Supply updated." : "Supply added. It will appear in the shop when active, available, and in stock.");
+      setSuccess(editing ? tx("Supply updated.") : tx("Supply added. It will appear in the shop when active, available, and in stock."));
       setAddOpen(false);
       setEditing(null);
       await loadSupplies();
     } catch (err) {
-      setFormError(readError(err, "Could not save supply."));
+      setFormError(readError(err, tx("Could not save supply.")));
     } finally {
       setSaving(false);
     }
@@ -274,7 +276,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
   async function uploadSupplyImage(file?: File) {
     if (!imageSupply) return;
     if (!file) {
-      setError("Please choose an image file first.");
+      setError(tx("Please choose an image file first."));
       return;
     }
     const validation = validateImageFile(file, t);
@@ -299,7 +301,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
       if (imageInputRef.current) imageInputRef.current.value = "";
       await loadSupplies();
     } catch (err) {
-      setError(readError(err, "Unable to upload supply image."));
+      setError(readError(err, tx("Unable to upload supply image.")));
     } finally {
       setSaving(false);
     }
@@ -314,7 +316,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
             <span className="font-semibold">{t("inventory_alert_count").replace("{count}", String(alertCount))}</span> {t("inventory_alert_suffix")}
           </p>
           {role === "admin" && (
-            <button onClick={() => onNavigate("admin-suppliers")} className="ml-auto font-['Poppins',sans-serif] text-[12px] text-yellow-700 underline whitespace-nowrap">{t("inventory_manage_suppliers")}</button>
+            <button onClick={() => onNavigate("admin-suppliers")} className="ms-auto font-['Poppins',sans-serif] text-[12px] text-yellow-700 underline whitespace-nowrap">{t("inventory_manage_suppliers")}</button>
           )}
         </div>
       )}
@@ -322,12 +324,12 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
       <div className="bg-white rounded-[15px] shadow-md p-4 sm:p-5">
         <div className="flex flex-wrap gap-3 mb-5 items-center">
           <div className="flex-1 min-w-[190px] relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
+            <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
             <input
               placeholder={t("inventory_search_supplies")}
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors"
+              className="w-full ps-8 pe-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors"
             />
           </div>
           <select value={category} onChange={(e) => { setCategory(e.target.value); setPage(1); }} className="border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[12px] bg-white outline-none focus:border-[#089D97]">
@@ -343,7 +345,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
             <option value="DAMAGED">{t("status_damaged")}</option>
             <option value="DISCONTINUED">{t("status_discontinued")}</option>
           </select>
-          <div className="flex gap-2 ml-auto">
+          <div className="flex gap-2 ms-auto">
             {role === "admin" && (
               <button onClick={() => onNavigate("admin-suppliers")} className="flex items-center gap-2 px-3 py-2 border border-gray-200 text-black/60 font-['Poppins',sans-serif] text-[12px] rounded-[10px] hover:bg-gray-50 transition-colors">
                 <Settings size={14} /> {t("nav_suppliers")}
@@ -366,7 +368,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
           <EmptyState icon={<Package size={28} />} title={t("inventory_empty_title")} description={t("inventory_empty_desc")} />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-start">
               <thead>
                 <tr className="border-b border-gray-100">
                   {[t("th_name"), t("th_category"), t("th_qty"), t("inventory_low"), t("th_supplier"), t("inventory_price"), t("inventory_store"), t("th_status"), t("th_actions")].map((heading) => (
@@ -380,7 +382,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
                   return (
                     <tr key={item.supplyId} className={`border-b border-gray-50 hover:bg-[rgba(8,157,151,0.03)] transition-colors ${label === "LOW_STOCK" ? "bg-yellow-50/40" : ""}`}>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] font-medium text-[13px] text-black min-w-[180px]">
-                        {(label === "OUT_OF_STOCK" || label === "LOW_STOCK") && <AlertTriangle size={12} className="text-yellow-500 inline mr-1" />}
+                        {(label === "OUT_OF_STOCK" || label === "LOW_STOCK") && <AlertTriangle size={12} className="text-yellow-500 inline me-1" />}
                         {item.supplyName}
                       </td>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60">{t(supplyCategoryKey(item.category))}</td>
@@ -484,7 +486,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
         </p>
       </Modal>
 
-      <Modal title="Upload Supply Image" open={!!imageSupply} onClose={() => setImageSupply(null)} onConfirm={() => uploadSupplyImage(imageInputRef.current?.files?.[0])} confirmLabel={saving ? t("pet_uploading") : t("action_upload")} size="sm">
+      <Modal title={tx("Upload Supply Image")} open={!!imageSupply} onClose={() => setImageSupply(null)} onConfirm={() => uploadSupplyImage(imageInputRef.current?.files?.[0])} confirmLabel={saving ? t("pet_uploading") : t("action_upload")} size="sm">
         <input ref={imageInputRef} type="file" accept="image/*,.jpg,.jpeg,.png,.webp" className="w-full text-[13px] font-['Poppins',sans-serif]" />
         <p className="mt-2 font-['Poppins',sans-serif] text-[12px] text-black/50">{t("pet_upload_hint")}</p>
       </Modal>

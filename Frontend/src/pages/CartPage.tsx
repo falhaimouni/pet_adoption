@@ -1,3 +1,4 @@
+import { useText } from "../i18n/useText";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import type { OrderDto } from "@shared/dto/order.dto";
@@ -25,6 +26,7 @@ const initialCheckoutForm: CheckoutForm = {
 };
 
 export default function CartPage({ onNavigate, embedded = false }: CartPageProps) {
+  const tx = useText();
   const { items, total, count, loading, error: cartError, updateQuantity, removeFromCart, clearCart, refreshCart } = useCart();
   const { t } = useLanguage();
   const [mutationError, setMutationError] = useState("");
@@ -48,7 +50,7 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
     try {
       await action();
     } catch (err) {
-      setMutationError(err instanceof Error ? err.message : "Unable to update cart.");
+      setMutationError(err instanceof Error ? err.message : tx("Unable to update cart."));
     } finally {
       setSavingProductId("");
     }
@@ -61,7 +63,7 @@ export default function CartPage({ onNavigate, embedded = false }: CartPageProps
     try {
       await clearCart();
     } catch (err) {
-      setMutationError(err instanceof Error ? err.message : "Unable to clear cart.");
+      setMutationError(err instanceof Error ? err.message : tx("Unable to clear cart."));
     } finally {
       setSavingProductId("");
     }

@@ -92,7 +92,7 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
             </h2>
           </div>
 
-          {/* Welcome section — positioned left-center */}
+          {/* Welcome section — positioned start-center */}
           <div className="relative z-10 w-full max-w-[420px] mt-5 sm:mt-8">
             <p className="font-['Poppins',sans-serif] font-semibold text-[32px] sm:text-[40px] lg:text-[44px] text-black leading-[1.1] text-balance break-words">
               {t("login_welcome_to")}
@@ -110,8 +110,8 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
               className="w-[240px] sm:w-[300px] lg:w-[340px] h-auto object-contain mx-auto lg:mx-0"
             />
             {/* Tagline card: stacked under dog on phones, overlapping on sm+ */}
-            <div className="relative mt-3 mx-auto sm:mx-0 sm:absolute sm:mt-0 sm:bottom-[20px] lg:bottom-[28px] sm:left-[190px] lg:left-[240px] bg-[rgba(186,216,211,0.96)] border border-white rounded-[20px] lg:rounded-[24px] shadow-[7px_7px_1px_0px_rgba(0,0,0,0.25)] px-4 sm:px-5 py-3 sm:py-3.5 w-full max-w-[230px] sm:w-[250px] sm:max-w-none">
-              <p className="font-['Poppins',sans-serif] text-[13px] sm:text-[14px] text-black leading-relaxed text-center sm:text-left">
+            <div className="relative mt-3 mx-auto sm:mx-0 sm:absolute sm:mt-0 sm:bottom-[20px] lg:bottom-[28px] sm:start-[190px] lg:start-[240px] bg-[rgba(186,216,211,0.96)] border border-white rounded-[20px] lg:rounded-[24px] shadow-[7px_7px_1px_0px_rgba(0,0,0,0.25)] px-4 sm:px-5 py-3 sm:py-3.5 w-full max-w-[230px] sm:w-[250px] sm:max-w-none">
+              <p className="font-['Poppins',sans-serif] text-[13px] sm:text-[14px] text-black leading-relaxed text-center sm:text-start">
                 {t("login_quote")}
               </p>
             </div>
@@ -122,7 +122,7 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
           <img
             src={pawLeafImg}
             alt=""
-            className="absolute bottom-[2%] left-[2%] w-[90px] lg:w-[120px] h-auto pointer-events-none hidden md:block"
+            className="absolute bottom-[2%] start-[2%] w-[90px] lg:w-[120px] h-auto pointer-events-none hidden md:block"
           />
         </div>
 
@@ -130,7 +130,7 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
         <div className="relative flex justify-center lg:justify-end items-start py-4 sm:py-6">
           <div className="w-full max-w-[440px] sm:max-w-[500px] lg:max-w-[520px] relative mt-12 sm:mt-[56px] bg-white rounded-[20px] sm:rounded-[30px] shadow-xl px-5 sm:px-8 py-6 sm:py-8">
             {/* Cat at the top of the card — fixed size, fixed offset so it never drifts */}
-            <div className="absolute -top-[36px] sm:-top-[52px] left-[8px] pointer-events-none">
+            <div className="absolute -top-[36px] sm:-top-[52px] start-[8px] pointer-events-none">
               <img
                 src={catPhotoImg}
                 alt=""

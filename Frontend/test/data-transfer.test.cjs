@@ -22,6 +22,7 @@ const base = process.env.UI_TEST_URL || 'http://127.0.0.1:5175';
       else if (path === '/pets') data = { data: [pet], total: 1 };
       else if (path.endsWith('/import/bulk')) {
         importCalls++;
+        await new Promise(resolve => setTimeout(resolve, 700));
         assert.match(req.headers()['content-type'], /multipart\/form-data/);
         assert.match(req.postDataBuffer().toString(), /name="files"; filename="valid.pdf"/);
         data = { total: 2, importedRows: 1, failed: 1, partial: 0, results: [
@@ -51,6 +52,7 @@ const base = process.env.UI_TEST_URL || 'http://127.0.0.1:5175';
     await page.getByRole('alert').filter({ hasText: 'no more than 20' }).waitFor();
     await input.setInputFiles([pdf('valid.pdf'), pdf('bad.pdf')]);
     await page.getByRole('button', { name: 'Import selected PDFs', exact: true }).click();
+    await page.getByRole('progressbar').waitFor();
     await page.getByText('1 record(s) imported.', { exact: false }).waitFor();
     await page.getByText('Row 1 (medicalDate): Invalid date', { exact: false }).waitFor();
     assert.equal(importCalls, 1); console.log('Import passed');

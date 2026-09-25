@@ -37,8 +37,8 @@ export default function AboutPage({ onNavigate, embedded = false }: AboutPagePro
       {/* Hero */}
       <section className="bg-gradient-to-br from-[#047975] to-[#089D97] text-white py-20 px-5 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 pointer-events-none">
-          <div className="absolute -top-20 -right-20 w-[400px] h-[400px] rounded-full bg-white" />
-          <div className="absolute -bottom-20 -left-20 w-[300px] h-[300px] rounded-full bg-white" />
+          <div className="absolute -top-20 -end-20 w-[400px] h-[400px] rounded-full bg-white" />
+          <div className="absolute -bottom-20 -start-20 w-[300px] h-[300px] rounded-full bg-white" />
         </div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <div className="inline-flex items-center gap-2 bg-white/20 rounded-full px-4 py-1.5 mb-6">
@@ -96,7 +96,7 @@ export default function AboutPage({ onNavigate, embedded = false }: AboutPagePro
             {steps.map(({ num, title, desc }, i) => (
               <div key={num} className="relative flex flex-col items-center text-center">
                 {i < steps.length - 1 && (
-                  <div className="hidden lg:block absolute top-7 left-[calc(50%+28px)] w-[calc(100%-56px)] h-px bg-[rgba(8,157,151,0.2)]" />
+                  <div className="hidden lg:block absolute top-7 start-[calc(50%+28px)] w-[calc(100%-56px)] h-px bg-[rgba(8,157,151,0.2)]" />
                 )}
                 <div className="w-14 h-14 bg-gradient-to-br from-[#089D97] to-[#047975] rounded-full flex items-center justify-center mb-4 shadow-md relative z-10">
                   <span className="font-['Poppins',sans-serif] font-bold text-[15px] text-white">{num}</span>
@@ -113,8 +113,8 @@ export default function AboutPage({ onNavigate, embedded = false }: AboutPagePro
       <section className="py-16 px-5">
         <div className="max-w-4xl mx-auto bg-gradient-to-br from-[#047975] to-[#089D97] rounded-[28px] p-10 text-white text-center relative overflow-hidden">
           <div className="absolute inset-0 opacity-10 pointer-events-none">
-            <div className="absolute -top-10 -right-10 w-[200px] h-[200px] rounded-full bg-white" />
-            <div className="absolute -bottom-10 -left-10 w-[150px] h-[150px] rounded-full bg-white" />
+            <div className="absolute -top-10 -end-10 w-[200px] h-[200px] rounded-full bg-white" />
+            <div className="absolute -bottom-10 -start-10 w-[150px] h-[150px] rounded-full bg-white" />
           </div>
           <div className="relative z-10">
             <PawPrint size={36} className="mx-auto mb-4 opacity-80" />

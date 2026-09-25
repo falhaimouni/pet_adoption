@@ -51,7 +51,7 @@ export default function PetCard({ pet, onViewDetails, onAdopt }: PetCardProps) {
       {/* Image */}
       <div className="relative h-[210px] bg-[#e8f5f4] overflow-hidden flex-shrink-0">
         {!imgLoaded && !imgError && (
-          <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-[#e0f2f0] via-[#f0f9f8] to-[#e0f2f0] bg-[length:200%_100%]" />
+          <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-secondary via-[#f0f9f8] to-secondary bg-[length:200%_100%]" />
         )}
         <AuthenticatedImage
           src={imgError ? defaultPetImage : imageUrl}
@@ -63,12 +63,12 @@ export default function PetCard({ pet, onViewDetails, onAdopt }: PetCardProps) {
         />
 
         {/* Species pill — top-left */}
-        <span className={`absolute top-3 left-3 px-2.5 py-0.5 rounded-full font-['Poppins',sans-serif] text-[11px] font-semibold ${speciesColor}`}>
-          {pet.species}
+        <span className={`absolute top-3 start-3 px-2.5 py-0.5 rounded-full font-['Poppins',sans-serif] text-[11px] font-semibold ${speciesColor}`}>
+          {t(`species_${pet.species.toLowerCase()}`)}
         </span>
 
         {/* Status badge — top-right */}
-        <span className={`absolute top-3 right-3 px-2.5 py-0.5 rounded-full font-['Poppins',sans-serif] text-[10px] font-semibold capitalize ${STATUS_STYLES[status] ?? STATUS_STYLES.AVAILABLE}`}>
+        <span className={`absolute top-3 end-3 px-2.5 py-0.5 rounded-full font-['Poppins',sans-serif] text-[10px] font-semibold capitalize ${STATUS_STYLES[status] ?? STATUS_STYLES.AVAILABLE}`}>
           {statusText}
         </span>
       </div>
@@ -77,7 +77,7 @@ export default function PetCard({ pet, onViewDetails, onAdopt }: PetCardProps) {
       <div className="p-4 flex flex-col gap-3 flex-1">
         {/* Name + breed */}
         <div>
-          <h3 className="font-['Poppins',sans-serif] font-semibold text-[17px] text-[#1a2e2d] leading-tight">{pet.name}</h3>
+          <h3 className="font-['Poppins',sans-serif] font-semibold text-[17px] text-foreground leading-tight">{pet.name}</h3>
           <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87] mt-0.5">{pet.breed || t("common_mixed_breed")}</p>
         </div>
 
@@ -90,7 +90,7 @@ export default function PetCard({ pet, onViewDetails, onAdopt }: PetCardProps) {
           ].map(({ label, value }) => (
             <div key={label} className="bg-[#f0f9f8] rounded-[10px] py-1.5 px-1">
               <p className="font-['Poppins',sans-serif] text-[10px] text-[#5a8a87]">{label}</p>
-              <p className="font-['Poppins',sans-serif] text-[12px] font-semibold text-[#1a2e2d] truncate">{label === t("pet_stat_age") ? formattedAge : value}</p>
+              <p className="font-['Poppins',sans-serif] text-[12px] font-semibold text-foreground truncate">{label === t("pet_stat_age") ? formattedAge : value}</p>
             </div>
           ))}
         </div>
@@ -99,14 +99,14 @@ export default function PetCard({ pet, onViewDetails, onAdopt }: PetCardProps) {
         <div className="flex gap-2 mt-auto pt-1">
           <button
             onClick={() => onViewDetails(pet.petId)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 border-2 border-[#089D97] text-[#089D97] font-['Poppins',sans-serif] font-medium text-[13px] rounded-[11px] hover:bg-[#089D97] hover:text-white transition-all duration-200"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 border-2 border-primary text-primary font-['Poppins',sans-serif] font-medium text-[13px] rounded-[11px] hover:bg-primary hover:text-white transition-all duration-200"
           >
             <Eye size={13} /> {t("pet_details_btn")}
           </button>
           <button
             onClick={() => onAdopt(pet.petId)}
             disabled={status !== "AVAILABLE"}
-            className="flex-1 py-2 bg-[#089D97] text-white font-['Poppins',sans-serif] font-medium text-[13px] rounded-[11px] hover:bg-[#047975] transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 py-2 bg-primary text-white font-['Poppins',sans-serif] font-medium text-[13px] rounded-[11px] hover:bg-primary-hover transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {status === "AVAILABLE" ? t("pet_adopt_btn") : statusText}
           </button>

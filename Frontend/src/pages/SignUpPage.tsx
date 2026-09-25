@@ -1,3 +1,4 @@
+import { useText } from "../i18n/useText";
 import { useState } from "react";
 import { useLanguage } from "../context/LanguageContext";
 import { User, Lock, Mail, PawPrint } from "lucide-react";
@@ -14,6 +15,7 @@ interface SignUpPageProps {
 }
 
 export default function SignUpPage({ onNavigate }: SignUpPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -91,7 +93,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
         {/* One illustration group: the rabbits stay attached to their background shape. */}
         <div className="relative w-full max-w-[340px] sm:max-w-[440px] lg:max-w-[540px] mx-auto lg:mx-0">
           <div className="relative w-full max-w-[520px] h-[420px] sm:h-[500px] lg:h-[560px] bg-[#089D97]/25 [border-radius:58%_42%_55%_45%/48%_56%_44%_52%] pointer-events-none">
-            <div className="absolute z-10 bottom-0 left-[6%] flex items-end">
+            <div className="absolute z-10 bottom-0 start-[6%] flex items-end">
               <img
                 src={tanBunnyImg}
                 alt={t("signup_brown_rabbit_alt")}
@@ -100,18 +102,18 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
               <img
                 src={grayBunnyImg}
                 alt={t("signup_gray_rabbit_alt")}
-                className="w-[125px] sm:w-[150px] lg:w-[175px] h-auto object-contain -ml-8 sm:-ml-12 translate-y-[6px]"
+                className="w-[125px] sm:w-[150px] lg:w-[175px] h-auto object-contain -ms-8 sm:-ms-12 translate-y-[6px]"
               />
             </div>
           </div>
 
           {/* Paw prints scattered */}
-          <PawPrint size={28} className="absolute top-[18%] right-[12%] text-white/70 rotate-12 pointer-events-none" fill="currentColor" />
-          <PawPrint size={22} className="absolute bottom-[16%] left-[46%] text-[#089D97]/60 rotate-12 pointer-events-none" fill="currentColor" />
-          <PawPrint size={34} className="absolute bottom-[6%] left-[8%] text-white/80 -rotate-12 pointer-events-none hidden sm:block" fill="currentColor" />
+          <PawPrint size={28} className="absolute top-[18%] end-[12%] text-white/70 rotate-12 pointer-events-none" fill="currentColor" />
+          <PawPrint size={22} className="absolute bottom-[16%] start-[46%] text-[#089D97]/60 rotate-12 pointer-events-none" fill="currentColor" />
+          <PawPrint size={34} className="absolute bottom-[6%] start-[8%] text-white/80 -rotate-12 pointer-events-none hidden sm:block" fill="currentColor" />
 
         {/* Join Petopia section — stepped px type per breakpoint so zoom scales uniformly */}
-        <div className="absolute top-[40px] sm:top-[56px] lg:top-[64px] left-[16px] sm:left-[24px] right-[16px] sm:right-auto z-10 flex flex-col items-start w-auto sm:w-full sm:max-w-[420px]">
+        <div className="absolute top-[40px] sm:top-[56px] lg:top-[64px] start-[16px] sm:start-[24px] end-[16px] sm:end-auto z-10 flex flex-col items-start w-auto sm:w-full sm:max-w-[420px]">
           <p className="font-['Poppins',sans-serif] font-semibold text-[32px] sm:text-[40px] lg:text-[44px] text-black leading-[1.1] flex items-center gap-2 sm:gap-3 flex-wrap text-balance break-words">
             {t("signup_tagline")}{" "}
             <span className="font-['Prata',serif] font-normal text-[#047975] text-[30px] sm:text-[36px] lg:text-[40px] leading-none">Petopia</span>
@@ -126,14 +128,14 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
       </div>
 
       {/* ── Right Panel (white card) ── */}
-      <div className="relative flex justify-center lg:justify-end items-start py-4 sm:py-6 pr-14 sm:pr-[100px] lg:pr-[112px]">
+      <div className="relative flex justify-center lg:justify-end items-start py-4 sm:py-6 pe-14 sm:pe-[100px] lg:pe-[112px]">
         <div className="w-full max-w-[440px] sm:max-w-[500px] lg:max-w-[520px] relative mt-[24px]">
         <div className="relative z-10 bg-white rounded-[20px] sm:rounded-[30px] shadow-xl px-5 sm:px-8 py-6 sm:py-8 overflow-visible">
           {/* The cat is part of the card, so it stays aligned with its border at every zoom level. */}
           <img
             src={catPhotoImg}
             alt=""
-            className="absolute top-[120px] sm:top-[150px] -right-[64px] sm:-right-[100px] lg:-right-[120px] w-[140px] sm:w-[175px] lg:w-[200px] h-auto object-contain pointer-events-none hidden sm:block z-20 rotate-90"
+            className="absolute top-[120px] sm:top-[150px] -end-[64px] sm:-end-[100px] lg:-end-[120px] w-[140px] sm:w-[175px] lg:w-[200px] h-auto object-contain pointer-events-none hidden sm:block z-20 rotate-90"
           />
           <h2 className="font-['Inter',sans-serif] font-semibold text-[22px] sm:text-[26px] lg:text-[28px] text-black mb-1 text-center text-balance">{t("signup_title")}</h2>
           <p className="font-['Inter',sans-serif] font-light text-[14px] sm:text-[15px] text-black mb-4 text-center text-balance">
@@ -256,7 +258,7 @@ export default function SignUpPage({ onNavigate }: SignUpPageProps) {
       </div>
 
       {/* Bottom curvy shape — full-window, smooth double wave (inspo Vector at 81.23%) */}
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 w-full h-[48px] sm:h-[64px] overflow-hidden z-[5]">
+      <div className="pointer-events-none absolute bottom-0 start-0 end-0 w-full h-[48px] sm:h-[64px] overflow-hidden z-[5]">
         <svg
           viewBox="0 0 1440 180"
           preserveAspectRatio="none"

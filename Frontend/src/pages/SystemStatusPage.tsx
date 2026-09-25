@@ -1,3 +1,4 @@
+import { useText } from "../i18n/useText";
 import { useCallback, useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import { API_BASE_URL } from "../lib/api";
@@ -56,6 +57,7 @@ function statusStyle(status: Status) {
 export default function SystemStatusPage({
   onNavigate,
 }: SystemStatusPageProps) {
+  const tx = useText();
   const [services, setServices] = useState<ServiceStatus>({
     frontend: "operational",
     backend: "checking",
@@ -153,13 +155,9 @@ export default function SystemStatusPage({
 
       <main className="max-w-4xl mx-auto px-4 py-12">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            System Status
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900">{tx("System Status")}</h1>
 
-          <p className="text-gray-600 mt-2">
-            Current availability of Petopia services.
-          </p>
+          <p className="text-gray-600 mt-2">{tx("Current availability of Petopia services.")}</p>
         </div>
 
         <div
@@ -171,8 +169,8 @@ export default function SystemStatusPage({
         >
           <h2 className="text-xl font-semibold">
             {systemOperational
-              ? "✅ All systems operational"
-              : "⚠️ Some services are experiencing problems"}
+              ? tx("✅ All systems operational")
+              : tx("⚠️ Some services are experiencing problems")}
           </h2>
         </div>
 
@@ -187,18 +185,18 @@ export default function SystemStatusPage({
               >
                 <div>
                   <h3 className="font-semibold text-gray-900">
-                    {service.name}
+                    {tx(service.name)}
                   </h3>
 
                   <p className="text-sm text-gray-500">
-                    {service.description}
+                    {tx(service.description)}
                   </p>
                 </div>
 
                 <span
                   className={`px-3 py-1 rounded-full border text-sm font-medium ${style.classes}`}
                 >
-                  {style.icon} {style.text}
+                  {style.icon} {tx(style.text)}
                 </span>
               </div>
             );
@@ -206,11 +204,10 @@ export default function SystemStatusPage({
         </div>
 
         <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-between items-center">
-          <p className="text-sm text-gray-500">
-            Last checked:{" "}
+          <p className="text-sm text-gray-500">{tx("Last checked:")}{" "}
             {lastChecked
-              ? lastChecked.toLocaleTimeString()
-              : "Not checked yet"}
+              ? lastChecked.toLocaleTimeString(document.documentElement.lang)
+              : tx("Not checked yet")}
           </p>
 
           <button
@@ -218,13 +215,11 @@ export default function SystemStatusPage({
             disabled={checking}
             className="px-4 py-2 rounded-lg bg-[#089D97] text-white disabled:opacity-50"
           >
-            {checking ? "Checking..." : "Check again"}
+            {checking ? tx("Checking...") : tx("Check again")}
           </button>
         </div>
 
-        <p className="text-xs text-gray-400 mt-4">
-          Status automatically refreshes every 15 seconds.
-        </p>
+        <p className="text-xs text-gray-400 mt-4">{tx("Status automatically refreshes every 15 seconds.")}</p>
       </main>
     </div>
   );

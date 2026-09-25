@@ -118,7 +118,7 @@ export default function ManagerAnalyticsPage({ onNavigate }: ManagerAnalyticsPag
                 <div key={s.name} className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full shrink-0" style={{ background: COLORS[i] }} />
                   <span className="font-['Poppins',sans-serif] text-[12px] text-black/70">{s.name}</span>
-                  <span className="font-['Poppins',sans-serif] text-[12px] font-semibold text-black ml-auto">{s.value}%</span>
+                  <span className="font-['Poppins',sans-serif] text-[12px] font-semibold text-black ms-auto">{s.value}%</span>
                 </div>
               ))}
             </div>

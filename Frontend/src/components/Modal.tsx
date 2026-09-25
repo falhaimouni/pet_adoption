@@ -36,7 +36,7 @@ export default function Modal({
         {/* Header */}
         <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-100 shrink-0">
           <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] sm:text-[18px] text-black break-words">{title}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button aria-label={t("action_close")} onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -61,7 +61,7 @@ export default function Modal({
                   ? "bg-gray-300 cursor-not-allowed"
                   : confirmDestructive
                   ? "bg-red-500 hover:bg-red-600"
-                  : "bg-[#089D97] hover:bg-[#047975]"
+                  : "bg-primary hover:bg-primary-hover"
               }`}
             >
               {confirmLabel ?? t("action_confirm")}

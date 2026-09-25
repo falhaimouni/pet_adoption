@@ -1,3 +1,4 @@
+import { useText } from "../../i18n/useText";
 import { useEffect, useRef, useState } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
 import { apiFetch } from "../../lib/api";
@@ -15,6 +16,7 @@ export default function ChatsListPage({
 }: {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
 }) {
+  const tx = useText();
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const navigateRef = useRef(onNavigate);
@@ -41,7 +43,7 @@ export default function ChatsListPage({
       role="adopter"
       activePage="support-chat"
       onNavigate={onNavigate}
-      pageTitle="Support Chat"
+      pageTitle={tx("Support Chat")}
     >
       {error ? (
         <div role="alert" className="space-y-3">
@@ -49,12 +51,10 @@ export default function ChatsListPage({
           <button
             className="rounded-lg bg-teal-600 px-4 py-2 text-white"
             onClick={() => setAttempt((value) => value + 1)}
-          >
-            Try again
-          </button>
+          >{tx("Try again")}</button>
         </div>
       ) : (
-        <p>Opening Support Chat…</p>
+        <p>{tx("Opening Support Chat…")}</p>
       )}
     </DashboardLayout>
   );

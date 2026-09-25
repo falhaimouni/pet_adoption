@@ -1,3 +1,4 @@
+import { useText } from "../../i18n/useText";
 import { formSchemas, validateFields, validationMessage } from "../../lib/formValidation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Edit, Eye, ImagePlus, PawPrint, Plus, Search, Trash2 } from "lucide-react";
@@ -26,6 +27,7 @@ interface StaffPetsPageProps {
 const blank: Record<"name" | "species" | "breed" | "age" | "gender" | "color" | "weight" | "description" | "adoptionStatus" | "healthStatus", string> = { name: "", species: PET_SPECIES_OPTIONS[0], breed: "", age: "", gender: "", color: "", weight: "", description: "", adoptionStatus: PET_STATUS_OPTIONS[0], healthStatus: "" };
 
 export default function StaffPetsPage({ onNavigate, role = "employee", activePage = "staff-pets" }: StaffPetsPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const [pets, setPets] = useState<PetResponse[]>([]);
   const [search, setSearch] = useState("");
@@ -144,7 +146,7 @@ export default function StaffPetsPage({ onNavigate, role = "employee", activePag
   async function uploadImage(file?: File) {
     if (!imagePet) return;
     if (!file) {
-      setError("Please choose an image file first.");
+      setError(tx("Please choose an image file first."));
       return;
     }
     const validation = validateImageFile(file, t);
@@ -178,13 +180,13 @@ export default function StaffPetsPage({ onNavigate, role = "employee", activePag
       <div className="bg-white rounded-[15px] shadow-md p-5">
         <div className="flex flex-wrap gap-3 mb-5 items-center">
           <div className="flex-1 min-w-[180px] relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
-            <input placeholder={t("pets_search")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+            <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
+            <input placeholder={t("pets_search")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full ps-8 pe-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
           </div>
           <div className="flex gap-2 flex-wrap">
             {["all", ...PET_SPECIES_OPTIONS].map((s) => <button key={s} onClick={() => setSpeciesFilter(s)} className={`px-3 py-1.5 rounded-[20px] font-['Poppins',sans-serif] text-[12px] transition-colors ${speciesFilter === s ? "bg-[#089D97] text-white" : "bg-gray-100 text-black/70 hover:bg-gray-200"}`}>{s === "all" ? t("status_all") : t(`species_${s.toLowerCase()}`)}</button>)}
           </div>
-          <button onClick={() => setAddOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-[#089D97] text-white font-['Poppins',sans-serif] font-medium text-[13px] rounded-[10px] hover:bg-[#047975] transition-colors ml-auto">
+          <button onClick={() => setAddOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-[#089D97] text-white font-['Poppins',sans-serif] font-medium text-[13px] rounded-[10px] hover:bg-[#047975] transition-colors ms-auto">
             <Plus size={16} /> {t("action_add_pet")}
           </button>
         </div>
@@ -197,7 +199,7 @@ export default function StaffPetsPage({ onNavigate, role = "employee", activePag
           <EmptyState icon={<PawPrint size={28} />} title={t("pets_empty_title")} description={t("pets_empty_desc")} />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-start">
               <thead>
                 <tr className="border-b border-gray-100">{[t("pet_table_name"), t("pet_table_species"), t("pet_table_breed"), t("pet_table_age"), t("pet_table_gender"), t("pet_table_status"), t("pet_table_health"), t("table_actions")].map((h) => <th key={h} className="py-2.5 px-3 font-['Poppins',sans-serif] font-semibold text-[11px] text-black/50 uppercase tracking-wider whitespace-nowrap">{h}</th>)}</tr>
               </thead>
@@ -238,7 +240,7 @@ export default function StaffPetsPage({ onNavigate, role = "employee", activePag
           <DatalistField id="pet-breeds" label={t("pet_field_breed")} value={form.breed} options={COMMON_BREED_OPTIONS} onChange={(value) => setForm((p) => ({ ...p, breed: value }))} />
           <DatalistField id="pet-colors" label={t("pet_field_color")} value={form.color} options={COMMON_COLOR_OPTIONS} onChange={(value) => setForm((p) => ({ ...p, color: value }))} />
           <SelectField label={t("pet_field_gender")} value={form.gender} options={["", ...PET_GENDER_OPTIONS]} placeholder={t("pet_choose_gender")} onChange={(value) => setForm((p) => ({ ...p, gender: value }))} translateOption={(value) => value ? t(`gender_${value.toLowerCase()}`) : value} />
-          <SelectField label={t("pet_field_health_status")} value={form.healthStatus} options={["", ...PET_HEALTH_STATUS_OPTIONS]} placeholder={t("pet_choose_health")} onChange={(value) => setForm((p) => ({ ...p, healthStatus: value }))} />
+          <SelectField label={t("pet_field_health_status")} value={form.healthStatus} options={["", ...PET_HEALTH_STATUS_OPTIONS]} translateOption={tx} placeholder={t("pet_choose_health")} onChange={(value) => setForm((p) => ({ ...p, healthStatus: value }))} />
           <div>
             <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("pet_field_species")}</label>
             <select value={form.species} onChange={(e) => setForm((p) => ({ ...p, species: e.target.value }))} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] bg-white outline-none focus:border-[#089D97]">
@@ -293,12 +295,13 @@ function SelectField({ label, value, options, placeholder, onChange, translateOp
 }
 
 function DatalistField({ id, label, value, options, onChange }: { id: string; label: string; value: string; options: readonly string[]; onChange: (value: string) => void }) {
+  const tx = useText();
   return (
     <div>
       <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{label}</label>
       <input aria-label={label} maxLength={id === "pet-colors" ? 80 : 120} list={id} value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97]" />
       <datalist id={id}>
-        {options.map((option) => <option key={option} value={option} />)}
+        {options.map((option) => <option key={option} value={option} label={tx(option)} />)}
       </datalist>
     </div>
   );

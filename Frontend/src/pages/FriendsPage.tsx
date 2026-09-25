@@ -1,3 +1,4 @@
+import { useText } from "../i18n/useText";
 import { useCallback, useEffect, useState } from "react";
 import DashboardLayout from "../components/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
@@ -25,6 +26,7 @@ export default function FriendsPage({
 }: {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
 }) {
+  const tx = useText();
   const { user } = useAuth();
   const [tab, setTab] = useState<"friends" | "requests">("friends");
   const [search, setSearch] = useState("");
@@ -99,12 +101,12 @@ export default function FriendsPage({
       role="adopter"
       activePage="friends"
       onNavigate={onNavigate}
-      pageTitle="Friends"
+      pageTitle={tx("Friends")}
     >
       <div className="w-full space-y-6 pb-20">
         <div
           role="tablist"
-          aria-label="Friends views"
+          aria-label={tx("Friends views")}
           className="inline-flex gap-1 rounded-full bg-white/60 p-1"
         >
           {(["friends", "requests"] as const).map((value) => (
@@ -118,15 +120,15 @@ export default function FriendsPage({
               onClick={() => setTab(value)}
               className={`rounded-full px-6 py-2 text-sm font-medium transition-colors ${tab === value ? "bg-[#089D97] text-white shadow-sm" : "text-gray-600 hover:bg-white"}`}
             >
-              {value === "friends" ? "Friends" : "Requests"}
+              {value === "friends" ? tx("Friends") : tx("Requests")}
             </button>
           ))}
         </div>
         {tab === "friends" && (
           <input
             type="search"
-            aria-label="Search adopters by name"
-            placeholder="Search adopters by name to find friends…"
+            aria-label={tx("Search adopters by name")}
+            placeholder={tx("Search adopters by name to find friends…")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="block w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-teal-500"
@@ -137,7 +139,7 @@ export default function FriendsPage({
             {error}
           </p>
         )}
-        {loading && <p>Loading friends…</p>}
+        {loading && <p>{tx("Loading friends…")}</p>}
         {tab === "requests" && (
           <section
             role="tabpanel"
@@ -146,7 +148,7 @@ export default function FriendsPage({
             className="space-y-4"
           >
             {!loading && !requests.length && (
-              <p>You don't have any pending requests.</p>
+              <p>{tx("You don't have any pending requests.")}</p>
             )}
             {requests.map((r) => (
               <div
@@ -175,7 +177,7 @@ export default function FriendsPage({
                         )
                       }
                     >
-                      {action[0].toUpperCase() + action.slice(1)}
+                      {tx(action[0].toUpperCase() + action.slice(1))}
                     </button>
                   ))}
                 </div>
@@ -191,7 +193,7 @@ export default function FriendsPage({
             className="space-y-4"
           >
             {!loading && !search.trim() && !friends.length && (
-              <p>You don't have any friends yet.</p>
+              <p>{tx("You don't have any friends yet.")}</p>
             )}
             {friends
               .filter((f) =>
@@ -212,7 +214,7 @@ export default function FriendsPage({
                     <p
                       className={`mt-1 text-sm ${f.online ? "text-green-700" : "text-gray-500"}`}
                     >
-                      {f.online ? "● Online" : "○ Offline"}
+                      {f.online ? tx("● Online") : tx("○ Offline")}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -231,16 +233,14 @@ export default function FriendsPage({
                           onNavigate("chats", { id: c.id });
                         })
                       }
-                    >
-                      Chat
-                    </button>
+                    >{tx("Chat")}</button>
                     <button
                       disabled={busy}
                       className={buttonClass}
                       onClick={() => {
                         if (
                           window.confirm(
-                            `Remove ${f.friend.name} from friends?`,
+                            tx("Remove {name} from friends?", { name: f.friend.name }),
                           )
                         )
                           void act(() =>
@@ -249,16 +249,14 @@ export default function FriendsPage({
                             }),
                           );
                       }}
-                    >
-                      Remove friend
-                    </button>
+                    >{tx("Remove friend")}</button>
                   </div>
                 </div>
               ))}
             {search.trim() && (
               <>
                 {searching && (
-                  <p className="text-sm text-gray-500">Searching adopters…</p>
+                  <p className="text-sm text-gray-500">{tx("Searching adopters…")}</p>
                 )}
                 {!searching &&
                   !results.length &&
@@ -266,7 +264,7 @@ export default function FriendsPage({
                     f.friend.name
                       .toLowerCase()
                       .includes(search.trim().toLowerCase()),
-                  ) && <p>No adopters found.</p>}
+                  ) && <p>{tx("No adopters found.")}</p>}
                 {results
                   .filter((p) => !friends.some((f) => f.friend.id === p.id))
                   .map((person) => {
@@ -288,8 +286,8 @@ export default function FriendsPage({
                             onClick={() => setTab("requests")}
                           >
                             {pending.recipientId === user?.id
-                              ? "Respond to request"
-                              : "Request sent"}
+                              ? tx("Respond to request")
+                              : tx("Request sent")}
                           </button>
                         ) : (
                           <button
@@ -303,9 +301,7 @@ export default function FriendsPage({
                                 }),
                               )
                             }
-                          >
-                            Add friend
-                          </button>
+                          >{tx("Add friend")}</button>
                         )}
                       </div>
                     );

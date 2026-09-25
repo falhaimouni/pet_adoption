@@ -1,3 +1,4 @@
+import { useText } from "../i18n/useText";
 import { useState } from "react";
 import Navbar from "../components/Navbar";
 import { apiFetch } from "../lib/api";
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function VerifyEmailPage({ onNavigate, token, email = "" }: Props) {
+  const tx = useText();
   const { t } = useLanguage();
   const [busy, setBusy] = useState(false);
   const [verified, setVerified] = useState(false);

@@ -1,3 +1,4 @@
+import { useText } from "../../i18n/useText";
 import { useEffect, useMemo, useState } from "react";
 import { ClipboardList, Eye, Filter, Search, X } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
@@ -18,6 +19,7 @@ interface AdoptionRequest {
 interface MyRequestsPageProps { onNavigate: (page: string) => void; }
 
 export default function MyRequestsPage({ onNavigate }: MyRequestsPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const [requests, setRequests] = useState<AdoptionRequest[]>([]);
   const [search, setSearch] = useState("");
@@ -32,7 +34,7 @@ export default function MyRequestsPage({ onNavigate }: MyRequestsPageProps) {
     setError("");
     apiFetch<AdoptionRequest[]>("/adoption/requests")
       .then(setRequests)
-      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load adoption requests."))
+      .catch((err) => setError(err instanceof Error ? err.message : tx("Unable to load adoption requests.")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -50,12 +52,12 @@ export default function MyRequestsPage({ onNavigate }: MyRequestsPageProps) {
   }
 
   return (
-    <DashboardLayout role="adopter" activePage="my-requests" onNavigate={onNavigate} pageTitle="My Requests" breadcrumbs={["My Petopia", "My Requests"]}>
+    <DashboardLayout role="adopter" activePage="my-requests" onNavigate={onNavigate} pageTitle={tx("My Requests")} breadcrumbs={["My Petopia", "My Requests"]}>
       <div className="bg-white rounded-[15px] shadow-md p-5">
         <div className="flex flex-wrap items-center gap-3 mb-5">
           <div className="flex-1 min-w-[180px] relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
-            <input placeholder={t("requests_search_ph")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+            <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
+            <input placeholder={t("requests_search_ph")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full ps-8 pe-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Filter size={15} className="text-[#089D97]" />
@@ -75,7 +77,7 @@ export default function MyRequestsPage({ onNavigate }: MyRequestsPageProps) {
           <EmptyState icon={<ClipboardList size={28} />} title={t("requests_no_found")} description={t("requests_no_found_desc")} action={{ label: t("requests_browse"), onClick: () => onNavigate("pets") }} />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-start">
               <thead>
                 <tr className="border-b border-gray-100">
                   {[t("req_pet"), t("req_species"), t("req_submitted"), t("req_status"), t("req_actions")].map((h) => (
@@ -87,7 +89,7 @@ export default function MyRequestsPage({ onNavigate }: MyRequestsPageProps) {
                 {filtered.map((r) => (
                   <tr key={r.requestId} className="border-b border-gray-50 hover:bg-[rgba(8,157,151,0.04)] transition-colors">
                     <td className="py-3 px-3 font-['Poppins',sans-serif] font-medium text-[14px] text-black">{r.pet.name}</td>
-                    <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{r.pet.species}</td>
+                    <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{tx(r.pet.species)}</td>
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{r.requestDate}</td>
                     <td className="py-3 px-3"><Badge label={r.status.toLowerCase()} variant={statusBadge(r.status.toLowerCase())} /></td>
                     <td className="py-3 px-3">

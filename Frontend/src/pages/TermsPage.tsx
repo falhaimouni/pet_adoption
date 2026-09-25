@@ -1,3 +1,4 @@
+import { useText } from "../i18n/useText";
 import { useState } from "react";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
@@ -12,6 +13,7 @@ interface TermsPageProps {
 }
 
 export default function TermsPage({ onNavigate }: TermsPageProps) {
+  const tx = useText();
   const [agreed, setAgreed] = useState(false);
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -30,7 +32,7 @@ export default function TermsPage({ onNavigate }: TermsPageProps) {
         <div className="relative flex-shrink-0 flex flex-col items-center lg:w-[420px] hidden lg:flex">
           {/* Teal ellipse */}
           <div
-            className="absolute top-[30px] left-[12px] w-[380px] h-[600px] rounded-full pointer-events-none"
+            className="absolute top-[30px] start-[12px] w-[380px] h-[600px] rounded-full pointer-events-none"
             style={{ background: "rgba(8,157,151,0.26)" }}
           />
 
@@ -45,7 +47,7 @@ export default function TermsPage({ onNavigate }: TermsPageProps) {
           <img
             src={pawLeafImg}
             alt=""
-            className="absolute bottom-[40px] left-[60px] w-[168px] h-auto pointer-events-none opacity-80"
+            className="absolute bottom-[40px] start-[60px] w-[168px] h-auto pointer-events-none opacity-80"
           />
         </div>
 
@@ -67,7 +69,7 @@ export default function TermsPage({ onNavigate }: TermsPageProps) {
             <hr className="border-black mb-6" />
 
             {/* Content */}
-            <div className="font-['Poppins',sans-serif] text-[13px] text-black space-y-4 max-h-[420px] overflow-y-auto overflow-x-hidden pr-2 break-words">
+            <div className="font-['Poppins',sans-serif] text-[13px] text-black space-y-4 max-h-[420px] overflow-y-auto overflow-x-hidden pe-2 break-words">
               <section>
                 <h3 className="font-semibold text-[#089D97] text-[15px] mb-1">{t("terms_s1_title")}</h3>
                 <p>{t("terms_s1_body")}</p>
@@ -108,7 +110,7 @@ export default function TermsPage({ onNavigate }: TermsPageProps) {
 
               <section>
                 <h3 className="font-semibold text-[#089D97] text-[15px] mb-1">{t("about_contact_title")}</h3>
-                <p>Email: petadoptionsystem2000@gmail.com</p>
+                <p>{tx("Email: petadoptionsystem2000@gmail.com")}</p>
               </section>
 
               <section>

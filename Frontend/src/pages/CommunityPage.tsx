@@ -1,3 +1,4 @@
+import { useText } from "../i18n/useText";
 import {
   Dialog,
   DialogContent,
@@ -44,24 +45,23 @@ export function PersonIdentity({
   person: Person;
   onClick?: () => void;
 }) {
+  const tx = useText();
   return (
     <button
       type="button"
       disabled={!onClick}
       onClick={onClick}
-      className="flex items-center gap-2 text-left disabled:cursor-default"
+      className="flex items-center gap-2 text-start disabled:cursor-default"
     >
       <AuthenticatedImage
         src={person.avatar}
         fallback={fallback}
         className="h-10 w-10 rounded-full object-cover"
-        alt={`${person.name}'s profile`}
+        alt={tx("Profile of {name}", { name: person.name })}
       />
       <span className="font-semibold">{person.name}</span>
       {person.role === "VET" && (
-        <span className="rounded-full bg-teal-100 px-2 py-1 text-xs text-teal-800">
-          Vet
-        </span>
+        <span className="rounded-full bg-teal-100 px-2 py-1 text-xs text-teal-800">{tx("Vet")}</span>
       )}
     </button>
   );
@@ -73,6 +73,7 @@ export function PublicProfile({
   id: string;
   onClose: () => void;
 }) {
+  const tx = useText();
   const [person, setPerson] = useState<Person>();
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
@@ -98,15 +99,15 @@ export function PublicProfile({
       <section
         role="dialog"
         aria-modal="true"
-        aria-label="User profile"
+        aria-label={tx("User profile")}
         className="relative w-full max-w-md space-y-4 rounded-2xl bg-white p-6 pt-12"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           autoFocus
-          aria-label="Close profile"
-          className="absolute right-3 top-3 rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+          aria-label={tx("Close profile")}
+          className="absolute end-3 top-3 rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
           onClick={onClose}
         >
           <X size={20} aria-hidden="true" />
@@ -140,12 +141,12 @@ export function PublicProfile({
                   }
                 }}
               >
-                {sent ? "Friend request sent" : "Send friend request"}
+                {sent ? tx("Friend request sent") : tx("Send friend request")}
               </button>
             </div>
           </>
         ) : (
-          !error && <p>Loading profile…</p>
+          !error && <p>{tx("Loading profile…")}</p>
         )}
       </section>
     </div>
@@ -156,6 +157,7 @@ export default function CommunityPage({
 }: {
   onNavigate: (page: string) => void;
 }) {
+  const tx = useText();
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [blocked, setBlocked] = useState(false);
@@ -240,14 +242,12 @@ export default function CommunityPage({
       role={user?.role ?? "adopter"}
       activePage="community"
       onNavigate={onNavigate}
-      pageTitle="Community"
+      pageTitle={tx("Community")}
     >
       <div className="w-full space-y-4 pb-20">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm text-gray-600">
-              Ask about pets, share photos, and talk with the community.
-            </p>
+            <p className="text-sm text-gray-600">{tx("Ask about pets, share photos, and talk with the community.")}</p>
           </div>
           {staff && (
             <button
@@ -258,9 +258,7 @@ export default function CommunityPage({
                   setShowBlocks(!showBlocks);
                 })
               }
-            >
-              Manage blocked users
-            </button>
+            >{tx("Manage blocked users")}</button>
           )}
         </div>
         {error && (
@@ -271,10 +269,10 @@ export default function CommunityPage({
         <Dialog open={showBlocks} onOpenChange={setShowBlocks}>
           <DialogContent className="max-h-[80dvh] overflow-y-auto bg-white">
             <DialogHeader>
-              <DialogTitle>Blocked users</DialogTitle>
-              <DialogDescription>Manage access to Community.</DialogDescription>
+              <DialogTitle>{tx("Blocked users")}</DialogTitle>
+              <DialogDescription>{tx("Manage access to Community.")}</DialogDescription>
             </DialogHeader>
-            {!blocks.length && <p>No blocked users.</p>}
+            {!blocks.length && <p>{tx("No blocked users.")}</p>}
             {blocks.map((b) => (
               <div
                 key={b.user.id}
@@ -292,26 +290,22 @@ export default function CommunityPage({
                       setBlocks(await apiFetch("/community/blocks"));
                     })
                   }
-                >
-                  Unblock
-                </button>
+                >{tx("Unblock")}</button>
               </div>
             ))}
           </DialogContent>
         </Dialog>
         {blocked ? (
-          <p role="alert" className="rounded-xl bg-white p-8">
-            You are blocked from Community.
-          </p>
+          <p role="alert" className="rounded-xl bg-white p-8">{tx("You are blocked from Community.")}</p>
         ) : (
           <>
             <section
-              aria-label="Community messages"
+              aria-label={tx("Community messages")}
               className="space-y-4 rounded-xl bg-white p-4 sm:p-6"
             >
-              {loading && <p>Loading Community…</p>}
+              {loading && <p>{tx("Loading Community…")}</p>}
               {!loading && !messages.length && (
-                <p>No messages yet. Start the conversation!</p>
+                <p>{tx("No messages yet. Start the conversation!")}</p>
               )}
               {hasOlder && (
                 <button
@@ -322,9 +316,7 @@ export default function CommunityPage({
                       pages.current += 1;
                     })
                   }
-                >
-                  Load older messages
-                </button>
+                >{tx("Load older messages")}</button>
               )}
               {messages.map((m) => {
                 const own = m.sender.id === user?.id;
@@ -346,12 +338,12 @@ export default function CommunityPage({
                       <AuthenticatedImage
                         src={m.sender.avatar}
                         fallback={fallback}
-                        alt={`${m.sender.name}'s profile`}
+                        alt={tx("Profile of {name}", { name: m.sender.name })}
                         className="h-10 w-10 rounded-full object-cover"
                       />
                     </button>
                     <div
-                      className={`group relative min-w-0 max-w-[85%] space-y-2 rounded-xl p-3 pr-12 ${own ? "bg-teal-50" : "bg-gray-50"}`}
+                      className={`group relative min-w-0 max-w-[85%] space-y-2 rounded-xl p-3 pe-12 ${own ? "bg-teal-50" : "bg-gray-50"}`}
                     >
                       {!own && (
                         <button
@@ -364,16 +356,12 @@ export default function CommunityPage({
                         >
                           {m.sender.name}{" "}
                           {m.sender.role === "VET" && (
-                            <span className="rounded-full bg-teal-100 px-2 py-1 text-xs text-teal-800">
-                              Vet
-                            </span>
+                            <span className="rounded-full bg-teal-100 px-2 py-1 text-xs text-teal-800">{tx("Vet")}</span>
                           )}
                         </button>
                       )}
                       {m.deletedAt ? (
-                        <p className="italic text-gray-500">
-                          This message has been deleted.
-                        </p>
+                        <p className="italic text-gray-500">{tx("This message has been deleted.")}</p>
                       ) : (
                         <>
                           {m.reply && (
@@ -389,22 +377,22 @@ export default function CommunityPage({
                           {m.image && (
                             <AuthenticatedImage
                               src={m.image}
-                              alt="Community photo"
+                              alt={tx("Community photo")}
                               className="max-h-80 max-w-full rounded-lg object-contain"
                             />
                           )}
                         </>
                       )}
                       <p className="text-xs text-gray-500">
-                        {new Date(m.createdAt).toLocaleString()}
+                        {new Date(m.createdAt).toLocaleString(document.documentElement.lang)}
                       </p>
                       {(!m.deletedAt || (staff && !own)) && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
                               type="button"
-                              aria-label="Message options"
-                              className="absolute right-2 top-2 !mt-0 rounded-full p-1 text-gray-500 opacity-0 transition-opacity hover:bg-black/5 focus-visible:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 data-[state=open]:opacity-100 [@media(hover:none)]:opacity-100"
+                              aria-label={tx("Message options")}
+                              className="absolute end-2 top-2 !mt-0 rounded-full p-1 text-gray-500 opacity-0 transition-opacity hover:bg-black/5 focus-visible:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 data-[state=open]:opacity-100 [@media(hover:none)]:opacity-100"
                             >
                               <ChevronDown size={18} aria-hidden="true" />
                             </button>
@@ -423,14 +411,10 @@ export default function CommunityPage({
                                     }),
                                   )
                                 }
-                              >
-                                Delete
-                              </DropdownMenuItem>
+                              >{tx("Delete")}</DropdownMenuItem>
                             )}
                             {!m.deletedAt && (
-                              <DropdownMenuItem onSelect={() => setReply(m)}>
-                                Reply
-                              </DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => setReply(m)}>{tx("Reply")}</DropdownMenuItem>
                             )}
                             {staff && !own && (
                               <DropdownMenuItem
@@ -438,7 +422,7 @@ export default function CommunityPage({
                                 onSelect={() => {
                                   if (
                                     window.confirm(
-                                      `Block ${m.sender.name} from Community?`,
+                                      tx("Block {name} from Community?", { name: m.sender.name }),
                                     )
                                   )
                                     void action(() =>
@@ -450,9 +434,7 @@ export default function CommunityPage({
                                       }),
                                     );
                                 }}
-                              >
-                                Block user
-                              </DropdownMenuItem>
+                              >{tx("Block user")}</DropdownMenuItem>
                             )}
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -468,10 +450,8 @@ export default function CommunityPage({
             >
               {reply && (
                 <div className="flex justify-between text-sm">
-                  <span>Replying to {reply.sender.name}</span>
-                  <button type="button" onClick={() => setReply(undefined)}>
-                    Cancel reply
-                  </button>
+                  <span>{tx("Replying to")}{" "}<bdi>{reply.sender.name}</bdi></span>
+                  <button type="button" onClick={() => setReply(undefined)}>{tx("Cancel reply")}</button>
                 </div>
               )}
               {photo && (
@@ -479,7 +459,7 @@ export default function CommunityPage({
                   <span className="truncate">{photo.name}</span>
                   <button
                     type="button"
-                    aria-label="Remove attached photo"
+                    aria-label={tx("Remove attached photo")}
                     onClick={() => {
                       setPhoto(undefined);
                       if (input.current) input.current.value = "";
@@ -492,13 +472,13 @@ export default function CommunityPage({
               <div className="flex items-center gap-2">
                 <div className="relative min-w-0 flex-1">
                   <textarea
-                    aria-label="Community message"
+                    aria-label={tx("Community message")}
                     maxLength={4000}
                     value={text}
                     onChange={(e) => setText(e.target.value)}
-                    placeholder="Write a message…"
+                    placeholder={tx("Write a message…")}
                     rows={1}
-                    className="block min-h-11 w-full resize-none rounded-full border border-black/10 bg-gray-50 py-3 pl-4 pr-12 text-sm outline-none focus:border-teal-500"
+                    className="block min-h-11 w-full resize-none rounded-full border border-black/10 bg-gray-50 py-3 ps-4 pe-12 text-sm outline-none focus:border-teal-500"
                     onKeyDown={(e) => {
                       if (
                         e.key === "Enter" &&
@@ -513,23 +493,23 @@ export default function CommunityPage({
                   />
                   <button
                     type="button"
-                    aria-label="Upload photo"
-                    title="Upload photo (PNG, JPEG, WebP; max 5 MB)"
+                    aria-label={tx("Upload photo")}
+                    title={tx("Upload photo (PNG, JPEG, WebP; max 5 MB)")}
                     onClick={() => input.current?.click()}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-2 text-teal-700 hover:bg-teal-100"
+                    className="absolute end-2 top-1/2 -translate-y-1/2 rounded-full p-2 text-teal-700 hover:bg-teal-100"
                   >
                     <Plus size={20} />
                   </button>
                   <input
                     ref={input}
                     type="file"
-                    aria-label="Community photo"
+                    aria-label={tx("Community photo")}
                     accept="image/png,image/jpeg,image/webp"
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file && file.size > 5 * 1024 * 1024) {
-                        setError("Photos must be 5 MB or smaller");
+                        setError(tx("Photos must be 5 MB or smaller"));
                         e.target.value = "";
                         setPhoto(undefined);
                       } else setPhoto(file);
@@ -538,7 +518,7 @@ export default function CommunityPage({
                 </div>
                 <button
                   type="submit"
-                  aria-label="Send"
+                  aria-label={tx("Send")}
                   disabled={busy || (!text.trim() && !photo)}
                   className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#089D97] text-white hover:bg-teal-700 disabled:opacity-50"
                 >

@@ -1,3 +1,4 @@
+import { useText } from "../../i18n/useText";
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Edit, Trash2, Syringe } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -33,6 +34,7 @@ function displayStatus(vaccine: Vaccination) {
 }
 
 export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinationsPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const routePetId = params?.petId;
   const [selectedPetId, setSelectedPetId] = useState(routePetId ?? "");
@@ -173,7 +175,7 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
               <label className="block font-['Poppins',sans-serif] text-[12px] text-black/60 mb-1">{t("req_pet")}</label>
               <select value={selectedPetId} onChange={(e) => setSelectedPetId(e.target.value)} disabled={petsLoading || pets.length === 0} className="w-full border border-gray-200 rounded-[10px] px-3 py-2 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] bg-white transition-colors disabled:opacity-60">
                 <option value="">{petsLoading ? t("loading_pets") : pets.length === 0 ? t("no_pets_available") : t("choose_pet")}</option>
-                {pets.map((item) => <option key={item.petId} value={item.petId}>{item.name} - {item.species}{item.breed ? `, ${item.breed}` : ""}</option>)}
+                {pets.map((item) => <option key={item.petId} value={item.petId}>{item.name} - {tx(item.species)}{item.breed ? `, ${item.breed}` : ""}</option>)}
               </select>
               {petsError && <p className="mt-2 font-['Poppins',sans-serif] text-[12px] text-red-600">{petsError}</p>}
             </div>
@@ -187,7 +189,7 @@ export default function VetVaccinationsPage({ onNavigate, params }: VetVaccinati
             <EmptyState icon={<Syringe size={28} />} title={t("vaccinations_empty_title")} description={t("vaccinations_empty_desc")} />
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="w-full text-start">
                 <thead>
                   <tr className="border-b border-gray-100">
                     {[t("th_vaccine"), t("th_date_given"), t("th_next_due"), t("th_batch"), t("role_vet"), t("th_status"), t("th_notes"), t("th_actions")].map((h) => (

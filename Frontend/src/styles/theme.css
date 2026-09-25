@@ -2,6 +2,16 @@
 
 :root {
   --font-size: 16px;
+  --font-body: 'Poppins', 'Inter', sans-serif;
+  --font-heading: 'Prata', serif;
+  --font-arabic: 'Cairo', sans-serif;
+  --primary-hover: #047975;
+  --success: #15803d;
+  --warning: #b45309;
+  --info: #2563eb;
+  --radius-control: 10px;
+  --radius-card: 15px;
+  --radius-dialog: 20px;
   --background: #f0f8f7;
   --foreground: #1a2e2d;
   --card: #ffffff;
@@ -86,6 +96,11 @@
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --font-sans: var(--font-body);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -126,6 +141,7 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body);
   }
 
   /**
@@ -279,35 +295,6 @@
   font-family: 'Cairo', 'Tajawal', 'Poppins', sans-serif;
 }
 
-[dir="rtl"] [class*="text-left"] {
-  text-align: right !important;
-}
-
-[dir="rtl"] [class*="ml-auto"] {
-  margin-left: unset !important;
-  margin-right: auto !important;
-}
-
-[dir="rtl"] [class*="mr-auto"] {
-  margin-right: unset !important;
-  margin-left: auto !important;
-}
-
-[dir="rtl"] [class*="text-start"] {
-  text-align: right !important;
-}
-
-[dir="rtl"] .petopia-popover {
-  right: auto !important;
-  left: 0 !important;
-}
-
-[dir="rtl"] .dashboard-sidebar {
-  margin-left: 0 !important;
-  margin-right: 14px !important;
-  border-radius: 10px;
-}
-
 [dir="rtl"] .lucide-arrow-left,
 [dir="rtl"] .lucide-arrow-right,
 [dir="rtl"] .lucide-chevron-left,
@@ -321,6 +308,7 @@
   text-align: right;
 }
 
+[dir="rtl"] input[dir="ltr"],
 [dir="rtl"] input[type="email"],
 [dir="rtl"] input[type="url"],
 [dir="rtl"] input[type="tel"],
@@ -330,22 +318,7 @@
   text-align: left;
 }
 
-[dir="rtl"] .absolute.left-3 {
-  left: auto !important;
-  right: 0.75rem !important;
-}
 
-[dir="rtl"] .absolute.left-4 {
-  left: auto !important;
-  right: 1rem !important;
-}
-
-[dir="rtl"] .pl-11 {
-  padding-left: 1rem !important;
-  padding-right: 2.75rem !important;
-}
-
-[dir="rtl"] .pl-12 {
-  padding-left: 1rem !important;
-  padding-right: 3rem !important;
-}
+/* Logical utilities handle spacing, positioning and borders in both directions. */
+html[lang="ar"] body { font-family: 'Cairo', sans-serif; }
+html[lang="ar"] .recharts-wrapper { direction: ltr; }

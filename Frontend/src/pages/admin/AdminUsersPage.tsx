@@ -1,3 +1,4 @@
+import { useText } from "../../i18n/useText";
 import { formSchemas, validateFields, validationMessage } from "../../lib/formValidation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Edit, Eye, RefreshCw, UserPlus, Camera, UserX } from "lucide-react";
@@ -132,6 +133,7 @@ function departmentFallbackFromUsers(users: UserRecord[]): DepartmentOption[] {
 interface AdminUsersPageProps { onNavigate: (page: string) => void; role?: Extract<UserRole, "admin" | "manager">; activePage?: string; }
 
 export default function AdminUsersPage({ onNavigate, role = "admin", activePage = "admin-users" }: AdminUsersPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [search, setSearch] = useState("");
@@ -180,9 +182,9 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
   const filtered = visibleUsers.filter((u) => {
     const name = `${u.firstName} ${u.lastName}`.toLowerCase();
     const ms = name.includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
-    const mr = roleFilter === "all" || roleLabel(u.role?.roleName) === roleFilter;
+    const me = roleFilter === "all" || roleLabel(u.role?.roleName) === roleFilter;
     const mt = statusFilter === "all" || u.status === statusFilter;
-    return ms && mr && mt;
+    return ms && me && mt;
   });
 
   function loadUsers(nextStatus: string = statusFilter) {
@@ -437,8 +439,8 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
       <div className="bg-white rounded-[15px] shadow-md p-5">
         <div className="flex flex-wrap gap-3 mb-5 items-center">
           <div className="flex-1 min-w-[200px] relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
-            <input placeholder={t("search_name_email")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+            <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
+            <input placeholder={t("search_name_email")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full ps-8 pe-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
           </div>
           <div className="flex gap-2 flex-wrap">
             {filterRoles.map((r) => (
@@ -469,7 +471,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
           <EmptyState icon={<Search size={28} />} title={t("users_empty_title")} description={t("users_empty_desc")} />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-start">
               <thead>
                 <tr className="border-b border-gray-100">
                   {[t("table_user"), t("table_email"), t("table_role"), t("table_status"), t("table_joined"), t("table_last_active"), t("table_actions")].map((h) => (
@@ -541,7 +543,7 @@ export default function AdminUsersPage({ onNavigate, role = "admin", activePage 
             {[[t("field_email"), viewUser.email], [t("field_phone"), viewUser.phone ?? "-"], [t("field_status"), t(`status_${viewUser.status}`)], [t("field_department"), viewUser.employeeProfile?.department?.departmentName ?? "-"], [t("field_joined"), viewUser.createdAt?.slice(0, 10) ?? "-"], [t("field_last_active"), viewUser.updatedAt?.slice(0, 10) ?? "-"]].map(([k, v]) => (
               <div key={k} className="flex justify-between gap-4 text-[13px] font-['Poppins',sans-serif] border-b border-gray-50 pb-2">
                 <span className="text-black/50">{k}</span>
-                <span className="font-medium text-black text-right">{v}</span>
+                <span className="font-medium text-black text-end">{v}</span>
               </div>
             ))}
           </div>

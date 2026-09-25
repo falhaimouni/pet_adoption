@@ -1,3 +1,4 @@
+import { useText } from "../i18n/useText";
 import { useEffect, useMemo, useState } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import Navbar from "../components/Navbar";
@@ -59,6 +60,7 @@ function mapSupplyToProduct(supply: StoreSupply): Product {
 }
 
 export default function ShopPage({ onNavigate, embedded = false }: ShopPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const { count } = useCart();
   const { isAuthenticated, user } = useAuth();
@@ -136,14 +138,14 @@ export default function ShopPage({ onNavigate, embedded = false }: ShopPageProps
             <p className="font-['Poppins',sans-serif] text-[15px] text-white/80">{t("shop_supplies_subtitle")}</p>
           </div>
           <div className="relative flex-1 lg:max-w-sm">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#089D97]" />
+            <Search size={16} className="absolute start-4 top-1/2 -translate-y-1/2 text-[#089D97]" />
             <input
               placeholder={t("shop_search_ph")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 rounded-[14px] bg-white text-[#1a2e2d] font-['Poppins',sans-serif] text-[14px] outline-none shadow-lg placeholder-gray-400"
+              className="w-full ps-11 pe-4 py-3 rounded-[14px] bg-white text-[#1a2e2d] font-['Poppins',sans-serif] text-[14px] outline-none shadow-lg placeholder-gray-400"
             />
-            {search && <button onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><X size={14} /></button>}
+            {search && <button onClick={() => setSearch("")} className="absolute end-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><X size={14} /></button>}
           </div>
         </div>
       </div>

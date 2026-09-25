@@ -134,10 +134,10 @@ export default function StaffChatDetailPage({ onNavigate, conversationId, role =
                 const fromMe = m.senderId !== conversation.adopter.userId;
                 return (
                   <div key={m.messageId} className={`flex ${fromMe ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[88%] sm:max-w-[75%] rounded-[16px] px-4 py-2.5 ${fromMe ? "bg-[#089D97] text-white rounded-tr-[4px]" : "bg-white text-black shadow-sm rounded-tl-[4px]"}`}>
+                    <div className={`max-w-[88%] sm:max-w-[75%] rounded-[16px] px-4 py-2.5 ${fromMe ? "bg-[#089D97] text-white rounded-se-[4px]" : "bg-white text-black shadow-sm rounded-ss-[4px]"}`}>
                       {(role === "admin" || role === "manager") && fromMe && m.sender && <p className="text-[10px] font-semibold mb-1">{m.sender.firstName} {m.sender.lastName}</p>}
                       <p className="font-['Poppins',sans-serif] text-[13px] leading-relaxed whitespace-pre-wrap break-words">{m.messageText}</p>
-                      <span className={`block text-right font-['Poppins',sans-serif] text-[10px] mt-1 ${fromMe ? "text-white/70" : "text-black/40"}`}>{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                      <span className={`block text-end font-['Poppins',sans-serif] text-[10px] mt-1 ${fromMe ? "text-white/70" : "text-black/40"}`}>{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                     </div>
                   </div>
                 );

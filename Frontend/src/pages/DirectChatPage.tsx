@@ -1,3 +1,4 @@
+import { useText } from "../i18n/useText";
 import AuthenticatedImage from "../components/AuthenticatedImage";
 import fallback from "../assets/default-avatar.svg";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
@@ -30,6 +31,7 @@ export default function DirectChatPage({
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
   conversationId?: string;
 }) {
+  const tx = useText();
   const { user } = useAuth();
   const [friends, setFriends] = useState<{ friend: Person; online: boolean }[]>(
     [],
@@ -165,40 +167,40 @@ export default function DirectChatPage({
             <p className="text-[13px] font-semibold text-black truncate">{friend.name}</p>
             <span className={`flex items-center gap-1.5 text-[10px] shrink-0 ${isOnline ? "text-emerald-600" : "text-black/40"}`}>
               <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? "bg-emerald-500" : "bg-black/30"}`} />
-              {isOnline ? "Online" : "Offline"}
+              {isOnline ? tx("Online") : tx("Offline")}
             </span>
           </div>
-          <p className="text-[12px] truncate text-black/50">{chat?.lastMessage || "Start chatting"}</p>
+          <p className="text-[12px] truncate text-black/50">{chat?.lastMessage || tx("Start chatting")}</p>
         </div>
       </button>
     );
   }
 
   return (
-    <DashboardLayout role="adopter" activePage="chats" onNavigate={onNavigate} pageTitle="Private Chat">
+    <DashboardLayout role="adopter" activePage="chats" onNavigate={onNavigate} pageTitle={tx("Private Chat")}>
       <div className={`w-full bg-white rounded-[15px] shadow-md overflow-hidden font-['Poppins',sans-serif] ${conversationId ? "flex flex-col h-[min(720px,calc(100dvh-128px))] min-h-[420px]" : ""}`}>
         {!conversationId ? (
           <>
             <div className="p-4 border-b border-gray-100">
               <div className="relative">
                 <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
-                <input type="search" aria-label="Search friends" placeholder="Search friends…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-full ps-8 pe-3 py-2 bg-[rgba(8,157,151,0.06)] rounded-[10px] text-[13px] outline-none focus:ring-1 focus:ring-[#089D97] transition-all" />
+                <input type="search" aria-label={tx("Search friends")} placeholder={tx("Search friends…")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full ps-8 pe-3 py-2 bg-[rgba(8,157,151,0.06)] rounded-[10px] text-[13px] outline-none focus:ring-1 focus:ring-[#089D97] transition-all" />
               </div>
             </div>
             {error && <p role="alert" className="px-4 py-2 text-[12px] text-red-600 bg-red-50">{error}</p>}
             {loading ? (
-              <div role="status" aria-label="Loading conversations" className="p-4 space-y-2">{[1, 2, 3].map((n) => <div key={n} className="h-16 rounded-[12px] bg-[#f0f8f7] animate-pulse" />)}</div>
+              <div role="status" aria-label={tx("Loading conversations")} className="p-4 space-y-2">{[1, 2, 3].map((n) => <div key={n} className="h-16 rounded-[12px] bg-[#f0f8f7] animate-pulse" />)}</div>
             ) : (
               <>
                 {filteredFriends.map(({ friend, online }) => conversationRow(friend, conversations.find((chat) => chat.friend.id === friend.id), online))}
                 {previousConversations.length > 0 && (
                   <>
-                    <p className="px-4 py-2 text-[11px] text-black/45 bg-[rgba(8,157,151,0.04)]">Previous conversations</p>
+                    <p className="px-4 py-2 text-[11px] text-black/45 bg-[rgba(8,157,151,0.04)]">{tx("Previous conversations")}</p>
                     {previousConversations.map((chat) => conversationRow(chat.friend, chat))}
                   </>
                 )}
                 {!filteredFriends.length && !previousConversations.length && (
-                  <EmptyState icon={<MessageCircle size={28} />} title={query ? "No conversations found" : "No conversations yet"} description={query ? "Try searching for another friend's name." : "Add friends in the community to start a private conversation."} />
+                  <EmptyState icon={<MessageCircle size={28} />} title={query ? tx("No conversations found") : tx("No conversations yet")} description={query ? tx("Try searching for another friend's name.") : tx("Add friends in the community to start a private conversation.")} />
                 )}
               </>
             )}
@@ -206,32 +208,32 @@ export default function DirectChatPage({
         ) : (
           <>
             <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white">
-              <button type="button" onClick={() => onNavigate("chats")} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label="Back to chats"><ArrowLeft size={20} /></button>
+              <button type="button" onClick={() => onNavigate("chats")} className="text-[#089D97] hover:text-[#047975] transition-colors" aria-label={tx("Back to chats")}><ArrowLeft size={20} /></button>
               {current ? (
-                <button onClick={() => setProfile(current.friend.id)} className="flex items-center gap-3 min-w-0 text-start rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#089D97]" aria-label={`View ${current.friend.name}'s profile`}>
+                <button onClick={() => setProfile(current.friend.id)} className="flex items-center gap-3 min-w-0 text-start rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#089D97]" aria-label={tx("Profile of {name}", { name: current.friend.name })}>
                   <AuthenticatedImage src={current.friend.avatar} fallback={fallback} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
                   <span className="min-w-0">
                     <span className="block truncate font-semibold text-[14px] text-black">{current.friend.name}</span>
-                    <span className={`flex items-center gap-1.5 text-[10px] ${online ? "text-emerald-600" : "text-black/45"}`}><span className={`h-1.5 w-1.5 rounded-full ${online ? "bg-emerald-500" : "bg-black/30"}`} />{online ? "Online" : "Offline"}</span>
+                    <span className={`flex items-center gap-1.5 text-[10px] ${online ? "text-emerald-600" : "text-black/45"}`}><span className={`h-1.5 w-1.5 rounded-full ${online ? "bg-emerald-500" : "bg-black/30"}`} />{online ? tx("Online") : tx("Offline")}</span>
                   </span>
                 </button>
-              ) : <p className="font-semibold text-[14px]">Private Chat</p>}
+              ) : <p className="font-semibold text-[14px]">{tx("Private Chat")}</p>}
             </div>
-            <div ref={messagesRef} aria-label="Private messages" className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3 bg-[rgba(186,216,211,0.15)]">
+            <div ref={messagesRef} aria-label={tx("Private messages")} className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3 bg-[rgba(186,216,211,0.15)]">
               {loading ? (
-                <div role="status" aria-label="Loading messages" className="space-y-3">{[1, 2, 3].map((n) => <div key={n} className="h-12 rounded-[16px] bg-white animate-pulse" />)}</div>
+                <div role="status" aria-label={tx("Loading messages")} className="space-y-3">{[1, 2, 3].map((n) => <div key={n} className="h-12 rounded-[16px] bg-white animate-pulse" />)}</div>
               ) : (
                 <>
-                  {older && messages.length > 0 && <div className="text-center"><button disabled={busy} onClick={loadOlder} className="rounded-full bg-white px-4 py-2 text-[12px] text-[#089D97] shadow-sm hover:bg-teal-50 disabled:opacity-40">Load older messages</button></div>}
-                  {!messages.length && !error && <EmptyState icon={<MessageCircle size={28} />} title="No messages yet" description="Start your private conversation with a friendly hello." />}
+                  {older && messages.length > 0 && <div className="text-center"><button disabled={busy} onClick={loadOlder} className="rounded-full bg-white px-4 py-2 text-[12px] text-[#089D97] shadow-sm hover:bg-teal-50 disabled:opacity-40">{tx("Load older messages")}</button></div>}
+                  {!messages.length && !error && <EmptyState icon={<MessageCircle size={28} />} title={tx("No messages yet")} description={tx("Start your private conversation with a friendly hello.")} />}
                   {messages.map((m) => {
                     const fromMe = m.senderId === user?.id;
                     return (
                       <article key={m.id} className={`flex ${fromMe ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[88%] sm:max-w-[75%] rounded-[16px] px-4 py-2.5 ${fromMe ? "bg-[#089D97] text-white rounded-tr-[4px]" : "bg-white text-black shadow-sm rounded-tl-[4px]"}`}>
+                        <div className={`max-w-[88%] sm:max-w-[75%] rounded-[16px] px-4 py-2.5 ${fromMe ? "bg-[#089D97] text-white rounded-se-[4px]" : "bg-white text-black shadow-sm rounded-ss-[4px]"}`}>
                           <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">{m.text}</p>
-                          <p className={`block text-right text-[10px] mt-1 ${fromMe ? "text-white/70" : "text-black/40"}`}>
-                            <time dateTime={m.createdAt} title={new Date(m.createdAt).toLocaleString()}>{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time>
+                          <p className={`block text-end text-[10px] mt-1 ${fromMe ? "text-white/70" : "text-black/40"}`}>
+                            <time dateTime={m.createdAt} title={new Date(m.createdAt).toLocaleString(document.documentElement.lang)}>{new Date(m.createdAt).toLocaleTimeString(document.documentElement.lang, { hour: "2-digit", minute: "2-digit" })}</time>
                             {fromMe && (m.readAt ? " · Read" : " · Sent")}
                           </p>
                         </div>
@@ -245,15 +247,15 @@ export default function DirectChatPage({
             <div className="px-4 py-3 border-t border-gray-100 bg-white">
               {current?.canSend ? (
                 <form onSubmit={send} className="flex items-center gap-2">
-                  <textarea aria-label="Private message" value={text} maxLength={4000} rows={1} onKeyDown={(e) => {
+                  <textarea aria-label={tx("Private message")} value={text} maxLength={4000} rows={1} onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                       e.preventDefault();
                       if (!e.repeat) e.currentTarget.form?.requestSubmit();
                     }
-                  }} onChange={(e) => setText(e.target.value)} className="min-w-0 flex-1 resize-none bg-[rgba(8,157,151,0.06)] rounded-[20px] px-4 py-2.5 text-[13px] outline-none focus:ring-1 focus:ring-[#089D97] transition-all" placeholder="Write a private message…" />
-                  <button type="submit" aria-label="Send message" disabled={busy || !text.trim()} className="w-[38px] h-[38px] bg-[#089D97] disabled:opacity-40 rounded-full flex items-center justify-center text-white hover:bg-[#047975] transition-colors shrink-0"><Send size={16} /></button>
+                  }} onChange={(e) => setText(e.target.value)} className="min-w-0 flex-1 resize-none bg-[rgba(8,157,151,0.06)] rounded-[20px] px-4 py-2.5 text-[13px] outline-none focus:ring-1 focus:ring-[#089D97] transition-all" placeholder={tx("Write a private message…")} />
+                  <button type="submit" aria-label={tx("Send message")} disabled={busy || !text.trim()} className="w-[38px] h-[38px] bg-[#089D97] disabled:opacity-40 rounded-full flex items-center justify-center text-white hover:bg-[#047975] transition-colors shrink-0"><Send size={16} /></button>
                 </form>
-              ) : !loading && <p className="text-[12px] text-black/50">You must be friends to send messages. Previous messages remain available.</p>}
+              ) : !loading && <p className="text-[12px] text-black/50">{tx("You must be friends to send messages. Previous messages remain available.")}</p>}
             </div>
           </>
         )}

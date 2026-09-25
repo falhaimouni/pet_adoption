@@ -1,3 +1,4 @@
+import { useText } from "../../i18n/useText";
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle, ClipboardList, Eye, Search, XCircle } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -20,6 +21,7 @@ interface AdoptionRequest {
 interface StaffRequestsPageProps { onNavigate: (page: string) => void; role?: UserRole; activePage?: string; }
 
 export default function StaffRequestsPage({ onNavigate, role = "employee", activePage = "staff-requests" }: StaffRequestsPageProps) {
+  const tx = useText();
   const { t } = useLanguage();
   const [requests, setRequests] = useState<AdoptionRequest[]>([]);
   const [search, setSearch] = useState("");
@@ -64,8 +66,8 @@ export default function StaffRequestsPage({ onNavigate, role = "employee", activ
       <div className="bg-white rounded-[15px] shadow-md p-5">
         <div className="flex flex-wrap gap-3 mb-5 items-center">
           <div className="flex-1 min-w-[180px] relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
-            <input placeholder={t("staff_search_adopter")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
+            <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#089D97]" />
+            <input placeholder={t("staff_search_adopter")} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full ps-8 pe-3 py-2 border border-gray-200 rounded-[10px] font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] transition-colors" />
           </div>
           <div className="flex gap-2 flex-wrap">
             {["all", "pending", "approved", "rejected", "cancelled"].map((s) => (
@@ -82,7 +84,7 @@ export default function StaffRequestsPage({ onNavigate, role = "employee", activ
           <EmptyState icon={<ClipboardList size={28} />} title={t("requests_no_found")} description={t("requests_no_match_desc")} />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-start">
               <thead>
                 <tr className="border-b border-gray-100">
                   {[t("th_adopter"), t("th_pet"), t("th_species"), t("th_submitted"), t("th_status"), t("th_actions")].map((h) => <th key={h} className="py-2.5 px-3 font-['Poppins',sans-serif] font-semibold text-[11px] text-black/50 uppercase tracking-wider whitespace-nowrap">{h}</th>)}
@@ -93,7 +95,7 @@ export default function StaffRequestsPage({ onNavigate, role = "employee", activ
                   <tr key={r.requestId} className="border-b border-gray-50 hover:bg-[rgba(8,157,151,0.03)] transition-colors">
                     <td className="py-3 px-3 font-['Poppins',sans-serif] font-medium text-[13px] text-black">{r.adopter.firstName} {r.adopter.lastName}</td>
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{r.pet.name}</td>
-                    <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{r.pet.species}</td>
+                    <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{tx(r.pet.species)}</td>
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/60">{r.requestDate}</td>
                     <td className="py-3 px-3"><Badge label={r.status.toLowerCase()} variant={statusBadge(r.status.toLowerCase())} /></td>
                     <td className="py-3 px-3">

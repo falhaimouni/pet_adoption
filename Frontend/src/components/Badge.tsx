@@ -9,7 +9,7 @@ interface BadgeProps {
 }
 
 const variants: Record<BadgeVariant, string> = {
-  teal: "bg-[rgba(8,157,151,0.12)] text-[#089D97] border border-[#089D97]",
+  teal: "bg-[rgba(8,157,151,0.12)] text-primary border border-primary",
   success: "bg-green-50 text-green-700 border border-green-300",
   pending: "bg-yellow-50 text-yellow-700 border border-yellow-300",
   rejected: "bg-red-50 text-red-600 border border-red-300",

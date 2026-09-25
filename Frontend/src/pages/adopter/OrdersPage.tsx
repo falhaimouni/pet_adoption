@@ -1,3 +1,4 @@
+import { useText } from "../../i18n/useText";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, PackageCheck } from "lucide-react";
 import type { OrderDto } from "@shared/dto/order.dto";
@@ -19,6 +20,7 @@ interface OrdersPageProps {
 }
 
 export default function OrdersPage({ onNavigate, orderId }: OrdersPageProps) {
+  const tx = useText();
   const { t, lang } = useLanguage();
   const { refreshCart } = useCart();
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
