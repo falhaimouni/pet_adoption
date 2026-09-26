@@ -147,6 +147,7 @@ export class NotificationsGateway
     if (
       !user ||
       user.status !== 'active' ||
+      user.emailVerified === false ||
       !user.role ||
       user.role.isActive === false ||
       payload.tokenVersion !== user.refreshTokenVersion

@@ -72,7 +72,8 @@ help:
 up:
 	@printf "\n"
 	@printf "%b\n" "$(CYAN)▶ Starting Pet Adoption...$(RESET)"
-	@$(COMPOSE) up -d --build
+	@$(COMPOSE) build
+	@$(COMPOSE) up -d
 
 	@printf "\n"
 	@printf "%b\n" "$(CYAN)▶ Waiting for Petopia to be ready...$(RESET)"

@@ -12,6 +12,7 @@ interface Adoption {
   adoptionId: string;
   adoptionDate: string;
   contractStatus: string;
+  request: { status: string };
   adopter: { firstName: string; lastName: string };
   pet: { name: string; species: string; adoptionStatus: string };
 }
@@ -58,7 +59,7 @@ export default function StaffAdoptionsPage({ onNavigate, role = "employee", acti
             <table className="w-full text-start">
               <thead>
                 <tr className="border-b border-gray-100">
-                  {[t("th_adopter"), t("th_pet"), t("th_species"), t("th_adoption_date"), t("adoptions_contract")].map((h) => <th key={h} className="py-2.5 px-3 font-['Poppins',sans-serif] font-semibold text-[11px] text-black/50 uppercase tracking-wider whitespace-nowrap">{h}</th>)}
+                  {[t("th_adopter"), t("th_pet"), t("th_species"), t("th_adoption_date"), t("req_status"), t("adoptions_contract")].map((h) => <th key={h} className="py-2.5 px-3 font-['Poppins',sans-serif] font-semibold text-[11px] text-black/50 uppercase tracking-wider whitespace-nowrap">{h}</th>)}
                 </tr>
               </thead>
               <tbody>
@@ -68,6 +69,7 @@ export default function StaffAdoptionsPage({ onNavigate, role = "employee", acti
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{a.pet.name}</td>
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{tx(a.pet.species)}</td>
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/60">{a.adoptionDate}</td>
+                    <td className="py-3 px-3"><Badge label={a.request.status.toLowerCase()} variant={statusBadge(a.request.status.toLowerCase())} /></td>
                     <td className="py-3 px-3"><Badge label={a.contractStatus.toLowerCase()} variant={statusBadge(a.contractStatus.toLowerCase())} /></td>
                   </tr>
                 ))}

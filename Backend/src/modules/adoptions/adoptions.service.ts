@@ -143,8 +143,8 @@ export class AdoptionsService {
   async findRequests(user: RequestUser): Promise<AdoptionRequestResponse[]> {
     const where =
       user.role === 'ADOPTER'
-        ? { adopter: { userId: user.userId } }
-        : undefined;
+        ? { adopter: { userId: user.userId, user: { emailVerified: true } } }
+        : { adopter: { user: { emailVerified: true } } };
 
     const requests = await this.adoptionRequestRepo.find({
       where,
@@ -165,10 +165,11 @@ export class AdoptionsService {
       .leftJoinAndSelect('adopter.user', 'adopterUser')
       .leftJoinAndSelect('request.pet', 'pet')
       .leftJoinAndSelect('request.reviewer', 'reviewer')
+      .where('adopterUser.emailVerified = true')
       .orderBy('adoption.adoptionDate', 'DESC');
 
     if (user.role === 'ADOPTER') {
-      qb.where('adopter.userId = :userId', { userId: user.userId });
+      qb.andWhere('adopter.userId = :userId', { userId: user.userId });
     }
 
     const adoptions = await qb.getMany();
@@ -591,7 +592,7 @@ export class AdoptionsService {
       relations: ['adopter', 'adopter.user', 'pet', 'adoption', 'reviewer'],
     });
 
-    if (!request) {
+    if (!request || request.adopter.user.emailVerified === false) {
       throw new NotFoundException('Adoption request not found');
     }
 
@@ -768,7 +769,7 @@ export class AdoptionsService {
     }
 
     const user = await manager.getRepository(User).findOne({
-      where: { userId, status: 'active' },
+      where: { userId, status: 'active', emailVerified: true },
       relations: ['role'],
     });
 
