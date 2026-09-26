@@ -6,6 +6,7 @@ import { useLanguage } from "../context/LanguageContext";
 interface OAuthCallbackPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
   code?: string;
+  errorMessage?: string;
 }
 
 function pageForRole(role: UserRole): string {
@@ -18,7 +19,7 @@ function pageForRole(role: UserRole): string {
   }
 }
 
-export default function OAuthCallbackPage({ onNavigate, code }: OAuthCallbackPageProps) {
+export default function OAuthCallbackPage({ onNavigate, code, errorMessage }: OAuthCallbackPageProps) {
   const tx = useText();
   const { completeGoogleLogin, returnTo, setReturnTo } = useAuth();
   const { t } = useLanguage();
@@ -31,6 +32,11 @@ export default function OAuthCallbackPage({ onNavigate, code }: OAuthCallbackPag
     attemptedRef.current = true;
 
     async function completeLogin() {
+      if (errorMessage) {
+        setError(errorMessage);
+        return;
+      }
+
       if (!code) {
         setError(tx("Google sign-in did not provide a valid session."));
         return;
@@ -54,7 +60,7 @@ export default function OAuthCallbackPage({ onNavigate, code }: OAuthCallbackPag
     return () => {
       cancelled = true;
     };
-  }, [code, completeGoogleLogin, onNavigate, returnTo, setReturnTo]);
+  }, [code, completeGoogleLogin, errorMessage, onNavigate, returnTo, setReturnTo]);
 
   return (
     <div className="min-h-screen bg-[#f0f8f7] flex items-center justify-center px-4 font-['Poppins',sans-serif]">

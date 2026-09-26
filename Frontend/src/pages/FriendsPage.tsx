@@ -3,7 +3,7 @@ import { SOCKET_EVENTS } from "@shared/events/socket.events";
 import { useCallback, useEffect, useState } from "react";
 import DashboardLayout from "../components/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
-import { apiFetch } from "../lib/api";
+import { ApiError, apiFetch } from "../lib/api";
 import {
   buttonClass,
   Person,
@@ -102,6 +102,10 @@ export default function FriendsPage({
       await work();
       await refresh();
     } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        await refresh();
+        return;
+      }
       setError((e as Error).message);
     } finally {
       setBusy(false);

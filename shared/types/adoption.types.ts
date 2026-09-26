@@ -14,6 +14,5 @@ export interface Adoption {
   requestId: string;
   adoptionDate: string;
   adoptionFee?: number;
-  contractStatus: string;
   completedAt?: string;
 }

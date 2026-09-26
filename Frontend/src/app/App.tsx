@@ -274,7 +274,7 @@ function renderPage(page: string, navigate: (p: string, params?: Params) => void
     case "terms": return <TermsPage onNavigate={navigate} />;
     case "privacy": return <PrivacyPolicyPage onNavigate={navigate} />;
     case "login": return <LoginPage onNavigate={navigate} />;
-    case "oauth-callback": return <OAuthCallbackPage onNavigate={navigate} code={params.code as string | undefined} />;
+    case "oauth-callback": return <OAuthCallbackPage onNavigate={navigate} code={params.code as string | undefined} errorMessage={params.error as string | undefined} />;
     case "signup": return <SignUpPage onNavigate={navigate} />;
     case "verify-email": return <VerifyEmailPage onNavigate={navigate} token={params.token as string | undefined} email={params.email as string | undefined} />;
     case "forgot-password": return <ForgotPasswordPage onNavigate={navigate} email={params.email as string | undefined} />;

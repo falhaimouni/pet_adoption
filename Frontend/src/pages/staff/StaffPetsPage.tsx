@@ -36,6 +36,7 @@ export default function StaffPetsPage({ onNavigate, role = "employee", activePag
   const [editing, setEditing] = useState<PetResponse | null>(null);
   const [deletePet, setDeletePet] = useState<PetResponse | null>(null);
   const [imagePet, setImagePet] = useState<PetResponse | null>(null);
+  const [selectedImageName, setSelectedImageName] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -161,6 +162,7 @@ export default function StaffPetsPage({ onNavigate, role = "employee", activePag
     try {
       await apiFetch(`/pets/${imagePet.petId}/images`, { method: "POST", body });
       setImagePet(null);
+      setSelectedImageName("");
       loadPets();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("pet_upload_error"));
@@ -217,7 +219,7 @@ export default function StaffPetsPage({ onNavigate, role = "employee", activePag
                       <div className="flex gap-2">
                         <button onClick={() => onNavigate("pet-detail", { petId: p.petId })} className="text-[#089D97] hover:text-[#047975]" aria-label={t("aria_view_pet")}><Eye size={15} /></button>
                         <button onClick={() => openEdit(p)} className="text-blue-500 hover:text-blue-700" aria-label={t("aria_edit_pet")}><Edit size={15} /></button>
-                        {canUploadPetImages && <button onClick={() => setImagePet(p)} className="text-amber-500 hover:text-amber-700" aria-label={t("aria_upload_pet_image")}><ImagePlus size={15} /></button>}
+                        {canUploadPetImages && <button onClick={() => { setImagePet(p); setSelectedImageName(""); if (inputRef.current) inputRef.current.value = ""; }} className="text-amber-500 hover:text-amber-700" aria-label={t("aria_upload_pet_image")}><ImagePlus size={15} /></button>}
                         {canArchivePets && (
                           <button onClick={() => setDeletePet(p)} className="text-red-400 hover:text-red-600" aria-label={t("aria_archive_pet")}><Trash2 size={15} /></button>
                         )}
@@ -266,9 +268,27 @@ export default function StaffPetsPage({ onNavigate, role = "employee", activePag
         <p className="font-['Poppins',sans-serif] text-[14px] text-black">{t("pet_archive_confirm").replace("{name}", deletePet?.name ?? "")}</p>
       </Modal>
 
-      <Modal title={t("pet_upload_image")} open={!!imagePet} onClose={() => setImagePet(null)} onConfirm={() => uploadImage(inputRef.current?.files?.[0])} confirmLabel={saving ? t("pet_uploading") : t("action_upload")} size="sm">
-        <input ref={inputRef} type="file" accept="image/*,.jpg,.jpeg,.png,.webp" className="w-full text-[13px] font-['Poppins',sans-serif]" />
-        <p className="mt-2 font-['Poppins',sans-serif] text-[12px] text-black/50">{t("pet_upload_hint")}</p>
+      <Modal title={t("pet_upload_image")} open={!!imagePet} onClose={() => { setImagePet(null); setSelectedImageName(""); }} onConfirm={() => uploadImage(inputRef.current?.files?.[0])} confirmLabel={saving ? t("pet_uploading") : t("action_upload")} size="sm">
+        <input
+          ref={inputRef}
+          id="pet-image-upload"
+          type="file"
+          accept="image/*,.jpg,.jpeg,.png,.webp"
+          className="sr-only"
+          onChange={(event) => setSelectedImageName(event.target.files?.[0]?.name ?? "")}
+        />
+        <label
+          htmlFor="pet-image-upload"
+          className="flex min-h-[132px] cursor-pointer flex-col items-center justify-center rounded-[14px] border-2 border-dashed border-[#089D97]/35 bg-[#f0f9f8] px-4 py-5 text-center transition-colors hover:border-[#089D97] hover:bg-[#e4f5f3] focus-within:border-[#089D97]"
+        >
+          <ImagePlus size={28} className="mb-2 text-[#089D97]" />
+          <span className="font-['Poppins',sans-serif] text-[14px] font-semibold text-[#1a2e2d]">
+            {selectedImageName || tx("Choose an image")}
+          </span>
+          <span className="mt-1 font-['Poppins',sans-serif] text-[12px] text-black/50">
+            {selectedImageName ? tx("Click to choose a different file") : t("pet_upload_hint")}
+          </span>
+        </label>
       </Modal>
     </DashboardLayout>
   );

@@ -47,6 +47,7 @@ export function clearAuthTokens() {
 export function resolveAssetUrl(url?: string | null) {
   if (!url) return "";
   if (/^(https?:|blob:|data:)/i.test(url)) return url;
+  if (url.startsWith("/assets/")) return url;
   if (MOCK_API_ENABLED && !url.startsWith("/uploads/")) return url;
   return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
 }

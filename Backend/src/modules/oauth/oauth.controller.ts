@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res, UseFilters, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { IsString, MinLength } from 'class-validator';
 import { Response } from 'express';
 import { OAuthService } from './oauth.service';
+import { OAuthRedirectExceptionFilter } from './oauth-redirect-exception.filter';
 
 type OAuthAuthResponse = {
   accessToken: string;
@@ -35,6 +36,7 @@ export class OAuthController {
 
   //2 google redirects the user back here
   @Get('callback')
+  @UseFilters(OAuthRedirectExceptionFilter)
   @UseGuards(AuthGuard('google'))
   async googleCallback(@Req() req: any, @Res() res: Response) {
     const auth = req.user as OAuthAuthResponse;

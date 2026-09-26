@@ -27,6 +27,18 @@ export interface Person {
   email?: string;
   role: string;
 }
+type Friend = {
+  id: string;
+  friend: Person;
+  online: boolean;
+};
+type FriendRequest = {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  user: Person;
+};
+type FriendActionState = "available" | "friend" | "pending" | "sent";
 type Message = {
   id: string;
   text: string | null;
@@ -76,13 +88,25 @@ export function PublicProfile({
   const tx = useText();
   const [person, setPerson] = useState<Person>();
   const [error, setError] = useState("");
-  const [sent, setSent] = useState(false);
+  const [friendState, setFriendState] = useState<FriendActionState>("available");
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     let active = true;
-    apiFetch<Person>(`/public-profiles/${id}`)
-      .then((p) => {
-        if (active) setPerson(p);
+    setError("");
+    setFriendState("available");
+    Promise.all([
+      apiFetch<Person>(`/public-profiles/${id}`),
+      apiFetch<Friend[]>("/friends"),
+      apiFetch<FriendRequest[]>("/friend-requests"),
+    ])
+      .then(([profile, friends, requests]) => {
+        if (!active) return;
+        setPerson(profile);
+        if (friends.some((friendship) => friendship.friend.id === id)) {
+          setFriendState("friend");
+        } else if (requests.some((request) => request.user.id === id)) {
+          setFriendState("pending");
+        }
       })
       .catch((e) => {
         if (active) setError(e.message);
@@ -123,7 +147,7 @@ export function PublicProfile({
             <p className="break-all text-sm text-gray-600">{person.email}</p>
             <div className="flex justify-center pt-4">
               <button
-                disabled={busy || sent}
+                disabled={busy || friendState !== "available"}
                 className={buttonClass}
                 onClick={async () => {
                   setBusy(true);
@@ -133,15 +157,26 @@ export function PublicProfile({
                       method: "POST",
                       body: JSON.stringify({ userId: id }),
                     });
-                    setSent(true);
+                    setFriendState("sent");
                   } catch (e) {
-                    setError((e as Error).message);
+                    if (e instanceof ApiError && e.status === 409) {
+                      const message = e.message.toLowerCase();
+                      setFriendState(message.includes("already friends") ? "friend" : "pending");
+                    } else {
+                      setError((e as Error).message);
+                    }
                   } finally {
                     setBusy(false);
                   }
                 }}
               >
-                {sent ? tx("Friend request sent") : tx("Send friend request")}
+                {friendState === "friend"
+                  ? tx("Already friends")
+                  : friendState === "pending"
+                    ? tx("Friend request already pending")
+                    : friendState === "sent"
+                      ? tx("Friend request sent")
+                      : tx("Send friend request")}
               </button>
             </div>
           </>

@@ -226,6 +226,14 @@ export class OAuthService {
     return redirectUrl.toString();
   }
 
+  createFrontendErrorRedirect(message: string): string {
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5173';
+    const redirectUrl = new URL(frontendUrl);
+    redirectUrl.hash = `/oauth-callback?error=${encodeURIComponent(message)}`;
+    return redirectUrl.toString();
+  }
+
   consumeFrontendSession(code: string): OAuthAuthResponse {
     this.pruneExpiredSessions();
 

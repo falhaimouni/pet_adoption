@@ -15,9 +15,6 @@ export class Adoption {
   @Column({ name: 'adoption_fee', type: 'decimal', precision: 10, scale: 2, nullable: true })
   adoptionFee?: string | null;
 
-  @Column({ name: 'contract_status', type: 'varchar', length: 80, default: 'pending' })
-  contractStatus!: string;
-
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 
