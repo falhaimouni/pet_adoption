@@ -14,6 +14,7 @@ interface ForgotPasswordPageProps {
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
 }
 
+
 export default function ForgotPasswordPage({ onNavigate, email = "" }: ForgotPasswordPageProps) {
   const { t } = useLanguage();
   const [message, setMessage] = useState("");
