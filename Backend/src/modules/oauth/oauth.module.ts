@@ -11,6 +11,7 @@ import { Adopter } from '../../database/entities/adopter.entity';
 import { OAuthController } from './oauth.controller';
 import { OAuthService } from './oauth.service';
 import { GoogleStrategy } from './google.strategy';
+import { OAuthRedirectExceptionFilter } from './oauth-redirect-exception.filter';
 
 import { AuthModule } from '../auth/auth.module';
 
@@ -34,6 +35,7 @@ import { AuthModule } from '../auth/auth.module';
   providers: [
     OAuthService,
     GoogleStrategy,
+    OAuthRedirectExceptionFilter,
   ],
 })
 export class OAuthModule {}

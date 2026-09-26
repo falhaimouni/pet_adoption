@@ -20,7 +20,6 @@ export async function seedAdoptions(dataSource: DataSource) {
       request: req,
       adoptionDate: new Date().toISOString().split('T')[0],
       adoptionFee: '100',
-      contractStatus: 'signed',
     };
 
     if (exists) {

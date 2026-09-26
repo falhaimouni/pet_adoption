@@ -30,10 +30,6 @@ const PET_ADOPTION_STATUS = {
   ADOPTED: 'ADOPTED',
 } as const;
 
-const CONTRACT_STATUS = {
-  PENDING: 'PENDING',
-} as const;
-
 const ACTIVITY_ENTITY = {
   ADOPTION_REQUEST: 'ADOPTION_REQUEST',
   ADOPTION: 'ADOPTION',
@@ -83,7 +79,6 @@ interface AdoptionRequestResponse {
     adoptionId: string;
     adoptionDate: string;
     adoptionFee?: number | null;
-    contractStatus: string;
   };
 }
 
@@ -92,7 +87,6 @@ interface AdoptionResponse {
   requestId: string;
   adoptionDate: string;
   adoptionFee?: number | null;
-  contractStatus: string;
   request: {
     requestId: string;
     status: string;
@@ -360,7 +354,6 @@ export class AdoptionsService {
             requestId,
             adoptionDate: this.today(),
             adoptionFee: null,
-            contractStatus: CONTRACT_STATUS.PENDING,
           }),
         );
 
@@ -628,7 +621,6 @@ export class AdoptionsService {
             adoptionId: request.adoption.adoptionId,
             adoptionDate: request.adoption.adoptionDate,
             adoptionFee: this.mapDecimal(request.adoption.adoptionFee),
-            contractStatus: request.adoption.contractStatus,
           }
         : undefined,
     };
@@ -640,7 +632,6 @@ export class AdoptionsService {
       requestId: adoption.requestId,
       adoptionDate: adoption.adoptionDate,
       adoptionFee: this.mapDecimal(adoption.adoptionFee),
-      contractStatus: adoption.contractStatus,
       request: {
         requestId: adoption.request.requestId,
         status: adoption.request.status,

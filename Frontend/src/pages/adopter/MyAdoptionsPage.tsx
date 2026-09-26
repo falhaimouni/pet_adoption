@@ -3,14 +3,12 @@ import { useEffect, useState } from "react";
 import { Heart, PawPrint } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import { useLanguage } from "../../context/LanguageContext";
-import Badge, { statusBadge } from "../../components/Badge";
 import EmptyState from "../../components/EmptyState";
 import { apiFetch } from "../../lib/api";
 
 interface Adoption {
   adoptionId: string;
   adoptionDate: string;
-  contractStatus: string;
   pet: { petId: string; name: string; species: string; adoptionStatus: string };
 }
 
@@ -56,7 +54,6 @@ export default function MyAdoptionsPage({ onNavigate }: MyAdoptionsPageProps) {
               <div className="p-5">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-['Poppins',sans-serif] font-semibold text-[18px] text-black">{a.pet.name}</h3>
-                  <Badge label={a.contractStatus.toLowerCase()} variant={statusBadge(a.contractStatus.toLowerCase())} />
                 </div>
                 <p className="font-['Poppins',sans-serif] text-[13px] text-black/60 mb-1">{tx(a.pet.species)}</p>
                 <p className="font-['Poppins',sans-serif] text-[12px] text-[#089D97] mt-3">{t("adoptions_adopted_on")} {a.adoptionDate}</p>
