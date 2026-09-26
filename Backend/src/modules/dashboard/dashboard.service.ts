@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 import {
   ActivityLog,
@@ -35,16 +35,17 @@ const ROLES = {
 } as const;
 
 const PET_STATUS = {
-  AVAILABLE: 'available',
-  ADOPTED: 'adopted',
-  PENDING: 'pending',
+  AVAILABLE: 'AVAILABLE',
+  ADOPTED: 'ADOPTED',
+  PENDING: 'PENDING',
 } as const;
 
 const REQUEST_STATUS = {
-  PENDING: 'pending',
-  APPROVED: 'approved',
-  REJECTED: 'rejected',
-  CANCELED: 'canceled',
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  CANCELED: 'CANCELED',
+  CANCELLED: 'CANCELLED',
 } as const;
 
 @Injectable()
@@ -141,6 +142,7 @@ export class DashboardService {
       await Promise.all([
         this.activityLogRepo
           .createQueryBuilder('log')
+          .leftJoin('log.user', 'user')
           .select('COUNT(log.logId)', 'totalActivities')
           //counts activities that have a user attached
           .addSelect(
@@ -149,6 +151,7 @@ export class DashboardService {
           )
           .addSelect('COUNT(DISTINCT log.userId)', 'uniqueActiveUsers')
           .where('log.createdAt >= :from AND log.createdAt < :to', range)
+          .andWhere('(log.userId IS NULL OR user.emailVerified = true)')
           .getRawOne<{
             totalActivities: string;
             attributedActivities: string;
@@ -156,6 +159,7 @@ export class DashboardService {
           }>(),
         this.activityLogRepo
           .createQueryBuilder('log')
+          .leftJoin('log.user', 'user')
           //UTC = Coordinated Universal Time.
           //convert createdAt to UTC date string in format YYYY-MM-DD and group by it
           .select(
@@ -167,24 +171,29 @@ export class DashboardService {
           .addSelect('COUNT(DISTINCT log.userId)', 'uniqueUsers')
           //bring the logs in the given date range// >= from(included) < to(excluded)
           .where('log.createdAt >= :from AND log.createdAt < :to', range)
+          .andWhere('(log.userId IS NULL OR user.emailVerified = true)')
           //collect the activities that happened on the same date together and group them by date
           .groupBy("TO_CHAR(log.createdAt AT TIME ZONE 'UTC', 'YYYY-MM-DD')")
           .orderBy('date', 'ASC')
           .getRawMany<{ date: string; count: string; uniqueUsers: string }>(),
         this.activityLogRepo
           .createQueryBuilder('log')
+          .leftJoin('log.user', 'user')
           .select('log.action', 'name')
           .addSelect('COUNT(log.logId)', 'count')
           .where('log.createdAt >= :from AND log.createdAt < :to', range)
+          .andWhere('(log.userId IS NULL OR user.emailVerified = true)')
           .groupBy('log.action')
           .orderBy('count', 'DESC')
           .addOrderBy('name', 'ASC')
           .getRawMany<{ name: string; count: string }>(),
         this.activityLogRepo
           .createQueryBuilder('log')
+          .leftJoin('log.user', 'user')
           .select('log.entityType', 'name')
           .addSelect('COUNT(log.logId)', 'count')
           .where('log.createdAt >= :from AND log.createdAt < :to', range)
+          .andWhere('(log.userId IS NULL OR user.emailVerified = true)')
           .groupBy('log.entityType')
           .orderBy('count', 'DESC')
           .addOrderBy('name', 'ASC')
@@ -199,6 +208,7 @@ export class DashboardService {
           .addSelect('user.email', 'email')
           .addSelect('COUNT(log.logId)', 'activityCount')
           .where('log.createdAt >= :from AND log.createdAt < :to', range)
+          .andWhere('user.emailVerified = true')
           .groupBy('user.userId')
           .addGroupBy('user.firstName')
           .addGroupBy('user.lastName')
@@ -266,6 +276,7 @@ export class DashboardService {
         .where('user.status = :status', {
           status: USER_STATUS.ACTIVE,
         })
+        .andWhere('user.emailVerified = true')
         //join user table with role table to get role name
         .innerJoin('user.role', 'role')
         //get role name
@@ -275,8 +286,12 @@ export class DashboardService {
         //group by role name
         .groupBy('role.roleName')
         .getRawMany<{ roleName: string; count: string }>(),
-      this.userRepo.count({ where: { status: USER_STATUS.ACTIVE } }),
-      this.userRepo.count({ where: { status: USER_STATUS.INACTIVE } }),
+      this.userRepo.count({
+        where: { status: USER_STATUS.ACTIVE, emailVerified: true },
+      }),
+      this.userRepo.count({
+        where: { status: USER_STATUS.INACTIVE, emailVerified: true },
+      }),
     ]);
 
     //convert it to readable format
@@ -305,6 +320,7 @@ export class DashboardService {
       .where('user.status = :status', {
         status: USER_STATUS.ACTIVE,
       })
+      .andWhere('user.emailVerified = true')
       //only active roles should be counted for manager stats
       .andWhere('role.isActive = true')
       //filter only employee, vet and adopter roles
@@ -332,9 +348,9 @@ export class DashboardService {
     const [total, available, adopted, pendingAdoption, addedRecently] =
       await Promise.all([
         this.petRepo.count(),
-        this.petRepo.count({ where: { adoptionStatus: PET_STATUS.AVAILABLE } }),
-        this.petRepo.count({ where: { adoptionStatus: PET_STATUS.ADOPTED } }),
-        this.petRepo.count({ where: { adoptionStatus: PET_STATUS.PENDING } }),
+        this.countPetsByAdoptionStatus(PET_STATUS.AVAILABLE),
+        this.countPetsByAdoptionStatus(PET_STATUS.ADOPTED),
+        this.countPetsByAdoptionStatus(PET_STATUS.PENDING),
         includeRecentlyAdded
           ? this.petRepo
               .createQueryBuilder('pet')
@@ -356,20 +372,13 @@ export class DashboardService {
   private async getAdoptionRequestStats() {
     const [pending, approved, rejectedOrCanceled] =
       await Promise.all([
-        this.adoptionRequestRepo.count({
-          where: { status: REQUEST_STATUS.PENDING },
-        }),
-        this.adoptionRequestRepo.count({
-          where: { status: REQUEST_STATUS.APPROVED },
-        }),
-        this.adoptionRequestRepo.count({
-          where: {
-            status: In([
-              REQUEST_STATUS.REJECTED,
-              REQUEST_STATUS.CANCELED,
-            ]),
-          },
-        }),
+        this.countAdoptionRequestsByStatus([REQUEST_STATUS.PENDING]),
+        this.countAdoptionRequestsByStatus([REQUEST_STATUS.APPROVED]),
+        this.countAdoptionRequestsByStatus([
+          REQUEST_STATUS.REJECTED,
+          REQUEST_STATUS.CANCELED,
+          REQUEST_STATUS.CANCELLED,
+        ]),
       ]);
 
     const totalRequests = pending + approved + rejectedOrCanceled;
@@ -463,6 +472,20 @@ export class DashboardService {
       .getCount();
   }
 
+  private countPetsByAdoptionStatus(status: string) {
+    return this.petRepo
+      .createQueryBuilder('pet')
+      .where('UPPER(pet.adoptionStatus) = :status', { status })
+      .getCount();
+  }
+
+  private countAdoptionRequestsByStatus(statuses: string[]) {
+    return this.adoptionRequestRepo
+      .createQueryBuilder('request')
+      .where('UPPER(request.status) IN (:...statuses)', { statuses })
+      .getCount();
+  }
+
   private async getRecentActivityLogs(): Promise<DashboardActivityLogDto[]> {
     const since = this.daysAgo(30);
     const logs = await this.activityLogRepo
@@ -481,6 +504,7 @@ export class DashboardService {
         'user.email',
       ])
       .where('log.createdAt >= :since', { since })
+      .andWhere('(log.userId IS NULL OR user.emailVerified = true)')
       //newsest first
       .orderBy('log.createdAt', 'DESC')
       //limit to 10

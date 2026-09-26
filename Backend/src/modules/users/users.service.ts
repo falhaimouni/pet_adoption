@@ -94,8 +94,8 @@ export class UsersService {
     const users = await this.userRepo.find({
       where:
         normalizedStatusFilter === 'all'
-          ? {}
-          : { status: normalizedStatusFilter },
+          ? { emailVerified: true }
+          : { status: normalizedStatusFilter, emailVerified: true },
       relations: ['role', 'employeeProfile', 'employeeProfile.department'],
       select: {
         userId: true,
@@ -105,6 +105,7 @@ export class UsersService {
         avatar: true,
         phone: true,
         status: true,
+        emailVerified: true,
         createdAt: true,
         role: {
           roleId: true,
@@ -135,7 +136,7 @@ export class UsersService {
 
   async findOne(id: string, currentUser?: RequestWithUser['user']) {
     const user = await this.userRepo.findOne({
-      where: { userId: id },
+      where: { userId: id, emailVerified: true },
       relations: ['role', 'employeeProfile', 'employeeProfile.department'],
     });
 
@@ -523,7 +524,7 @@ export class UsersService {
 
   private async getUserForAuthorization(id: string) {
     const user = await this.userRepo.findOne({
-      where: { userId: id },
+      where: { userId: id, emailVerified: true },
       relations: ['role'],
     });
 
@@ -655,6 +656,7 @@ export class UsersService {
       .setLock('pessimistic_write')
       //filter for active admins
       .where('user.status = :status', { status: USER_STATUS.ACTIVE })
+      .andWhere('user.emailVerified = true')
       .andWhere('role.roleName = :roleName', { roleName: 'ADMIN' })
       //run the query and get the results
       .getMany();

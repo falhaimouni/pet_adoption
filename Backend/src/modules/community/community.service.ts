@@ -45,7 +45,7 @@ export class CommunityService {
     if (!name.trim()) return [];
     const rows = await this.db.query(
       `SELECT ${PERSON} AS person FROM users u JOIN roles r ON r.role_id=u.role_id
-      WHERE r.role_name='ADOPTER' AND r.is_active=true AND u.status='active' AND u.user_id<>$1
+      WHERE r.role_name='ADOPTER' AND r.is_active=true AND u.status='active' AND u.email_verified=true AND u.user_id<>$1
       AND strpos(lower(concat_ws(' ',u.first_name,u.last_name)),lower($2))>0
       ORDER BY u.first_name,u.last_name,u.user_id LIMIT 30`,
       [actor.userId, name.trim()],
@@ -55,7 +55,7 @@ export class CommunityService {
   async profile(id: string) {
     const [person] = await this.db.query(
       `SELECT (${PERSON})::jsonb || jsonb_build_object('email',u.email) AS person FROM users u JOIN roles r ON r.role_id=u.role_id
-      WHERE u.user_id=$1 AND r.role_name='ADOPTER' AND u.status='active' AND r.is_active=true`,
+      WHERE u.user_id=$1 AND r.role_name='ADOPTER' AND u.status='active' AND u.email_verified=true AND r.is_active=true`,
       [id],
     );
     if (!person) throw new NotFoundException("Public profile not available");
@@ -70,7 +70,7 @@ export class CommunityService {
       CASE WHEN p.id IS NOT NULL THEN json_build_object('id',p.id,'text',CASE WHEN p.deleted_at IS NOT NULL THEN 'This message has been deleted.' ELSE COALESCE(p.text,'Photo') END) END AS reply
       FROM community_messages m JOIN users u ON u.user_id=m.sender_id JOIN roles r ON r.role_id=u.role_id
       LEFT JOIN community_messages p ON p.id=m.reply_to
-      WHERE ($1::uuid IS NULL OR (m.created_at,m.id)<(SELECT created_at,id FROM community_messages WHERE id=$1))
+      WHERE u.email_verified=true AND ($1::uuid IS NULL OR (m.created_at,m.id)<(SELECT created_at,id FROM community_messages WHERE id=$1))
       ORDER BY m.created_at DESC,m.id DESC LIMIT 50`,
       [before ?? null],
     );
@@ -149,7 +149,7 @@ export class CommunityService {
   async blocks(actor: Actor) {
     this.staff(actor);
     return this.db.query(
-      `SELECT ${PERSON} AS user,b.created_at AS "createdAt" FROM community_blocks b JOIN users u ON u.user_id=b.user_id JOIN roles r ON r.role_id=u.role_id ORDER BY b.created_at DESC`,
+      `SELECT ${PERSON} AS user,b.created_at AS "createdAt" FROM community_blocks b JOIN users u ON u.user_id=b.user_id JOIN roles r ON r.role_id=u.role_id WHERE u.email_verified=true ORDER BY b.created_at DESC`,
     );
   }
   async block(actor: Actor, id: string, remove = false) {
@@ -163,7 +163,7 @@ export class CommunityService {
         throw new BadRequestException("You cannot block yourself");
       if (
         !(
-          await this.db.query("SELECT user_id FROM users WHERE user_id=$1", [
+          await this.db.query("SELECT user_id FROM users WHERE user_id=$1 AND email_verified=true", [
             id,
           ])
         ).length
@@ -179,12 +179,13 @@ export class CommunityService {
   async heartbeat(actor: Actor) {
     await this.db.transaction(async (manager) => {
       const [user] = await manager.query(
-        "SELECT refresh_token_version,status FROM users WHERE user_id=$1 FOR UPDATE",
+        "SELECT refresh_token_version,status,email_verified FROM users WHERE user_id=$1 FOR UPDATE",
         [actor.userId],
       );
       if (
         !user ||
         user.status !== "active" ||
+        user.email_verified !== true ||
         user.refresh_token_version !== actor.tokenVersion
       ) {
         throw new ForbiddenException("Session is no longer active");
@@ -203,7 +204,7 @@ export class CommunityService {
       p.last_seen_at AS "lastSeenAt"
       FROM friendships f JOIN users u ON u.user_id=CASE WHEN f.user1_id=$1 THEN f.user2_id ELSE f.user1_id END
       JOIN roles r ON r.role_id=u.role_id LEFT JOIN user_presence p ON p.user_id=u.user_id
-      WHERE (f.user1_id=$1 OR f.user2_id=$1) AND r.role_name='ADOPTER' AND u.status='active' AND r.is_active=true ORDER BY u.first_name`,
+      WHERE (f.user1_id=$1 OR f.user2_id=$1) AND r.role_name='ADOPTER' AND u.status='active' AND u.email_verified=true AND r.is_active=true ORDER BY u.first_name`,
       [actor.userId],
     );
     return rows.map((row: { friend: { id: string } }) => ({ ...row, online: this.realtime.isOnline(row.friend.id) }));
@@ -252,7 +253,7 @@ export class CommunityService {
     return this.db.query(
       `SELECT f.id,f.sender_id AS "senderId",f.recipient_id AS "recipientId",${PERSON} AS user
       FROM friend_requests f JOIN users u ON u.user_id=CASE WHEN f.sender_id=$1 THEN f.recipient_id ELSE f.sender_id END
-      JOIN roles r ON r.role_id=u.role_id WHERE (f.sender_id=$1 OR f.recipient_id=$1) AND f.status='PENDING' AND r.role_name='ADOPTER' AND u.status='active' ORDER BY f.created_at DESC`,
+      JOIN roles r ON r.role_id=u.role_id WHERE (f.sender_id=$1 OR f.recipient_id=$1) AND f.status='PENDING' AND r.role_name='ADOPTER' AND u.status='active' AND u.email_verified=true ORDER BY f.created_at DESC`,
       [actor.userId],
     );
   }
@@ -336,7 +337,7 @@ export class CommunityService {
       EXISTS(SELECT 1 FROM friendships f WHERE f.user1_id=c.user1_id AND f.user2_id=c.user2_id) AS "canSend",
       (SELECT text FROM direct_messages WHERE conversation_id=c.id ORDER BY created_at DESC,id DESC LIMIT 1) AS "lastMessage"
       FROM direct_conversations c JOIN users u ON u.user_id=CASE WHEN c.user1_id=$1 THEN c.user2_id ELSE c.user1_id END JOIN roles r ON r.role_id=u.role_id
-      WHERE (c.user1_id=$1 OR c.user2_id=$1) AND r.role_name='ADOPTER' ORDER BY (SELECT max(created_at) FROM direct_messages WHERE conversation_id=c.id) DESC NULLS LAST`,
+      WHERE (c.user1_id=$1 OR c.user2_id=$1) AND r.role_name='ADOPTER' AND u.status='active' AND u.email_verified=true ORDER BY (SELECT max(created_at) FROM direct_messages WHERE conversation_id=c.id) DESC NULLS LAST`,
       [actor.userId],
     );
   }
