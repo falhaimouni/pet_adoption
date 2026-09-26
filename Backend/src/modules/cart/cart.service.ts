@@ -9,6 +9,8 @@ import { Supply } from '../../database/entities/supply.entity';
 import { User } from '../../database/entities/user.entity';
 import { AddCartItemDto } from './cart.dto';
 import { SupplyStatusEnum } from '@shared/enums/supply-status.enum';
+import { NotificationTypeEnum } from '@shared/enums';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class CartService {
@@ -30,6 +32,8 @@ export class CartService {
     private readonly userRepo: Repository<User>,
 
     private readonly dataSource: DataSource,
+
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async getMyCart(userId: string) {
@@ -46,7 +50,7 @@ export class CartService {
   }
 
   async addItem(userId: string, dto: AddCartItemDto) {
-    return this.dataSource.transaction(async (manager) => {
+    const cart = await this.dataSource.transaction(async (manager) => {
       const user = await manager
         .getRepository(User)
         .createQueryBuilder('user')
@@ -115,6 +119,13 @@ export class CartService {
       });
       return this.withSupplyImages(savedCart);
     });
+    await this.notificationsService.notifyUsers(
+      [userId],
+      'Cart updated',
+      'An item was added to your cart.',
+      NotificationTypeEnum.ORDER,
+    );
+    return cart;
   }
 
   private async createEmptyCart(userId: string) {
@@ -167,7 +178,14 @@ export class CartService {
       if (!result.affected) throw new NotFoundException('Cart item not found');
     });
 
-    return this.getMyCart(userId);
+    const cart = await this.getMyCart(userId);
+    await this.notificationsService.notifyUsers(
+      [userId],
+      'Cart updated',
+      'An item was removed from your cart.',
+      NotificationTypeEnum.ORDER,
+    );
+    return cart;
   }
 
   async updateItemQuantity(
@@ -175,7 +193,7 @@ export class CartService {
     productId: string,
     quantity: number,
   ) {
-    return this.dataSource.transaction(async (manager) => {
+    const cart = await this.dataSource.transaction(async (manager) => {
       const user = await manager.getRepository(User)
         .createQueryBuilder('user')
         .setLock('pessimistic_write')
@@ -222,6 +240,13 @@ export class CartService {
       });
       return this.withSupplyImages(savedCart);
     });
+    await this.notificationsService.notifyUsers(
+      [userId],
+      'Cart updated',
+      'An item quantity was updated in your cart.',
+      NotificationTypeEnum.ORDER,
+    );
+    return cart;
   }
 
   async clearCart(userId: string) {
@@ -251,6 +276,13 @@ export class CartService {
       await manager.getRepository(CartItem).delete({ cartId: cart.cartId });
       await manager.getRepository(Cart).delete({ cartId: cart.cartId });
     });
+
+    await this.notificationsService.notifyUsers(
+      [userId],
+      'Cart cleared',
+      'Your cart was cleared.',
+      NotificationTypeEnum.ORDER,
+    );
 
     return { success: true, message: 'Cart deleted successfully' };
   }

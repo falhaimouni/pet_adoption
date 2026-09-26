@@ -19,6 +19,8 @@ import { Pet } from '../../database/entities/pet.entity';
 import { User } from '../../database/entities/user.entity';
 import { Vaccination } from '../../database/entities/vaccination.entity';
 import { ActivityLog } from '../../database/entities/activity-log.entity';
+import { NotificationTypeEnum, RolesEnum } from '@shared/enums';
+import { NotificationsService } from '../notifications/notifications.service';
 import { FileUpload } from '../../database/entities/file-upload.entity';
 import { UploadsService } from '../uploads/uploads.service';
 import { validateUploadedFile } from '../uploads/upload-validation.util';
@@ -108,6 +110,8 @@ export class MedicalService {
 
     @InjectDataSource()
     private readonly dataSource?: DataSource,
+
+    private readonly notificationsService?: NotificationsService,
   ) {}
 
   async importMedicalDocuments(
@@ -463,7 +467,16 @@ export class MedicalService {
       );
     }
 
-    return this.findEntry(savedEntry.entryId);
+    const response = await this.findEntry(savedEntry.entryId);
+    const pet = await this.ensurePetExists(petId);
+    await this.notificationsService?.notifyRoles(
+      [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE, RolesEnum.VET],
+      'Medical entry created',
+      `A medical entry was added for ${pet.petName}.`,
+      NotificationTypeEnum.MEDICAL,
+      [veterinarianId],
+    );
+    return response;
   }
 
   async updateEntry(
@@ -480,12 +493,25 @@ export class MedicalService {
     if (dto.notes !== undefined) entry.notes = dto.notes;
 
     await this.medicalEntryRepo.save(entry);
-    return this.findEntry(entryId);
+    const response = await this.findEntry(entryId);
+    await this.notificationsService?.notifyRoles(
+      [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE, RolesEnum.VET],
+      'Medical entry updated',
+      `A medical entry was updated for ${entry.medicalRecord.pet.petName}.`,
+      NotificationTypeEnum.MEDICAL,
+    );
+    return response;
   }
 
   async removeEntry(entryId: string): Promise<{ message: string }> {
-    await this.getEntryEntity(entryId);
+    const entry = await this.getEntryEntity(entryId);
     await this.medicalEntryRepo.softDelete(entryId);
+    await this.notificationsService?.notifyRoles(
+      [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE, RolesEnum.VET],
+      'Medical entry archived',
+      `A medical entry was archived for ${entry.medicalRecord.pet.petName}.`,
+      NotificationTypeEnum.MEDICAL,
+    );
 
     return {
       message: 'Medical entry archived successfully',
@@ -791,7 +817,7 @@ export class MedicalService {
   private async getEntryEntity(entryId: string) {
     const entry = await this.medicalEntryRepo.findOne({
       where: { entryId },
-      relations: ['veterinarian'],
+      relations: ['veterinarian', 'medicalRecord', 'medicalRecord.pet'],
     });
 
     if (!entry) {
@@ -894,6 +920,7 @@ export class MedicalService {
       where: { petId },
       select: {
         petId: true,
+        petName: true,
       },
     });
 

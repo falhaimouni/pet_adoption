@@ -3,7 +3,7 @@ import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 import { Product, Supplier, Supply } from "src/database/entities";
 import { DataSource, QueryFailedError, Repository } from "typeorm";
 import { InventoryQueryDto } from "../../../../../shared/dto/inventory-query.dto";
-import { SupplyStatusEnum } from "@shared/enums";
+import { NotificationTypeEnum, RolesEnum, SupplyStatusEnum } from "@shared/enums";
 import { CreateSupplierDto, UpdateSupplierDto } from "@shared/dto/supplier.dto";
 import { CreateSupplyDto, UpdateSupplyDto } from "@shared/dto/supply.dto";
 import { PaginatedSuppliesDto } from "@shared/dto/paginatedSupplies.dto";
@@ -227,6 +227,13 @@ export class SupplyService{
         throw error;
       }
       await this.notifyLowStockIfNeeded(savedSupply);
+      await this.notificationsService.notifyRoles(
+        [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE],
+        'Supply created',
+        `${savedSupply.supplyName} was added to inventory.`,
+        NotificationTypeEnum.INVENTORY,
+        [actorUserId],
+      );
 
       return savedSupply;
     }
@@ -261,6 +268,12 @@ export class SupplyService{
       {
         await this.notifyLowStock(savedSupply.updated);
       }
+      await this.notificationsService.notifyRoles(
+        [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE],
+        'Supply updated',
+        `${savedSupply.updated.supplyName} was updated.`,
+        NotificationTypeEnum.INVENTORY,
+      );
 
       return savedSupply.updated;
     }
@@ -313,6 +326,13 @@ export class SupplyService{
           entityType: 'SUPPLY',
           entityId: id,
         }),
+      );
+      await this.notificationsService.notifyRoles(
+        [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE],
+        'Supply deleted',
+        `${supply.supplyName} was deleted from inventory.`,
+        NotificationTypeEnum.INVENTORY,
+        [actorUserId],
       );
       return {
       success: true,

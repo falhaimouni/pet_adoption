@@ -9,7 +9,9 @@ import { DataSource, EntityManager } from "typeorm";
 import { CommunityMessageDto } from "./community.dto";
 
 import { NotificationsGateway } from "../notifications/notifications.gateway";
+import { NotificationsService } from "../notifications/notifications.service";
 import { SOCKET_EVENTS } from "@shared/events";
+import { NotificationTypeEnum } from "@shared/enums";
 
 type Actor = { userId: string; role: string; tokenVersion?: number };
 const STAFF = ["ADMIN", "MANAGER", "EMPLOYEE"];
@@ -17,7 +19,11 @@ const PERSON = `json_build_object('id',u.user_id,'name',concat_ws(' ',u.first_na
 
 @Injectable()
 export class CommunityService {
-  constructor(private readonly db: DataSource, private readonly realtime: NotificationsGateway) {}
+  constructor(
+    private readonly db: DataSource,
+    private readonly realtime: NotificationsGateway,
+    private readonly notifications: NotificationsService,
+  ) {}
   staff(actor: Actor) {
     if (!STAFF.includes(actor.role))
       throw new ForbiddenException("Staff access required");
@@ -220,7 +226,7 @@ export class CommunityService {
     if (id === actor.userId)
       throw new BadRequestException("You cannot add yourself");
     await this.profile(id);
-    return this.db.transaction(async (m) => {
+    const request = await this.db.transaction(async (m) => {
       await this.pairLock(m, actor.userId, id);
       const pair = [actor.userId, id].sort();
       if (
@@ -247,6 +253,14 @@ export class CommunityService {
       );
       return request;
     });
+    await this.notifications.notifyUsers(
+      [id],
+      'New friend request',
+      'You received a new friend request.',
+      NotificationTypeEnum.FRIEND,
+      [actor.userId],
+    );
+    return request;
   }
   async requests(actor: Actor) {
     this.adopter(actor);
@@ -263,7 +277,7 @@ export class CommunityService {
     action: "accept" | "reject" | "cancel",
   ) {
     this.adopter(actor);
-    return this.db.transaction(async (m) => {
+    const result = await this.db.transaction(async (m) => {
       const [initial] = await m.query(
         "SELECT * FROM friend_requests WHERE id=$1",
         [id],
@@ -294,10 +308,23 @@ export class CommunityService {
       ]);
       return { ok: true };
     });
+    if (action === "accept") {
+      const [request] = await this.db.query("SELECT sender_id AS \"senderId\", recipient_id AS \"recipientId\" FROM friend_requests WHERE id=$1", [id]);
+      if (request) {
+        await this.notifications.notifyUsers(
+          [request.senderId],
+          'Friend request accepted',
+          'Your friend request was accepted.',
+          NotificationTypeEnum.FRIEND,
+          [actor.userId],
+        );
+      }
+    }
+    return result;
   }
   async removeFriend(actor: Actor, id: string) {
     this.adopter(actor);
-    return this.db.transaction(async (m) => {
+    const result = await this.db.transaction(async (m) => {
       await this.pairLock(m, actor.userId, id);
       await m.query(
         "DELETE FROM friendships WHERE user1_id=$1 AND user2_id=$2",
@@ -305,6 +332,14 @@ export class CommunityService {
       );
       return { ok: true };
     });
+    await this.notifications.notifyUsers(
+      [id],
+      'Friend removed',
+      'A friend connection was removed.',
+      NotificationTypeEnum.FRIEND,
+      [actor.userId],
+    );
+    return result;
   }
   async startConversation(actor: Actor, id: string) {
     this.adopter(actor);
@@ -387,6 +422,12 @@ export class CommunityService {
       return { message, userIds: [c.user1_id, c.user2_id] };
     });
     this.realtime.emitToUsers(result.userIds, SOCKET_EVENTS.DIRECT_MESSAGE, { conversationId: id, message: result.message });
+    await this.notifications.notifyUsers(
+      result.userIds.filter((userId) => userId !== actor.userId),
+      'New direct message',
+      'You received a new direct message.',
+      NotificationTypeEnum.MESSAGE,
+    );
     return result.message;
   }
   async read(actor: Actor, id: string) {

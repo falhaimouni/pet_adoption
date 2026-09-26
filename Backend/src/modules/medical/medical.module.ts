@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UploadsModule } from '../uploads/uploads.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 import { MedicalEntry } from '../../database/entities/medical-entry.entity';
 import { MedicalRecord } from '../../database/entities/medical-record.entity';
@@ -15,6 +16,7 @@ import { MedicalService } from './medical.service';
   imports: [
     TypeOrmModule.forFeature([MedicalRecord, MedicalEntry, Pet, User, Vaccination, ActivityLog]),
     UploadsModule,
+    NotificationsModule,
   ],
   controllers: [MedicalController],
   providers: [MedicalService],

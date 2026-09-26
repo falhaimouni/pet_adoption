@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, QueryFailedError, Repository } from 'typeorm';
+import { NotificationTypeEnum, RolesEnum } from '@shared/enums';
 
 import { Department } from '../../database/entities/department.entity';
 import { Employee } from '../../database/entities/employee.entity';
@@ -14,6 +15,7 @@ import {
   CreateDepartmentDto,
   UpdateDepartmentDto,
 } from '@shared/dto/department.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class DepartmentsService {
@@ -21,6 +23,7 @@ export class DepartmentsService {
     @InjectRepository(Department)
     private readonly departmentRepo: Repository<Department>,
     private readonly dataSource: DataSource,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   findAll(activeOnly = false) {
@@ -65,7 +68,9 @@ export class DepartmentsService {
       ...dto,
       departmentName,
     });
-    return this.serialize(await this.saveDepartment(department));
+    const saved = await this.saveDepartment(department);
+    await this.notifyStaff('Department created', `${saved.departmentName} department was created.`);
+    return this.serialize(saved);
   }
 
   async update(departmentId: string, dto: UpdateDepartmentDto) {
@@ -111,10 +116,13 @@ export class DepartmentsService {
       ...dto,
       ...(departmentName === undefined ? {} : { departmentName }),
     });
-    return this.serialize(await this.saveDepartment(department));
+    const saved = await this.saveDepartment(department);
+    await this.notifyStaff('Department updated', `${saved.departmentName} department was updated.`);
+    return this.serialize(saved);
   }
 
   async remove(departmentId: string) {
+    let departmentName = 'A department';
     await this.dataSource.transaction(async (manager) => {
       const department = await manager
         .getRepository(Department)
@@ -130,6 +138,7 @@ export class DepartmentsService {
       if (!department.isActive) {
         return;
       }
+      departmentName = department.departmentName;
 
       const employeeCount = await manager.getRepository(Employee).count({
         where: { departmentId },
@@ -144,6 +153,7 @@ export class DepartmentsService {
       department.isActive = false;
       await manager.save(department);
     });
+    await this.notifyStaff('Department deleted', `${departmentName} was deleted.`);
 
     return { message: 'Department deleted successfully' };
   }
@@ -196,8 +206,20 @@ export class DepartmentsService {
         relations: ['manager', 'employees', 'employees.user', 'employees.user.role'],
       });
 
+      if (updatedDepartment) {
+        await this.notifyStaff('Department users assigned', `${updatedDepartment.departmentName} assignments were updated.`);
+      }
       return updatedDepartment ? this.serialize(updatedDepartment) : null;
     });
+  }
+
+  private notifyStaff(title: string, message: string) {
+    return this.notificationsService.notifyRoles(
+      [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE],
+      title,
+      message,
+      NotificationTypeEnum.DEPARTMENT,
+    );
   }
 
   //removes leading and trailing whitespace from the department name

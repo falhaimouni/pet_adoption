@@ -11,6 +11,8 @@ import { MedicalRecord } from '../../database/entities/medical-record.entity';
 import { User } from '../../database/entities/user.entity';
 import { Vaccination } from '../../database/entities/vaccination.entity';
 import { VaccineStatusEnum } from '@shared/enums/vaccine-status.enum';
+import { NotificationTypeEnum, RolesEnum } from '@shared/enums';
+import { NotificationsService } from '../notifications/notifications.service';
 
 interface VaccinationPetResponse {
   petId: string;
@@ -49,6 +51,8 @@ export class VaccinationsService {
 
     @InjectRepository(MedicalRecord)
     private readonly medicalRecordRepo: Repository<MedicalRecord>,
+
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async findByPet(petId: string): Promise<VaccinationResponse[]> {
@@ -92,7 +96,15 @@ export class VaccinationsService {
       savedVaccination.vaccinationId,
     );
 
-    return this.mapVaccinationResponse(savedVaccinationEntity);
+    const response = this.mapVaccinationResponse(savedVaccinationEntity);
+    await this.notificationsService.notifyRoles(
+      [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE, RolesEnum.VET],
+      'Vaccination created',
+      `${response.vaccineName} was added for ${response.pet.name}.`,
+      NotificationTypeEnum.MEDICAL,
+      [veterinarianId],
+    );
+    return response;
   }
 
   async update(
@@ -117,12 +129,25 @@ export class VaccinationsService {
 
     await this.vaccinationRepo.save(vaccination);
     const updatedVaccination = await this.getVaccinationEntity(vaccinationId);
-    return this.mapVaccinationResponse(updatedVaccination);
+    const response = this.mapVaccinationResponse(updatedVaccination);
+    await this.notificationsService.notifyRoles(
+      [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE, RolesEnum.VET],
+      'Vaccination updated',
+      `${response.vaccineName} was updated for ${response.pet.name}.`,
+      NotificationTypeEnum.MEDICAL,
+    );
+    return response;
   }
 
   async remove(vaccinationId: string): Promise<{ message: string }> {
-    await this.getVaccinationEntity(vaccinationId);
+    const vaccination = await this.getVaccinationEntity(vaccinationId);
     await this.vaccinationRepo.softDelete(vaccinationId);
+    await this.notificationsService.notifyRoles(
+      [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE, RolesEnum.VET],
+      'Vaccination archived',
+      `${vaccination.vaccineName} was archived for ${vaccination.pet.petName}.`,
+      NotificationTypeEnum.MEDICAL,
+    );
 
     return {
       message: 'Vaccination archived successfully',
