@@ -7,7 +7,7 @@ SHELL := /bin/bash
 COMPOSE := docker compose --env-file .env.production
 
 PROJECT_NAME := pet_adoption
-HOSTNAME := petopia.com
+HOSTNAME := localhost
 PORT := 8443
 URL := https://$(HOSTNAME):$(PORT)
 
@@ -39,7 +39,6 @@ help:
 
 	@printf "%b\n" "$(GREEN)make$(RESET)              Start the project"
 	@printf "%b\n" "$(GREEN)make build$(RESET)        Build all Docker images"
-	@printf "%b\n" "$(GREEN)make open$(RESET)         Open Petopia in the browser"
 	@printf "%b\n" "$(GREEN)make re$(RESET)           Full rebuild + start"
 	@printf "%b\n" "$(GREEN)make check$(RESET)        Check Docker, containers and endpoints"
 	@printf "%b\n" "$(GREEN)make status$(RESET)       Show container status"
@@ -85,17 +84,7 @@ up:
 	@printf "%b\n" "$(BLUE)→ $(URL)$(RESET)"
 
 	@printf "\n"
-	@printf "%b\n" "$(CYAN)▶ Opening Petopia...$(RESET)"
-	@if [ -n "$$SUDO_USER" ]; then \
-    	sudo -u "$$SUDO_USER" -H env \
-        DISPLAY="$$DISPLAY" \
-        WAYLAND_DISPLAY="$$WAYLAND_DISPLAY" \
-        XDG_RUNTIME_DIR="/run/user/$$(id -u "$$SUDO_USER")" \
-        DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$$(id -u "$$SUDO_USER")/bus" \
-        ./scripts/open-petopia.sh; \
-	else \
-    	./scripts/open-petopia.sh; \
-	fi
+
 
 
 # ============================================================
