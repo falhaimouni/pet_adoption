@@ -45,6 +45,7 @@ export class SupplyService{
 
     const queryBuilder = this.supplyRepo
       .createQueryBuilder('supply')
+      .leftJoinAndSelect('supply.supplier', 'supplier')
       .leftJoinAndSelect('supply.imageFile', 'imageFile');
     if (query.search)
     {

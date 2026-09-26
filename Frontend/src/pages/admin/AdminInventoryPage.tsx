@@ -406,7 +406,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
                       <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60">{t(supplyCategoryKey(item.category))}</td>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] font-semibold text-[13px] text-black">{item.quantity}</td>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/50">{item.lowStockLimit}</td>
-                      <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60 whitespace-nowrap">{item.supplier?.supplierName ?? item.supplierId}</td>
+                      <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60 whitespace-nowrap">{item.supplier?.supplierName ?? "—"}</td>
                       <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/70">${Number(item.sellingPrice).toFixed(2)}</td>
                       <td className="py-3 px-3"><Badge label={item.storeListed === false ? "hidden" : "listed"} variant={item.storeListed === false ? "neutral" : "success"} /></td>
                       <td className="py-3 px-3"><Badge label={label.replace("_", " ").toLowerCase()} variant={statusBadge(label.toLowerCase())} /></td>

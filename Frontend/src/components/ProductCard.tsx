@@ -38,11 +38,9 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
   const [imgError, setImgError] = useState(false);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState("");
-  const { addToCart, isInCart } = useCart();
+  const { addToCart } = useCart();
   const { isAuthenticated, user } = useAuth();
   const { t } = useLanguage();
-  const productId = String(product.id);
-  const inCart = isInCart(productId);
   const canUseCart = isAuthenticated && user?.role === "adopter";
   const discount = product.originalPrice
     ? Math.round((1 - product.price / product.originalPrice) * 100)
@@ -120,10 +118,10 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
               }
             }}
             disabled={!product.inStock || adding}
-            className={`w-full flex items-center justify-center gap-2 py-2.5 font-['Poppins',sans-serif] font-medium text-[13px] rounded-[11px] transition-all duration-200 ${inCart ? "bg-secondary text-primary border-2 border-primary" : "bg-primary text-white hover:bg-primary-hover"} disabled:opacity-40 disabled:cursor-not-allowed`}
+            className="w-full flex items-center justify-center gap-2 py-2.5 font-['Poppins',sans-serif] font-medium text-[13px] rounded-[11px] transition-all duration-200 bg-primary text-white hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <ShoppingCart size={14} />
-            {adding ? t("product_adding") : inCart ? t("product_in_cart") : t("product_add_to_cart")}
+            {adding ? t("product_adding") : t("product_add_to_cart")}
           </button>
         )}
         {error && <p className="font-['Poppins',sans-serif] text-[11px] text-red-600">{error}</p>}
