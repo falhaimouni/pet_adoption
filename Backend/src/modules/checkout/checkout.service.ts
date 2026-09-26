@@ -22,6 +22,7 @@ import { PaymentMethodEnum } from '@shared/enums/payment-method.enum';
 import { PaymentStatusEnum } from '@shared/enums/payment-status.enum';
 import { OrderStatusEnum } from '@shared/enums/order-status.enum';
 import { SupplyStatusEnum } from '@shared/enums/supply-status.enum';
+import { NotificationTypeEnum, RolesEnum } from '@shared/enums';
 import { NotificationsService } from '../notifications/notifications.service';
 
 type InventoryAlert = {
@@ -199,6 +200,18 @@ export class CheckoutService {
     if (!order) {
       throw new NotFoundException('Order could not be created');
     }
+    await this.notificationsService.notifyUsers(
+      [userId],
+      'Order created',
+      `Your order ${order.orderId} was created.`,
+      NotificationTypeEnum.ORDER,
+    );
+    await this.notificationsService.notifyRoles(
+      [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE],
+      'New order',
+      `A new order was created for ${order.totalPrice}.`,
+      NotificationTypeEnum.ORDER,
+    );
 
     return order;
   }
@@ -230,6 +243,18 @@ export class CheckoutService {
     if (!order) {
       throw new NotFoundException('Order could not be canceled');
     }
+    await this.notificationsService.notifyUsers(
+      [userId],
+      'Order cancelled',
+      `Your order ${order.orderId} was cancelled.`,
+      NotificationTypeEnum.ORDER,
+    );
+    await this.notificationsService.notifyRoles(
+      [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE],
+      'Order cancelled',
+      `Order ${order.orderId} was cancelled.`,
+      NotificationTypeEnum.ORDER,
+    );
 
     return order;
   }
@@ -348,6 +373,18 @@ export class CheckoutService {
         error instanceof Error ? error.stack : String(error),
       );
     }
+    await this.notificationsService.notifyUsers(
+      [userId],
+      'Order completed',
+      `Your order ${order.orderId} was completed.`,
+      NotificationTypeEnum.ORDER,
+    );
+    await this.notificationsService.notifyRoles(
+      [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE],
+      'Order completed',
+      `Order ${order.orderId} was paid and completed.`,
+      NotificationTypeEnum.ORDER,
+    );
 
     return order;
   }

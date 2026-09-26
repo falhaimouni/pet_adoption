@@ -1,7 +1,7 @@
 import { localizeNotification } from "../i18n/notifications";
 import { useText } from "../i18n/useText";
 import { useEffect, useState } from "react";
-import { AlertCircle, Bell, Check, CheckCheck, Heart, Info, Package } from "lucide-react";
+import { AlertCircle, Bell, Check, CheckCheck, Heart, Info, Package, PawPrint, Stethoscope, UserCog, Building2, ShoppingBag, Users, MessageCircle } from "lucide-react";
 import DashboardLayout from "../components/DashboardLayout";
 import EmptyState from "../components/EmptyState";
 import { useAuth } from "../context/AuthContext";
@@ -21,8 +21,16 @@ interface NotificationItem {
 
 function iconFor(type: string) {
   switch (type.toUpperCase()) {
+    case "MESSAGE": return <MessageCircle size={16} className="text-sky-500" />;
     case "ADOPTION": return <Heart size={16} className="text-[#089D97]" />;
     case "INVENTORY": return <Package size={16} className="text-amber-500" />;
+    case "PET": return <PawPrint size={16} className="text-emerald-500" />;
+    case "MEDICAL": return <Stethoscope size={16} className="text-rose-500" />;
+    case "USER": return <UserCog size={16} className="text-indigo-500" />;
+    case "DEPARTMENT": return <Building2 size={16} className="text-cyan-600" />;
+    case "ORDER": return <ShoppingBag size={16} className="text-violet-500" />;
+    case "FRIEND": return <Users size={16} className="text-teal-600" />;
+    case "COMMUNITY": return <Users size={16} className="text-teal-600" />;
     case "ALERT": return <AlertCircle size={16} className="text-yellow-500" />;
     default: return <Info size={16} className="text-gray-400" />;
   }
@@ -30,15 +38,24 @@ function iconFor(type: string) {
 
 function bgFor(type: string) {
   switch (type.toUpperCase()) {
+    case "MESSAGE": return "bg-sky-50";
     case "ADOPTION": return "bg-[rgba(8,157,151,0.1)]";
     case "INVENTORY": return "bg-amber-50";
+    case "PET": return "bg-emerald-50";
+    case "MEDICAL": return "bg-rose-50";
+    case "USER": return "bg-indigo-50";
+    case "DEPARTMENT": return "bg-cyan-50";
+    case "ORDER": return "bg-violet-50";
+    case "FRIEND":
+    case "COMMUNITY": return "bg-teal-50";
     case "ALERT": return "bg-yellow-50";
     default: return "bg-gray-100";
   }
 }
 
 function canViewNotificationType(role: Role, type: string) {
-  if (type.toUpperCase() !== "INVENTORY") return true;
+  const staffOnly = ["INVENTORY", "PET", "MEDICAL", "USER", "DEPARTMENT", "SYSTEM"];
+  if (!staffOnly.includes(type.toUpperCase())) return true;
   return role === "admin" || role === "manager" || role === "employee";
 }
 
@@ -78,8 +95,17 @@ export default function NotificationsPage({ onNavigate, role }: NotificationsPag
     { key: "all", label: t("notif_all") },
     { key: "MESSAGE", label: t("nav_chats") },
     { key: "ADOPTION", label: t("notif_adoptions") },
+    { key: "ORDER", label: tx("Orders") },
+    { key: "FRIEND", label: tx("Friends") },
     ...(canViewNotificationType(resolvedRole, "INVENTORY")
-      ? [{ key: "INVENTORY", label: t("notif_inventory") }]
+      ? [
+          { key: "INVENTORY", label: t("notif_inventory") },
+          { key: "PET", label: tx("Pets") },
+          { key: "MEDICAL", label: tx("Medical") },
+          { key: "USER", label: tx("Users") },
+          { key: "DEPARTMENT", label: tx("Departments") },
+          { key: "SYSTEM", label: tx("System") },
+        ]
       : []),
   ];
   const locale = lang === "ar" ? "ar-JO" : lang === "fr" ? "fr-FR" : "en-US";

@@ -12,8 +12,10 @@ import { Vaccination } from '../../database/entities/vaccination.entity';
 import { Adoption } from '../../database/entities/adoption.entity';
 import { FileUpload } from '../../database/entities/file-upload.entity';
 import { FileUploadCategory } from '@shared/enums';
+import { NotificationTypeEnum, RolesEnum } from '@shared/enums';
 import { StoredFileBackup, UploadsService } from '../uploads/uploads.service';
 import { ActivityLog } from '../../database/entities/activity-log.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 interface PetImageResponse {
   imageId: string;
@@ -85,6 +87,8 @@ export class PetsService {
 
     @InjectRepository(ActivityLog)
     private readonly activityLogRepo: Repository<ActivityLog>,
+
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(dto: CreatePetDto, createdBy?: string): Promise<PetResponse> {
@@ -111,7 +115,15 @@ export class PetsService {
       }),
     );
 
-    return this.findOne(savedPet.petId);
+    const response = await this.findOne(savedPet.petId);
+    await this.notificationsService.notifyRoles(
+      [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE],
+      'Pet created',
+      `${response.name} was added to the shelter.`,
+      NotificationTypeEnum.PET,
+      createdBy ? [createdBy] : [],
+    );
+    return response;
   }
 
   async findAll(query: FindPetsQueryDto): Promise<PaginatedPetsResponse> {
@@ -244,7 +256,14 @@ export class PetsService {
       await manager.getRepository(Pet).save(pet);
     });
 
-    return this.findOne(id);
+    const response = await this.findOne(id);
+    await this.notificationsService.notifyRoles(
+      [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE],
+      'Pet updated',
+      `${response.name} was updated.`,
+      NotificationTypeEnum.PET,
+    );
+    return response;
   }
 
   async uploadPetImage(
@@ -271,6 +290,14 @@ export class PetsService {
       );
 
       image.file = uploadedFile;
+      const pet = await this.getPetEntity(petId);
+      await this.notificationsService.notifyRoles(
+        [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE],
+        'Pet image uploaded',
+        `A new image was uploaded for ${pet.petName}.`,
+        NotificationTypeEnum.PET,
+        [userId],
+      );
       return this.mapPetImageResponse(image);
     } catch (error) {
       await this.uploadsService.rollbackFileUpload(
@@ -359,6 +386,14 @@ export class PetsService {
       }
       throw error;
     }
+
+    await this.notificationsService.notifyRoles(
+      [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE],
+      'Pet archived',
+      'A pet profile was archived.',
+      NotificationTypeEnum.PET,
+      [actorUserId],
+    );
 
     return {
       message: 'Pet archived successfully',

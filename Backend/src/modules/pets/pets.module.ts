@@ -9,12 +9,14 @@ import { Vaccination } from '../../database/entities/vaccination.entity';
 import { Adoption } from '../../database/entities/adoption.entity';
 import { ActivityLog } from '../../database/entities/activity-log.entity';
 import { UploadsModule } from '../uploads/uploads.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { PetsController } from './pets.controller';
 import { PetsService } from './pets.service';
 
 @Module({
   imports: [
     UploadsModule,
+    NotificationsModule,
     TypeOrmModule.forFeature([
       Pet,
       PetImage,

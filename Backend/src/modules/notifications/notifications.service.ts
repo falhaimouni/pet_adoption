@@ -65,6 +65,70 @@ export class NotificationsService {
     return response;
   }
 
+  async notifyUsers(
+    userIds: string[],
+    title: string,
+    message: string,
+    type: NotificationTypeEnum,
+    excludeUserIds: string[] = [],
+  ): Promise<NotificationResponse[]> {
+    const excluded = new Set(excludeUserIds);
+    const uniqueUserIds = [...new Set(userIds)].filter((userId) => !excluded.has(userId));
+    if (uniqueUserIds.length === 0) return [];
+
+    const users = await this.userRepo.find({
+      where: {
+        userId: In(uniqueUserIds),
+        status: 'active',
+        emailVerified: true,
+      },
+      select: { userId: true },
+    });
+
+    return Promise.all(
+      users.map((user) =>
+        this.createForUser(user.userId, {
+          title,
+          message,
+          type,
+        }),
+      ),
+    );
+  }
+
+  async notifyRoles(
+    roles: RolesEnum[],
+    title: string,
+    message: string,
+    type: NotificationTypeEnum,
+    excludeUserIds: string[] = [],
+  ): Promise<NotificationResponse[]> {
+    const excluded = new Set(excludeUserIds);
+    const users = await this.userRepo.find({
+      where: {
+        status: 'active',
+        emailVerified: true,
+        role: {
+          roleName: In(roles),
+          isActive: true,
+        },
+      },
+      relations: ['role'],
+    });
+
+    return Promise.all(
+      users
+        .filter((user) => !excluded.has(user.userId))
+        .map((user) =>
+          this.createForUser(user.userId, {
+            title,
+            message,
+            type,
+          }),
+        ),
+    );
+  }
+
   async createChatMessage(senderId: string, adopterUserId: string, fromAdopter: boolean): Promise<void> {
     const sender = await this.userRepo.findOneByOrFail({ userId: senderId });
     const recipients = fromAdopter
@@ -234,7 +298,16 @@ export class NotificationsService {
   }
 
   private canViewNotificationType(role: string, type: string): boolean {
-    if (type !== NotificationTypeEnum.INVENTORY) {
+    const staffOnlyTypes = new Set<string>([
+      NotificationTypeEnum.INVENTORY,
+      NotificationTypeEnum.PET,
+      NotificationTypeEnum.MEDICAL,
+      NotificationTypeEnum.USER,
+      NotificationTypeEnum.DEPARTMENT,
+      NotificationTypeEnum.SYSTEM,
+    ]);
+
+    if (!staffOnlyTypes.has(type)) {
       return true;
     }
 

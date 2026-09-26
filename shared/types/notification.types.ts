@@ -1,4 +1,15 @@
-export type NotificationType = "MESSAGE" | "ADOPTION" | "INVENTORY";
+export type NotificationType =
+  | "MESSAGE"
+  | "ADOPTION"
+  | "INVENTORY"
+  | "PET"
+  | "MEDICAL"
+  | "USER"
+  | "DEPARTMENT"
+  | "ORDER"
+  | "COMMUNITY"
+  | "FRIEND"
+  | "SYSTEM";
 export type NotificationStatus = "READ" | "UNREAD";
 
 export interface Notification {

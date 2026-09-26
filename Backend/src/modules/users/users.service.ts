@@ -21,7 +21,8 @@ import {
   UpdateUserDto,
 } from '@shared/dto/user.dto';
 import { RequestWithUser } from '@shared/types/auth.types';
-import { FileUploadCategory } from '@shared/enums';
+import { FileUploadCategory, NotificationTypeEnum, RolesEnum } from '@shared/enums';
+import { NotificationsService } from '../notifications/notifications.service';
 
 type RoleName = 'ADMIN' | 'MANAGER' | 'EMPLOYEE' | 'VET' | 'ADOPTER';
 type UserListStatusFilter = 'active' | 'inactive' | 'all';
@@ -81,6 +82,8 @@ export class UsersService {
     private dataSource: DataSource,
     @InjectRepository(ActivityLog)
     private activityLogRepo: Repository<ActivityLog>,
+
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async findAll(
@@ -251,7 +254,21 @@ export class UsersService {
       throw error;
     }
 
-    return this.findOne(savedUser.userId);
+    const response = await this.findOne(savedUser.userId);
+    await this.notificationsService.notifyRoles(
+      [RolesEnum.ADMIN, RolesEnum.MANAGER],
+      'User created',
+      `${response.firstName} ${response.lastName} was created.`,
+      NotificationTypeEnum.USER,
+      [actorUserId],
+    );
+    await this.notificationsService.notifyUsers(
+      [savedUser.userId],
+      'Account created',
+      'Your Petopia account was created.',
+      NotificationTypeEnum.SYSTEM,
+    );
+    return response;
   }
 
   async uploadAvatar(userId: string, file: Express.Multer.File) {
@@ -346,7 +363,14 @@ export class UsersService {
       await this.userRepo.update(id, updateData);
     }
 
-    return this.findProfile(id);
+    const profile = await this.findProfile(id);
+    await this.notificationsService.notifyUsers(
+      [id],
+      'Profile updated',
+      'Your profile was updated.',
+      NotificationTypeEnum.USER,
+    );
+    return profile;
   }
 
   async updateUser(
@@ -450,8 +474,23 @@ export class UsersService {
       }
     });
 
-
-    return this.findProfile(id);
+    const profile = await this.findProfile(id);
+    await this.notificationsService.notifyRoles(
+      [RolesEnum.ADMIN, RolesEnum.MANAGER],
+      'User updated',
+      `${profile.firstName} ${profile.lastName} was updated.`,
+      NotificationTypeEnum.USER,
+      [currentUser.userId],
+    );
+    if (currentUser.userId !== id) {
+      await this.notificationsService.notifyUsers(
+        [id],
+        'Account updated',
+        'Your account was updated by shelter staff.',
+        NotificationTypeEnum.USER,
+      );
+    }
+    return profile;
   }
 
   async delete(id: string, currentUser: RequestWithUser['user']) {
@@ -516,6 +555,19 @@ export class UsersService {
       }
     });
 
+    await this.notificationsService.notifyRoles(
+      [RolesEnum.ADMIN, RolesEnum.MANAGER],
+      'User deactivated',
+      `${user.firstName} ${user.lastName} was deactivated.`,
+      NotificationTypeEnum.USER,
+      [currentUser.userId],
+    );
+    await this.notificationsService.notifyUsers(
+      [id],
+      'Account deactivated',
+      'Your Petopia account was deactivated.',
+      NotificationTypeEnum.USER,
+    );
 
     return {
       message: 'User deactivated successfully',
