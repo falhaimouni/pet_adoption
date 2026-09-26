@@ -122,6 +122,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
   const [editing, setEditing] = useState<Supply | null>(null);
   const [deleteItem, setDeleteItem] = useState<Supply | null>(null);
   const [imageSupply, setImageSupply] = useState<Supply | null>(null);
+  const [selectedImageName, setSelectedImageName] = useState("");
   const [form, setForm] = useState(blankForm);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -283,6 +284,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
 
   function openImageUpload(item: Supply) {
     setImageSupply(item);
+    setSelectedImageName("");
     setError("");
     setSuccess("");
     if (imageInputRef.current) imageInputRef.current.value = "";
@@ -313,6 +315,7 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
       });
       setSuccess(`Image updated for ${imageSupply.supplyName}.`);
       setImageSupply(null);
+      setSelectedImageName("");
       if (imageInputRef.current) imageInputRef.current.value = "";
       await loadSupplies();
     } catch (err) {
@@ -501,9 +504,27 @@ export default function AdminInventoryPage({ onNavigate, role = "admin", activeP
         </p>
       </Modal>
 
-      <Modal title={tx("Upload Supply Image")} open={!!imageSupply} onClose={() => setImageSupply(null)} onConfirm={() => uploadSupplyImage(imageInputRef.current?.files?.[0])} confirmLabel={saving ? t("pet_uploading") : t("action_upload")} size="sm">
-        <input ref={imageInputRef} type="file" accept="image/*,.jpg,.jpeg,.png,.webp" className="w-full text-[13px] font-['Poppins',sans-serif]" />
-        <p className="mt-2 font-['Poppins',sans-serif] text-[12px] text-black/50">{t("pet_upload_hint")}</p>
+      <Modal title={tx("Upload Supply Image")} open={!!imageSupply} onClose={() => { setImageSupply(null); setSelectedImageName(""); }} onConfirm={() => uploadSupplyImage(imageInputRef.current?.files?.[0])} confirmLabel={saving ? t("pet_uploading") : t("action_upload")} size="sm">
+        <input
+          ref={imageInputRef}
+          id="supply-image-upload"
+          type="file"
+          accept="image/*,.jpg,.jpeg,.png,.webp"
+          className="sr-only"
+          onChange={(event) => setSelectedImageName(event.target.files?.[0]?.name ?? "")}
+        />
+        <label
+          htmlFor="supply-image-upload"
+          className="flex min-h-[132px] cursor-pointer flex-col items-center justify-center rounded-[14px] border-2 border-dashed border-[#089D97]/35 bg-[#f0f9f8] px-4 py-5 text-center transition-colors hover:border-[#089D97] hover:bg-[#e4f5f3] focus-within:border-[#089D97]"
+        >
+          <ImagePlus size={28} className="mb-2 text-[#089D97]" />
+          <span className="font-['Poppins',sans-serif] text-[14px] font-semibold text-[#1a2e2d]">
+            {selectedImageName || tx("Choose an image")}
+          </span>
+          <span className="mt-1 font-['Poppins',sans-serif] text-[12px] text-black/50">
+            {selectedImageName ? tx("Click to choose a different file") : t("pet_upload_hint")}
+          </span>
+        </label>
       </Modal>
     </DashboardLayout>
   );
