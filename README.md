@@ -704,15 +704,16 @@ Major modules are worth **2 points**, Minor modules **1 point**.
 | 8 | Web | Custom-made design system with reusable components | Minor | 1 | `rabu-shr`, `falhaimo` |
 | 9 | Accessibility | Support for multiple languages (at least 3) | Minor | 1 | `falhaimo`, `rabu-shr` |
 | 10 | Accessibility | Right-to-left (RTL) language support | Minor | 1 | `rabu-shr`, `falhaimo` |
-| 11 | User Management | Standard user management and authentication | Major | 2 | `sshawish`, `lkhazaal` |
-| 12 | User Management | Remote authentication with OAuth 2.0 | Minor | 1 | `sshawish` |
-| 13 | User Management | Advanced permissions system | Major | 2 | `sshawish` |
-| 14 | User Management |  User activity analytics and insights dashboard | Minor | 1 | `sshawish` |
-| 15 | DevOps | Monitoring system with Prometheus and Grafana | Major | 2 | `malsharq` |
-| 16 | DevOps | Health check, status endpoints and automated backups | Minor | 1 | `malsharq` |
-| 17 | Data & Analytics | Data export and import functionality | Minor | 1 | `sshawish`, `falhaimo` |
+| 11 | Accessibility | Support for additional browsers | Minor | 1 | `rabu-shr`, `falhaimo` |
+| 12 | User Management | Standard user management and authentication | Major | 2 | `sshawish`, `lkhazaal` |
+| 13 | User Management | Remote authentication with OAuth 2.0 | Minor | 1 | `sshawish` |
+| 14 | User Management | Advanced permissions system | Major | 2 | `sshawish` |
+| 15 | User Management |  User activity analytics and insights dashboard | Minor | 1 | `sshawish` |
+| 16 | DevOps | Monitoring system with Prometheus and Grafana | Major | 2 | `malsharq` |
+| 17 | DevOps | Health check, status endpoints and automated backups | Minor | 1 | `malsharq` |
+| 18 | Data & Analytics | Data export and import functionality | Minor | 1 | `sshawish`, `falhaimo` |
 
-**Total: 6 Major × 2 + 11 Minor × 1 = 23 points**
+**Total: 6 Major × 2 + 12 Minor × 1 = 24 points**
 
 ### Module Justification and Implementation
 
@@ -776,43 +777,49 @@ Major modules are worth **2 points**, Minor modules **1 point**.
 **How:** The language context switches document direction to `rtl` for Arabic, and components use direction-aware styling. Browser tests (`i18n.browser.mjs`, `i18n-interactions.browser.mjs`) check the RTL behavior.
 **Who:** `rabu-shr`, `falhaimo`.
 
-#### 11. Standard User Management — Major, 2 points
+#### 11. Support for additional browsers — Minor, 1 point
+
+**Why:** Users should have a consistent experience across modern browsers, including Firefox, Safari, and Edge.
+**How:** The frontend is built with standards-based React, Vite, Tailwind CSS, and responsive layouts. Playwright browser tests verify core workflows, responsive behavior, translations, RTL support, form interactions, file handling, and navigation. However, the current automated tests run only against Chromium; Firefox, Safari, and Edge-specific test runs and documented browser limitations are not currently included.
+**Who:** `rabu-shr`, `falhaimo`.
+
+#### 12. Standard User Management — Major, 2 points
 
 **Why:** Every workflow depends on reliable accounts and profiles.
 **How:** Signup with email verification, secure login, profile editing, avatar upload, change/forgot/reset password, friends and online presence (heartbeat + `user_presence`). Email changes through profile updates are blocked by `PreventEmailChangeMiddleware`.
 **Who:** `sshawish`, `lkhazaal`.
 
-#### 12. Remote Authentication (OAuth 2.0) — Minor, 1 point
+#### 13. Remote Authentication (OAuth 2.0) — Minor, 1 point
 
 **Why:** Users can log in without creating yet another password.
 **How:** `OAuthModule` with a Passport Google strategy. The callback exchanges the code for a local session and links the Google identity in `oauth_accounts`. Google-created accounts cannot log in with a local password.
 **Who:** `sshawish`.
 
-#### 13. Advanced Permissions — Major, 2 points
+#### 14. Advanced Permissions — Major, 2 points
 
 **Why:** Five roles with very different capabilities must never see each other's tools or data.
 **How:** `JwtAuthGuard`, `RolesGuard` and `@Roles(...)` on every protected endpoint; ownership checks (adopters only see their own requests, carts and orders); inactive users or roles cannot authenticate; admins manage users, employees, departments and roles. The frontend mirrors these rules for UX, but enforcement is always server-side.
 **Who:** `sshawish`.
 
-#### 14. Analytics and dashboard — Minor, 1 point
+#### 15. Analytics and dashboard — Minor, 1 point
 
 **Why:** Administrators and managers need activity insights to understand system usage, monitor user engagement, and identify the most active users and common actions.
 **How:** The backend stores user activity in the `activity_logs` table and exposes the protected GET /`dashboard/user-activity` endpoint. It provides total activities, unique active users, average activity per user, activity trends, action and entity breakdowns, top users, date-range filtering, and result limits. The admin and manager dashboards display these insights using charts, KPIs, activity summaries, and recent activity logs.
 **Who:** `sshawish`.
 
-#### 15. Monitoring with Prometheus and Grafana — Major, 2 points
+#### 16. Monitoring with Prometheus and Grafana — Major, 2 points
 
 **Why:** A production-style system needs visibility into performance and failures.
 **How:** The backend exposes `/metrics` with HTTP metrics collected by an interceptor. Prometheus scrapes the backend, Postgres exporter and cAdvisor; alert rules live in `monitoring/prometheus/rules/pet-adoption-alerts.yml`; Alertmanager routes alerts by email; Grafana is provisioned with a datasource and a `pet-adoption-monitoring` dashboard, protected by admin credentials from the environment.
 **Who:** `malsharq`.
 
-#### 16. Health Checks and Backups — Minor, 1 point
+#### 17. Health Checks and Backups — Minor, 1 point
 
 **Why:** The system must report its own status and survive data loss.
 **How:** `/health`, `/ready` (checks the database) and `/version` endpoints; Docker health checks on every service; a `db-backup` container running `backup-db.sh` and `backup-uploads.sh` on a schedule, with `restore-db.sh` for recovery.
 **Who:** `malsharq`.
 
-#### 17. Data Export and Import — Minor, 1 point
+#### 18. Data Export and Import — Minor, 1 point
 
 **Why:** Reports must leave the system (spreadsheets, printing, data exchange), and vets need to bring in existing records.
 **How:** Adoption, inventory and pet reports export to CSV, PDF (PDFKit) and XML. Vets can import medical data from rows or PDFs, individually or in bulk, through the `MedicalDataImport` component.
