@@ -13,11 +13,12 @@ import AuthenticatedImage from "./AuthenticatedImage";
 
 interface NavbarProps {
   activePage?: string;
+  hideSystemStatus?: boolean;
   onNavigate: (page: string, params?: Record<string, unknown>) => void;
 }
 
 
-export default function Navbar({ activePage, onNavigate }: NavbarProps) {
+export default function Navbar({ activePage, hideSystemStatus = false, onNavigate }: NavbarProps) {
   const tx = useText();
   const { t, lang } = useLanguage();
   const { isDark, toggleTheme } = useTheme();
@@ -32,7 +33,7 @@ const LEGAL_LINKS = [
   { label: "Privacy", page: "privacy" },
   { label: "Terms", page: "terms" },
   { label: "System Status", page: "status" },
-    ];
+    ].filter((link) => !hideSystemStatus || link.page !== "status");
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);

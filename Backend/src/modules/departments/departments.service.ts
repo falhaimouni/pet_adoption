@@ -22,16 +22,20 @@ export class DepartmentsService {
   constructor(
     @InjectRepository(Department)
     private readonly departmentRepo: Repository<Department>,
+    @InjectRepository(Employee)
+    private readonly employeeRepo: Repository<Employee>,
     private readonly dataSource: DataSource,
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  findAll(activeOnly = false) {
-    return this.departmentRepo.find({
+  async findAll(activeOnly = false) {
+    const departments = await this.departmentRepo.find({
       where: activeOnly ? { isActive: true } : {},
       relations: ['manager', 'employees', 'employees.user', 'employees.user.role'],
       order: { departmentName: 'ASC' },
-    }).then((departments) => departments.map((department) => this.serialize(department)));
+    });
+    const systemEmployees = await this.findActiveSystemEmployees();
+    return departments.map((department) => this.serialize(department, systemEmployees));
   }
 
   async findOne(departmentId: string) {
@@ -45,7 +49,8 @@ export class DepartmentsService {
     }
 
     //removes the password field from the user object before returning it
-    return this.serialize(department);
+    const systemEmployees = await this.findActiveSystemEmployees();
+    return this.serialize(department, systemEmployees);
   }
 
   async create(dto: CreateDepartmentDto) {
@@ -140,9 +145,11 @@ export class DepartmentsService {
       }
       departmentName = department.departmentName;
 
-      const employeeCount = await manager.getRepository(Employee).count({
-        where: { departmentId },
-      });
+      const employeeCount = await this.countActiveDepartmentEmployees(
+        department.departmentName,
+        departmentId,
+        manager,
+      );
 
       if (employeeCount > 0) {
         throw new BadRequestException(
@@ -245,17 +252,77 @@ export class DepartmentsService {
   }
 
   //removes the password field from the user object before returning it
-  private serialize(department: Department) {
+  private serialize(department: Department, systemEmployees: Employee[] = []) {
+    const departmentRole = this.departmentRoleName(department.departmentName);
+    const activeEmployees = departmentRole
+      ? systemEmployees.filter((employee) =>
+          employee.user?.role?.roleName?.toUpperCase() === departmentRole,
+        )
+      : department.employees?.filter((employee) =>
+          employee.status === 'active' &&
+          employee.user?.status === 'active' &&
+          employee.user?.emailVerified === true,
+        );
+
     return {
       ...department,
       manager: department.manager
         ? this.withoutPassword(department.manager)
         : department.manager,
-      employees: department.employees?.map((employee) => ({
+      employeeCount: activeEmployees?.length ?? 0,
+      employees: activeEmployees?.map((employee) => ({
         ...employee,
         user: employee.user ? this.withoutPassword(employee.user) : employee.user,
       })),
     };
+  }
+
+  private findActiveSystemEmployees() {
+    return this.employeeRepo
+      .createQueryBuilder('employee')
+      .innerJoinAndSelect('employee.user', 'user')
+      .innerJoinAndSelect('user.role', 'role')
+      .where('employee.status = :employeeStatus', { employeeStatus: 'active' })
+      .andWhere('user.status = :userStatus', { userStatus: 'active' })
+      .andWhere('user.email_verified = true')
+      .getMany();
+  }
+
+  private async countActiveDepartmentEmployees(
+    departmentName: string,
+    departmentId: string,
+    manager = this.dataSource.manager,
+  ) {
+    const departmentRole = this.departmentRoleName(departmentName);
+    const query = manager
+      .getRepository(Employee)
+      .createQueryBuilder('employee')
+      .innerJoin('employee.user', 'user')
+      .innerJoin('user.role', 'role')
+      .where('employee.status = :employeeStatus', { employeeStatus: 'active' })
+      .andWhere('user.status = :userStatus', { userStatus: 'active' })
+      .andWhere('user.email_verified = true');
+
+    if (departmentRole) {
+      query.andWhere('UPPER(role.role_name) = :departmentRole', { departmentRole });
+    } else {
+      query.andWhere('employee.department_id = :departmentId', { departmentId });
+    }
+
+    return query.getCount();
+  }
+
+  private departmentRoleName(departmentName: string) {
+    switch (departmentName.trim().toLowerCase()) {
+      case 'customer service':
+        return 'EMPLOYEE';
+      case 'management':
+        return 'MANAGER';
+      case 'veterinary':
+        return 'VET';
+      default:
+        return null;
+    }
   }
 
   private withoutPassword<T extends { password: string | null }>(user: T) {

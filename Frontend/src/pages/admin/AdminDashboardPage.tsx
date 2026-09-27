@@ -186,7 +186,7 @@ export default function AdminDashboardPage({ onNavigate }: AdminDashboardPagePro
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-5">
-        <ChartCard title={t("admin_adoption_status_chart")} loading={loading} empty={!loading && adoptionStatusData.every((item) => item.value === 0)} emptyText={t("admin_no_metrics")}>
+        <ChartCard title={t("admin_adoption_status_chart")} loading={loading} empty={!loading && adoptionStatusData.every((item) => item.value === 0)} emptyText={t("admin_no_adoption_requests")}>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={adoptionStatusData} margin={{ top: 10, right: isRtl ? 8 : 20, left: isRtl ? 20 : -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#eef5f4" />
