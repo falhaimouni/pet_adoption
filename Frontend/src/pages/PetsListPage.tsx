@@ -128,6 +128,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
   const [pets, setPets] = useState<PetResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [adoptError, setAdoptError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<PetSortValue>("createdAt_DESC");
@@ -203,7 +204,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
       return;
     }
     setSubmitting(true);
-    setError("");
+    setAdoptError("");
     try {
       await apiFetch("/adoption/requests", {
         method: "POST",
@@ -212,7 +213,10 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
       setAdoptDone(true);
       setPets((current) => current.map((pet) => pet.petId === adoptModalPet.petId ? { ...pet, adoptionStatus: "PENDING" } : pet));
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("pets_load_error_title"));
+      const message = err instanceof Error ? err.message : t("pet_submit_error");
+      setAdoptError(message);
+      setPets((current) => current.map((pet) => pet.petId === adoptModalPet.petId ? { ...pet, adoptionStatus: "PENDING" } : pet));
+      setAdoptModalPet((pet) => pet ? { ...pet, adoptionStatus: "PENDING" } : pet);
     } finally {
       setSubmitting(false);
     }
@@ -411,7 +415,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
                     onViewDetails={(id) => onNavigate("pet-detail", { petId: id })}
                     onAdopt={(id) => {
                       const p = pets.find((x) => x.petId === id);
-                      if (p) { setAdoptModalPet(p); setAdoptDone(false); }
+                      if (p) { setAdoptModalPet(p); setAdoptDone(false); setAdoptError(""); }
                     }}
                   />
                 ))}
@@ -471,7 +475,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
                     <label className="block font-['Poppins',sans-serif] text-[12px] text-[#5a8a87] mb-1">{t("pet_notes")}</label>
                     <textarea value={adoptNote} onChange={(e) => setAdoptNote(e.target.value)} rows={3} maxLength={1000} placeholder={t("pet_notes_ph")} className="w-full border border-gray-200 rounded-[12px] px-3.5 py-2.5 font-['Poppins',sans-serif] text-[13px] outline-none focus:border-[#089D97] focus:ring-1 focus:ring-[#089D97]/20 transition-all resize-none" />
                   </div>
-                  {error && <p className="font-['Poppins',sans-serif] text-[12px] text-red-600">{error}</p>}
+                  {adoptError && <p className="font-['Poppins',sans-serif] text-[12px] text-red-600">{adoptError}</p>}
                 </div>
                 <div className="flex gap-3 mt-5">
                   <button onClick={() => setAdoptModalPet(null)} className="flex-1 py-2.5 border-2 border-gray-200 text-[#5a8a87] font-['Poppins',sans-serif] font-medium text-[13px] rounded-[12px] hover:border-gray-300 transition-colors">

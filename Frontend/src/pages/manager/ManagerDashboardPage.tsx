@@ -1,7 +1,17 @@
 import { translateActivityValue } from "../../i18n/activity";
 import { useText } from "../../i18n/useText";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Heart, ClipboardList, ShoppingCart, Package, AlertTriangle } from "lucide-react";
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import DashboardLayout from "../../components/DashboardLayout";
 import KpiCard from "../../components/KpiCard";
 import Badge, { statusBadge } from "../../components/Badge";
@@ -12,6 +22,10 @@ import type { ManagerDashboardDto, UserActivityAnalyticsDto } from "@shared/dto"
 const inventoryAlerts: Array<{ item: string; qty: number; min: number; status: string }> = [];
 
 type DashboardData = ManagerDashboardDto;
+interface ReportResponse {
+  summary: Record<string, string | number>;
+  data: Record<string, unknown>[];
+}
 
 interface ManagerDashboardPageProps { onNavigate: (page: string) => void; }
 
@@ -20,6 +34,7 @@ export default function ManagerDashboardPage({ onNavigate }: ManagerDashboardPag
   const { t } = useLanguage();
   const [data, setData] = useState<DashboardData | null>(null);
   const [activityAnalytics, setActivityAnalytics] = useState<UserActivityAnalyticsDto | null>(null);
+  const [adoptionReport, setAdoptionReport] = useState<ReportResponse | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -31,19 +46,22 @@ export default function ManagerDashboardPage({ onNavigate }: ManagerDashboardPag
       setError("");
 
       try {
-        const [dashboard, analytics] = await Promise.all([
+        const [dashboard, analytics, adoptions] = await Promise.all([
           apiFetch<DashboardData>("/dashboard/manager"),
           apiFetch<UserActivityAnalyticsDto>("/dashboard/user-activity?limit=5"),
+          apiFetch<ReportResponse>("/reports/adoptions"),
         ]);
 
         if (!active) return;
         setData(dashboard);
         setActivityAnalytics(analytics);
+        setAdoptionReport(adoptions);
       } catch (err) {
         if (!active) return;
         setError(err instanceof Error ? err.message : t("dashboard_load_error"));
         setData(null);
         setActivityAnalytics(null);
+        setAdoptionReport(null);
       } finally {
         if (active) setLoading(false);
       }
@@ -57,6 +75,7 @@ export default function ManagerDashboardPage({ onNavigate }: ManagerDashboardPag
   }, [t]);
 
   const recentActivity = data?.activity.recentActivityLogs ?? [];
+  const monthlyAdoptions = useMemo(() => monthlyAdoptionData(adoptionReport?.data ?? []), [adoptionReport]);
   const value = (metric?: number) => loading ? "..." : metric ?? "-";
 
   return (
@@ -89,7 +108,23 @@ export default function ManagerDashboardPage({ onNavigate }: ManagerDashboardPag
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-['Poppins',sans-serif] font-semibold text-[16px] text-black">{t("manager_adoption_trend")}</h3>
           </div>
-          <p className="font-['Poppins',sans-serif] text-[13px] text-black/40 py-16 text-center">{t("manager_trend_unavailable")}</p>
+          {loading ? (
+            <div className="h-[220px] rounded-[12px] bg-[#f0f8f7] animate-pulse" />
+          ) : monthlyAdoptions.length === 0 ? (
+            <p className="font-['Poppins',sans-serif] text-[13px] text-black/40 py-16 text-center">{t("report_no_data")}</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={monthlyAdoptions} margin={{ top: 5, right: 20, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="month" tick={{ fontFamily: "Poppins", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontFamily: "Poppins", fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip contentStyle={{ fontFamily: "Poppins", fontSize: 12, borderRadius: 10 }} />
+                <Legend wrapperStyle={{ fontFamily: "Poppins", fontSize: 12 }} />
+                <Line type="monotone" dataKey="adoptions" name={t("status_approved")} stroke="#089D97" strokeWidth={2.5} dot={{ fill: "#089D97", r: 4 }} />
+                <Line type="monotone" dataKey="requests" name={t("metric_adoption_requests")} stroke="#80CECE" strokeWidth={2.5} strokeDasharray="5 4" dot={{ fill: "#80CECE", r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         {/* Inventory alerts */}
@@ -153,6 +188,27 @@ export default function ManagerDashboardPage({ onNavigate }: ManagerDashboardPag
       </div>
     </DashboardLayout>
   );
+}
+
+function monthlyAdoptionData(rows: Record<string, unknown>[]) {
+  const months = new Map<string, { month: string; adoptions: number; requests: number }>();
+
+  rows.forEach((row) => {
+    const rawDate = typeof row.requestDate === "string" ? row.requestDate : "";
+    const date = rawDate ? new Date(rawDate) : null;
+    if (!date || Number.isNaN(date.getTime())) return;
+
+    const key = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+    const month = new Intl.DateTimeFormat("en", { month: "short" }).format(date);
+    const current = months.get(key) ?? { month, adoptions: 0, requests: 0 };
+
+    current.requests += 1;
+    if (String(row.status ?? "").toUpperCase() === "APPROVED") current.adoptions += 1;
+
+    months.set(key, current);
+  });
+
+  return [...months.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, value]) => value);
 }
 
 function MetricRow({ label, value }: { label: string; value: string | number }) {
