@@ -235,8 +235,8 @@ const LEGAL_LINKS = [
                           <div className="flex items-start gap-3">
                             <span className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${item.isRead ? "bg-gray-200" : "bg-amber-500"}`} />
                             <div className="min-w-0">
-                              <p className="font-['Poppins',sans-serif] font-semibold text-[13px] text-foreground truncate">{translateNotification(item.title, t)}</p>
-                              <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87] leading-snug line-clamp-2">{translateNotification(item.message, t)}</p>
+                              <p className="font-['Poppins',sans-serif] font-semibold text-[13px] text-foreground truncate">{localizeNotification(item.title, tx)}</p>
+                              <p className="font-['Poppins',sans-serif] text-[12px] text-[#5a8a87] leading-snug line-clamp-2">{localizeNotification(item.message, tx)}</p>
                               <p className="font-['Poppins',sans-serif] text-[10px] text-black/35 mt-1">{new Date(item.createdAt).toLocaleString(lang === "ar" ? "ar-JO" : lang === "fr" ? "fr-FR" : "en-US")}</p>
                             </div>
                           </div>
@@ -397,14 +397,4 @@ const LEGAL_LINKS = [
       )}
     </header>
   );
-}
-
-function translateNotification(value: string, t: (key: string) => string) {
-  const map: Record<string, string> = {
-    "New adoption request": "notification_new_adoption_request",
-    "Mochi has a new interested adopter.": "notification_new_adoption_request_msg",
-    "Low stock": "notification_low_stock",
-    "Some store supplies are near the low stock limit.": "notification_low_stock_msg",
-  };
-  return map[value] ? t(map[value]) : value;
 }
