@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import InputField from "../components/InputField";
 import { apiFetch } from "../lib/api";
 import { useLanguage } from "../context/LanguageContext";
+import { useAuth } from "../context/AuthContext";
 import { isEmail } from "../lib/validation";
 import dogImg from "../imports/Login/69b6e36eb99058fdf605168f149a065c8e920c01.png";
 import catPhotoImg from "../imports/Login/9bd62fd6b651515e439f303dbe7dcc8978ef5b6a.png";
@@ -17,6 +18,8 @@ interface ForgotPasswordPageProps {
 
 export default function ForgotPasswordPage({ onNavigate, email = "" }: ForgotPasswordPageProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const accountEmail = (email || user?.email || "").trim().toLowerCase();
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,15 +28,15 @@ export default function ForgotPasswordPage({ onNavigate, email = "" }: ForgotPas
     e.preventDefault();
     setMessage("");
     setError("");
-    if (!isEmail(email.trim())) {
-      setError(t("error_valid_email"));
+    if (!isEmail(accountEmail)) {
+      setError(t("forgot_error"));
       return;
     }
     setLoading(true);
     try {
       await apiFetch<{ message: string }>("/auth/forgot-password", {
         method: "POST",
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify({ email: accountEmail }),
       });
       setMessage(t("forgot_success_message"));
     } catch (err) {
@@ -45,7 +48,7 @@ export default function ForgotPasswordPage({ onNavigate, email = "" }: ForgotPas
 
   return (
     <div className="min-h-screen bg-[rgba(186,216,211,0.99)] flex flex-col overflow-x-hidden">
-      <Navbar onNavigate={onNavigate} />
+      <Navbar onNavigate={onNavigate} hideSystemStatus />
 
       {/* Fluid px layout: stacks on mobile/tablet, 2 cols on desktop. No vw so zoom stays stable. */}
       <div className="w-full max-w-[1280px] mx-auto grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-8 lg:gap-6 items-center lg:items-center flex-1 px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
@@ -140,22 +143,22 @@ export default function ForgotPasswordPage({ onNavigate, email = "" }: ForgotPas
                   placeholder="you@example.com"
                   type="email"
                   icon={<Mail size={18} />}
-                  value={email}
+                  value={accountEmail}
                   readOnly
                   variant="light"
                 />
 
-                {(!isEmail(email) || error) && (
+                {error && (
                   <div className="bg-red-50 border border-red-200 rounded-[12px] px-4 py-3">
                     <p role="alert" className="whitespace-pre-line font-['Poppins',sans-serif] text-[13px] text-red-600">
-                      {error || t("error_valid_email")}
+                      {error}
                     </p>
                   </div>
                 )}
 
                 <button
                   type="submit"
-                  disabled={loading || !isEmail(email)}
+                  disabled={loading || !isEmail(accountEmail)}
                   className="w-full bg-[#089D97] text-white font-['Inter',sans-serif] font-bold text-[18px] sm:text-[20px] lg:text-[22px] py-3 sm:py-4 rounded-[16px] sm:rounded-[20px] hover:bg-[#047975] transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {loading ? t("forgot_sending") : t("forgot_send")}

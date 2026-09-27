@@ -29,6 +29,7 @@ interface DepartmentRecord {
   isActive?: boolean;
   createdAt?: string;
   manager?: DepartmentUser | null;
+  employeeCount?: number;
   employees?: DepartmentEmployee[];
 }
 
@@ -45,7 +46,7 @@ function fullName(user?: DepartmentUser | null) {
 }
 
 function employeeCount(department: DepartmentRecord) {
-  return department.employees?.length ?? 0;
+  return department.employeeCount ?? department.employees?.length ?? 0;
 }
 
 export default function AdminDepartmentsPage({ onNavigate }: { onNavigate: (page: string) => void }) {
