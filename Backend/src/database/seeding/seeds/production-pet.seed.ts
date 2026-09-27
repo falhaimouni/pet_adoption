@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 
+import { PET_STATUS } from '@shared/constants/pet-status.constants';
 import { Pet } from '../../entities/pet.entity';
 import { User } from '../../entities/user.entity';
 
@@ -28,7 +29,7 @@ export async function seedProductionPets(
     });
     const petData = {
       ...pet,
-      adoptionStatus: 'available',
+      adoptionStatus: PET_STATUS.AVAILABLE,
       healthStatus: 'Healthy',
       createdByUser: creator,
     };

@@ -14,7 +14,7 @@ import {
 } from 'class-validator';
 
 import { PET_SPECIES } from '../constants/pet-species.constants';
-import { PET_STATUS } from '../constants/pet-status.constants';
+import { normalizePetStatus, PET_STATUS } from '../constants/pet-status.constants';
 
 export const PET_SORT_FIELDS = [
   'createdAt',
@@ -63,8 +63,8 @@ export class FindPetsQueryDto {
   @IsOptional()
   @Transform(({ value }) =>
     Array.isArray(value)
-      ? value.map((item) => typeof item === 'string' ? item.toUpperCase() : item)
-      : typeof value === 'string' ? value.toUpperCase() : value,
+      ? value.map((item) => normalizePetStatus(item))
+      : normalizePetStatus(value),
   )
   @IsIn(Object.values(PET_STATUS), { each: true })
   status?: string | string[];

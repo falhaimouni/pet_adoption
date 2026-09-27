@@ -6,6 +6,7 @@ import Badge, { statusBadge } from "../../components/Badge";
 import EmptyState from "../../components/EmptyState";
 import Pagination from "../../components/Pagination";
 import { apiFetch, PaginatedResponse, PetResponse } from "../../lib/api";
+import { normalizePetStatus } from "../../lib/formOptions";
 import { useLanguage } from "../../context/LanguageContext";
 
 interface VetPetsPageProps { onNavigate: (page: string, params?: Record<string, any>) => void; }
@@ -67,7 +68,7 @@ export default function VetPetsPage({ onNavigate }: VetPetsPageProps) {
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{tx(p.species)}</td>
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{p.breed ?? "-"}</td>
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{p.age == null ? "-" : `${p.age} ${p.age === 1 ? t("common_year") : t("common_years")}`}</td>
-                    <td className="py-3 px-3"><Badge label={p.adoptionStatus.toLowerCase()} variant={statusBadge(p.adoptionStatus.toLowerCase())} /></td>
+                    <td className="py-3 px-3"><Badge label={normalizePetStatus(p.adoptionStatus, p.adoptionStatus).toLowerCase()} variant={statusBadge(p.adoptionStatus)} /></td>
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[12px] text-black/60">{p.healthStatus ?? "-"}</td>
                     <td className="py-3 px-3">
                       <div className="flex gap-2">

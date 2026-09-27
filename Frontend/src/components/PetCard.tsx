@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Eye } from "lucide-react";
 import { PetResponse } from "../lib/api";
 import { useLanguage } from "../context/LanguageContext";
+import { normalizePetStatus } from "../lib/formOptions";
 import { defaultPetImage, getPrimaryPetImageUrl } from "../lib/petImages";
 import AuthenticatedImage from "./AuthenticatedImage";
 
@@ -32,13 +33,14 @@ export default function PetCard({ pet, onViewDetails, onAdopt }: PetCardProps) {
   const [imgError, setImgError] = useState(false);
 
   const speciesColor = SPECIES_COLORS[pet.species] ?? SPECIES_COLORS.default;
-  const status = pet.adoptionStatus.toUpperCase();
+  const status = normalizePetStatus(pet.adoptionStatus, pet.adoptionStatus.toUpperCase());
   const imageUrl = getPrimaryPetImageUrl(pet.images);
   const formattedAge = pet.age == null ? t("common_unknown") : `${pet.age} ${pet.age === 1 ? t("common_year") : t("common_years")}`;
   const statusText =
     status === "AVAILABLE" ? t("status_available") :
     status === "PENDING" ? t("status_pending") :
     status === "ADOPTED" ? t("status_adopted") :
+    status === "MEDICAL_HOLD" ? t("pet_status_medical_hold") :
     t("common_unavailable");
 
   useEffect(() => {

@@ -6,6 +6,7 @@ import EmptyState from "../components/EmptyState";
 import { apiFetch, PetResponse } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { normalizePetStatus } from "../lib/formOptions";
 import { defaultPetImage, getPrimaryPetImageUrl } from "../lib/petImages";
 import AuthenticatedImage from "../components/AuthenticatedImage";
 
@@ -20,10 +21,11 @@ function valueOrDash(value?: string | number | null) {
 }
 
 function statusLabel(status: string, t: (key: string) => string) {
-  const normalized = status.toUpperCase();
+  const normalized = normalizePetStatus(status, status.toUpperCase());
   if (normalized === "AVAILABLE") return t("status_available");
   if (normalized === "PENDING") return t("status_pending");
   if (normalized === "ADOPTED") return t("status_adopted");
+  if (normalized === "MEDICAL_HOLD") return t("pet_status_medical_hold");
   return t("common_unavailable");
 }
 

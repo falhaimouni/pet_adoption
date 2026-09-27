@@ -4,6 +4,7 @@ import { DataSource, Repository } from 'typeorm';
 
 import { CreatePetDto, UpdatePetDto } from '@shared/dto/pet.dto';
 import { FindPetsQueryDto } from '@shared/dto/find-pets-query.dto';
+import { normalizePetStatus, PET_STATUS } from '@shared/constants/pet-status.constants';
 import { Pet } from '../../database/entities/pet.entity';
 import { PetImage } from '../../database/entities/pet-image.entity';
 import { MedicalEntry } from '../../database/entities/medical-entry.entity';
@@ -101,6 +102,7 @@ export class PetsService {
       color: dto.color,
       weight: dto.weight === undefined ? undefined : String(dto.weight),
       description: dto.description,
+      adoptionStatus: PET_STATUS.AVAILABLE,
       createdBy,
     });
 
@@ -428,7 +430,7 @@ export class PetsService {
       weight: this.mapWeight(pet.weight),
       description: pet.description,
       healthStatus: pet.healthStatus,
-      adoptionStatus: pet.adoptionStatus,
+      adoptionStatus: String(normalizePetStatus(pet.adoptionStatus)),
       arrivalDate: pet.arrivalDate,
       images: (pet.images ?? []).map((image) => this.mapPetImageResponse(image)),
     };

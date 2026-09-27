@@ -15,6 +15,7 @@ import {
   PET_HEALTH_STATUS_OPTIONS,
   PET_SPECIES_OPTIONS,
   PET_STATUS_OPTIONS,
+  normalizePetStatus,
 } from "../../lib/formOptions";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -73,7 +74,7 @@ export default function StaffPetsPage({ onNavigate, role = "employee", activePag
       color: pet.color ?? "",
       weight: pet.weight == null ? "" : String(pet.weight),
       description: pet.description ?? "",
-      adoptionStatus: pet.adoptionStatus,
+      adoptionStatus: normalizePetStatus(pet.adoptionStatus),
       healthStatus: pet.healthStatus ?? "",
     });
     setAddOpen(true);
@@ -96,7 +97,7 @@ export default function StaffPetsPage({ onNavigate, role = "employee", activePag
       color: form.color.trim() || undefined,
       weight: form.weight === "" ? undefined : Number(form.weight),
       description: form.description.trim() || undefined,
-      ...(editing ? { adoptionStatus: form.adoptionStatus, healthStatus: form.healthStatus.trim() || undefined } : {}),
+      ...(editing ? { adoptionStatus: normalizePetStatus(form.adoptionStatus), healthStatus: form.healthStatus.trim() || undefined } : {}),
     };
   }
 
@@ -213,7 +214,7 @@ export default function StaffPetsPage({ onNavigate, role = "employee", activePag
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{p.breed ?? "-"}</td>
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{p.age ?? "-"}</td>
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{p.gender ? t(`gender_${p.gender.toLowerCase()}`) : "-"}</td>
-                    <td className="py-3 px-3"><Badge label={t(`pet_status_${p.adoptionStatus.toLowerCase()}`)} variant={statusBadge(p.adoptionStatus.toLowerCase())} /></td>
+                    <td className="py-3 px-3"><Badge label={normalizePetStatus(p.adoptionStatus, p.adoptionStatus).toLowerCase()} variant={statusBadge(p.adoptionStatus)} /></td>
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{p.healthStatus ?? "-"}</td>
                     <td className="py-3 px-3">
                       <div className="flex gap-2">

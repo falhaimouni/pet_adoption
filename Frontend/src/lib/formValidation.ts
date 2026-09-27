@@ -1,5 +1,6 @@
 import { PET_SPECIES } from "@shared/constants/pet-species.constants";
 import { PET_STATUS } from "@shared/constants/pet-status.constants";
+import { PET_GENDER, PET_HEALTH_STATUS } from "@shared/constants/pet-profile.constants";
 import { MEDICAL_STATUS } from "@shared/constants/medical-status.constants";
 import { SUPPLY_CATEGORIES } from "@shared/constants/supply-categories.constants";
 import { SupplyStatusEnum } from "@shared/enums/supply-status.enum";
@@ -8,11 +9,12 @@ import translations, { type Lang } from "../i18n/translations";
 import { isEmail, isStrongPassword, validateDocumentFile, validateImageFile } from "./validation";
 
 type Rule = {
-  kind: "text" | "email" | "phone" | "password" | "date" | "number" | "choice" | "id" | "boolean" | "ids";
+  kind: "text" | "petText" | "email" | "phone" | "password" | "date" | "number" | "choice" | "id" | "boolean" | "ids";
   required?: boolean; max?: number; min?: number; decimals?: number; values?: readonly string[]; matches?: string;
 };
 export type FormSchema = Record<string, Rule>;
 const text = (max: number, required = false): Rule => ({ kind: "text", max, required });
+const petText = (max: number, required = false): Rule => ({ kind: "petText", max, required });
 const number = (decimals = 0, min = 0, required = false): Rule => ({ kind: "number", decimals, min, required });
 const choice = (values: readonly string[], required = false): Rule => ({ kind: "choice", values, required });
 const phone: Rule = { kind: "phone", max: 30 };
@@ -22,7 +24,7 @@ const id: Rule = { kind: "id", required: true };
 const date: Rule = { kind: "date", required: true };
 const profile: FormSchema = { firstName: text(80, true), lastName: text(80, true), phone, address: text(1000), avatar: text(2048) };
 const employee: FormSchema = { ...profile, email, password, roleId: id, departmentId: id, salary: number(2), hireDate: date, status: choice(["active", "inactive"]) };
-const pet: FormSchema = { name: text(120, true), species: choice(Object.values(PET_SPECIES), true), breed: text(120), age: number(), gender: text(30), color: text(80), weight: number(2), description: text(5000), adoptionStatus: choice(Object.values(PET_STATUS)), healthStatus: text(80) };
+const pet: FormSchema = { name: petText(120, true), species: choice(Object.values(PET_SPECIES), true), breed: petText(120), age: number(), gender: choice(Object.values(PET_GENDER)), color: petText(80), weight: number(2), description: text(5000), adoptionStatus: choice(Object.values(PET_STATUS)), healthStatus: choice(Object.values(PET_HEALTH_STATUS)) };
 const supplier: FormSchema = { supplierName: text(160, true), phone: { ...phone, required: true }, email: { ...email, max: 255 }, address: text(5000, true), city: text(100, true), country: text(100, true) };
 const supply: FormSchema = { supplyName: text(160, true), category: choice(Object.values(SUPPLY_CATEGORIES), true), supplierId: id, quantity: number(0, 0, true), sellingPrice: number(2, 0, true), purchasePrice: number(2, 0, true), lowStockLimit: number(0, 0, true), minimumOrderQuantity: number(0, 1, true), deliveryTimeDays: number(), status: choice(Object.values(SupplyStatusEnum)), storeListed: { kind: "boolean" } };
 const vaccination: FormSchema = { vaccineName: text(160, true), vaccinationDate: date, nextDueDate: { ...date, required: false }, batch: text(120), status: choice(Object.values(VaccineStatusEnum)), notes: text(5000) };
@@ -50,6 +52,10 @@ export function isPhone(value: string) {
   return /^\+?[\d\s().-]+$/.test(normalized) && /^\d{7,15}$/.test(normalized.replace(/\D/g, ""));
 }
 
+export function isPetText(value: string) {
+  return /[\p{L}]/u.test(value) && /^[\p{L}\p{M}\s.'&,/-]+$/u.test(value);
+}
+
 export function validateFields(schema: FormSchema, values: Record<string, unknown>, t: (key: string) => string, options: { partial?: boolean; mockIds?: boolean } = {}) {
   const errors: Record<string, string> = {};
   for (const [field, rule] of Object.entries(schema)) {
@@ -67,6 +73,7 @@ export function validateFields(schema: FormSchema, values: Record<string, unknow
     let valid = true;
     switch (rule.kind) {
       case "text": valid = typeof raw === "string" && (rule.min === undefined || raw.length >= rule.min); break;
+      case "petText": valid = typeof value === "string" && isPetText(value) && (rule.min === undefined || value.length >= rule.min); break;
       case "email": valid = typeof value === "string" && isEmail(value); break;
       case "phone": valid = typeof value === "string" && isPhone(value); break;
       case "password": valid = typeof raw === "string" && isStrongPassword(raw); break;
@@ -93,6 +100,8 @@ const fieldLabels: Record<string, string> = {
   firstName: "profile_first_name", lastName: "profile_last_name", email: "profile_email", phone: "profile_phone", address: "profile_address",
   password: "login_password", currentPassword: "security_current_pw", newPassword: "security_new_pw_ph", confirmPassword: "signup_confirm_password",
   diagnosis: "medical_diagnosis", treatment: "medical_treatment", notes: "pet_notes", city: "cart_city", name: "pet_table_name",
+  species: "pet_table_species", breed: "pet_field_breed", age: "pet_table_age", gender: "pet_field_gender", color: "pet_field_color",
+  weight: "pet_field_weight", adoptionStatus: "pet_field_adoption_status", healthStatus: "pet_field_health_status",
   quantity: "inventory_quantity", sellingPrice: "inventory_selling_price", purchasePrice: "inventory_purchase_price", message: "nav_chats",
 };
 

@@ -46,8 +46,9 @@ test('inventory rejects empty numeric fields, fractional quantities and excess p
 });
 
 test('pet forms validate species, optional measurements and text limits', () => {
-  const errors = validateFields(formSchemas.pet, { name: 'Luna', species: 'Invalid', age: -1, weight: 'not a number', breed: 'x'.repeat(121), color: 'x'.repeat(81), description: 'x'.repeat(5001) }, t);
-  for (const field of ['species', 'age', 'weight', 'breed', 'color', 'description']) assert.ok(errors[field], field);
+  const errors = validateFields(formSchemas.pet, { name: '123', species: 'Invalid', age: -1, weight: 'not a number', breed: '123', gender: 'Other', color: '456', healthStatus: 'Sick', description: 'x'.repeat(5001) }, t);
+  for (const field of ['name', 'species', 'age', 'weight', 'breed', 'gender', 'color', 'healthStatus', 'description']) assert.ok(errors[field], field);
+  assert.deepEqual(validateFields(formSchemas.pet, { name: 'Luna', species: 'Cat', breed: 'Domestic Shorthair', gender: 'Female', color: 'Black & White', healthStatus: 'Healthy', age: 2, weight: '4.25' }, t), {});
 });
 
 test('medical and vaccine forms validate dates, status, length, and chronological order', () => {

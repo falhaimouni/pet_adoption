@@ -1,6 +1,7 @@
 // Constants exports
 export * from './roles.constants';
 export * from './pet-status.constants';
+export * from './pet-profile.constants';
 export * from './adoption.constants';
 export * from './adoption-status.constants';
 export * from './inventory.constants';

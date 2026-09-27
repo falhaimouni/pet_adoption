@@ -34,7 +34,7 @@ export default function Badge({ label, variant = "neutral", size = "sm" }: Badge
 }
 
 function translateBadgeLabel(label: string, t: (key: string) => string) {
-  const normalized = label.trim().toLowerCase().replace(/\s+/g, "_");
+  const normalized = label.trim().toLowerCase().replace(/[\s-]+/g, "_");
   const aliases: Record<string, string> = {
     staff: "role_employee",
     employee: "role_employee",
@@ -80,6 +80,7 @@ function translateBadgeLabel(label: string, t: (key: string) => string) {
 }
 
 export function statusBadge(status: string): BadgeVariant {
+  const normalized = status.trim().toLowerCase().replace(/[\s-]+/g, "_");
   const map: Record<string, BadgeVariant> = {
     available: "teal",
     active: "success",
@@ -97,6 +98,7 @@ export function statusBadge(status: string): BadgeVariant {
     "in stock": "success",
     "low stock": "warning",
     "out of stock": "rejected",
+    medical_hold: "warning",
     online: "success",
     offline: "neutral",
     unread: "teal",
@@ -110,5 +112,5 @@ export function statusBadge(status: string): BadgeVariant {
     vet: "teal",
     adopter: "success",
   };
-  return map[status.toLowerCase()] ?? "neutral";
+  return map[normalized] ?? "neutral";
 }

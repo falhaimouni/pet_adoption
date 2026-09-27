@@ -11,6 +11,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { AdoptionRequest } from './adoption-request.entity';
+import { PET_STATUS } from '@shared/constants/pet-status.constants';
 import { MedicalRecord } from './medical-record.entity';
 import { PetImage } from './pet-image.entity';
 import { User } from './user.entity';
@@ -50,7 +51,7 @@ export class Pet {
   healthStatus?: string | null;
 
   @Index()
-  @Column({ name: 'adoption_status', type: 'varchar', length: 80, default: 'available' })
+  @Column({ name: 'adoption_status', type: 'varchar', length: 80, default: PET_STATUS.AVAILABLE })
   adoptionStatus!: string;
 
   @Column({ name: 'arrival_date', type: 'date', nullable: true })
