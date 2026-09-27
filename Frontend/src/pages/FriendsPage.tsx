@@ -232,7 +232,10 @@ export default function FriendsPage({
                       {f.online ? tx("● Online") : tx("○ Offline")}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" className={buttonClass} onClick={() => setProfile(f.friend.id)}>
+                      {tx("View profile")}
+                    </button>
                     <button
                       disabled={busy}
                       className={buttonClass}
@@ -329,6 +332,7 @@ export default function FriendsPage({
           <PublicProfile
             key={profile}
             id={profile}
+            onFriendshipChange={() => { void refresh(); }}
             onClose={() => setProfile(undefined)}
           />
         )}

@@ -88,7 +88,7 @@ export default function OrdersPage({ onNavigate, orderId }: OrdersPageProps) {
                 <h2 className="text-lg font-semibold text-[#1a2e2d]">{t("cart_order_reference")}</h2>
                 {status(order)}
               </div>
-              <p className="mt-2 break-all text-sm text-[#5a8a87]">{order.orderId}</p>
+              <p className="mt-2 break-all text-sm text-[#5a8a87]">{order.orderReference}</p>
               <p className="mt-3 text-sm text-[#1a2e2d]" role="status">{t(order.orderStatus === "PENDING" ? "order_pending_desc" : order.orderStatus === "COMPLETED" ? "order_paid_desc" : "order_canceled_desc")}</p>
               {actionError && <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{actionError}</p>}
             </section>
@@ -137,7 +137,7 @@ export default function OrdersPage({ onNavigate, orderId }: OrdersPageProps) {
             {orders.map(value => (
               <article key={value.orderId} className="rounded-[18px] bg-white p-4 sm:p-6 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-[#5a8a87]">{new Date(value.createdAt).toLocaleDateString(lang)}</p>{status(value)}</div>
-                <p className="mt-3 break-all text-sm">{t("cart_order_reference")}: {value.orderId}</p>
+                <p className="mt-3 break-all text-sm">{t("cart_order_reference")}: {value.orderReference}</p>
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><strong className="text-[#089D97]">{money(value.totalPrice)}</strong><button onClick={() => onNavigate("orders", { orderId: value.orderId })} className={`${buttonClass} bg-[#e0f2f0] text-[#047975]`}>{t("orders_view_details")}</button></div>
               </article>
             ))}

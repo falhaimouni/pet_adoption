@@ -2,21 +2,22 @@ import { DataSource } from 'typeorm';
 
 import { Cart } from '../../entities/cart.entity';
 import { CartItem } from '../../entities/cart-item.entity';
-import { Product } from '../../entities/product.entity';
+import { Supply } from '../../entities/supply.entity';
+import { SupplyStatusEnum } from '@shared/enums/supply-status.enum';
 import { User } from '../../entities/user.entity';
 
 export async function seedCartItems(
   dataSource: DataSource,
 ): Promise<void> {
   const cartRepo = dataSource.getRepository(Cart);
-  const productRepo = dataSource.getRepository(Product);
+  const supplyRepo = dataSource.getRepository(Supply);
   const userRepo = dataSource.getRepository(User);
   const repo = dataSource.getRepository(CartItem);
 
   const items = [
     {
       userEmail: 'adopter1@test.com',
-      productName: 'Dog Food',
+      productName: 'Adult Dog Food',
       quantity: 2,
     },
     {
@@ -26,7 +27,7 @@ export async function seedCartItems(
     },
     {
       userEmail: 'adopter2@test.com',
-      productName: 'Cat Food',
+      productName: 'Adult Cat Food',
       quantity: 1,
     },
     {
@@ -47,11 +48,18 @@ export async function seedCartItems(
       where: { userId: user.userId },
     });
 
-    const product = await productRepo.findOne({
-      where: { productName: item.productName },
+    const supply = await supplyRepo.findOne({
+      where: {
+        supplyName: item.productName,
+        isActive: true,
+        storeListed: true,
+        status: SupplyStatusEnum.AVAILABLE,
+      },
+      relations: ['product'],
     });
+    const product = supply?.product;
 
-    if (!cart || !product) continue;
+    if (!cart || !supply || !product || supply.quantity < item.quantity) continue;
 
     const unitPrice = Number(product.unitPrice);
     const subtotal = unitPrice * item.quantity;

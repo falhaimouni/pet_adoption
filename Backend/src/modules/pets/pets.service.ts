@@ -153,7 +153,10 @@ export class PetsService {
     }
 
     if (query.species) {
-      qb.andWhere('pet.species ILIKE :species', { species: query.species });
+      const species = Array.isArray(query.species) ? query.species : [query.species];
+      qb.andWhere('LOWER(pet.species) IN (:...species)', {
+        species: species.map((value) => value.toLowerCase()),
+      });
     }
 
     if (query.breed) {
@@ -161,8 +164,9 @@ export class PetsService {
     }
 
     if (query.status) {
-      qb.andWhere('LOWER(pet.adoptionStatus) = LOWER(:status)', {
-        status: query.status,
+      const statuses = Array.isArray(query.status) ? query.status : [query.status];
+      qb.andWhere('LOWER(pet.adoptionStatus) IN (:...statuses)', {
+        statuses: statuses.map((value) => value.toLowerCase()),
       });
     }
 

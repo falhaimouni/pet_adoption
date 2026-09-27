@@ -5,6 +5,7 @@ import { OrderStatusEnum } from '../enums/order-status.enum';
 
 export interface OrderDto {
   orderId: string;
+  orderReference: string;
   userId: string;
   totalPrice: string;
   recipientName: string;

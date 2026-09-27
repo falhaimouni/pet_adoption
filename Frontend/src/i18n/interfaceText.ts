@@ -1,5 +1,21 @@
 // Interface copy is keyed by its English source; protocol labels and user content are not translated.
 export const interfaceText: Record<string, { ar: string; fr: string }> = {
+  "Your order {reference} was created.": { ar: "تم إنشاء طلبك {reference}.", fr: "Votre commande {reference} a été créée." },
+  "Your order {reference} was completed.": { ar: "تم إكمال طلبك {reference}.", fr: "Votre commande {reference} a été finalisée." },
+  "Your order {reference} was cancelled.": { ar: "تم إلغاء طلبك {reference}.", fr: "Votre commande {reference} a été annulée." },
+  "Order {reference} was created.": { ar: "تم إنشاء الطلب {reference}.", fr: "La commande {reference} a été créée." },
+  "Order {reference} was cancelled.": { ar: "تم إلغاء الطلب {reference}.", fr: "La commande {reference} a été annulée." },
+  "Order {reference} was paid and completed.": { ar: "تم دفع قيمة الطلب {reference} وإكماله.", fr: "La commande {reference} a été payée et finalisée." },
+  "Your order was created.": { ar: "تم إنشاء طلبك.", fr: "Votre commande a été créée." },
+  "Your order was completed.": { ar: "تم إكمال طلبك.", fr: "Votre commande a été finalisée." },
+  "Your order was cancelled.": { ar: "تم إلغاء طلبك.", fr: "Votre commande a été annulée." },
+  "An order was cancelled.": { ar: "تم إلغاء طلب.", fr: "Une commande a été annulée." },
+  "An order was paid and completed.": { ar: "تم دفع قيمة طلب وإكماله.", fr: "Une commande a été payée et finalisée." },
+  "Friend request already pending": { ar: "طلب الصداقة قيد الانتظار بالفعل", fr: "Une demande d’amitié est déjà en attente" },
+  "Choose an image": { ar: "اختر صورة", fr: "Choisir une image" },
+  "Click to choose a different file": { ar: "انقر لاختيار ملف آخر", fr: "Cliquez pour choisir un autre fichier" },
+  "View profile": { ar: "عرض الملف الشخصي", fr: "Voir le profil" },
+  "Profile information": { ar: "معلومات الملف الشخصي", fr: "Informations du profil" },
   "Vet": {
     "ar": "طبيب بيطري",
     "fr": "Vétérinaire"

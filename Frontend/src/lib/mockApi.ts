@@ -129,6 +129,7 @@ let mockCartItems: Array<{ productId: string; quantity: number }> = [];
 let mockOrders: Array<Record<string, unknown>> = [
   {
     orderId: "mock-order-demo",
+    orderReference: "PET-2026-000001",
     userId: "mock-adopter",
     totalPrice: "31.48",
     recipientName: "Adopter Demo",
@@ -321,14 +322,14 @@ function filterByQuery<T extends Record<string, unknown>>(items: T[], params: UR
 function listPets(params: URLSearchParams) {
   let data = [...pets];
   data = filterByQuery(data, params, ["name", "species", "breed", "description"]);
-  const species = params.get("species");
-  const status = params.get("status");
+  const species = params.getAll("species");
+  const status = params.getAll("status");
   const minAge = params.get("minAge");
   const maxAge = params.get("maxAge");
   const sortBy = params.get("sortBy") ?? "createdAt";
   const order = params.get("order") === "ASC" ? "ASC" : "DESC";
-  if (species) data = data.filter((pet) => pet.species.toLowerCase() === species.toLowerCase());
-  if (status) data = data.filter((pet) => pet.adoptionStatus.toLowerCase() === status.toLowerCase());
+  if (species.length) data = data.filter((pet) => species.some((value) => pet.species.toLowerCase() === value.toLowerCase()));
+  if (status.length) data = data.filter((pet) => status.some((value) => pet.adoptionStatus.toLowerCase() === value.toLowerCase()));
   if (minAge) data = data.filter((pet) => Number(pet.age ?? 0) >= Number(minAge));
   if (maxAge) data = data.filter((pet) => Number(pet.age ?? 0) <= Number(maxAge));
   data.sort((a, b) => {
@@ -417,6 +418,7 @@ function mockOrderFromBody(orderId: string, body: Record<string, unknown>, statu
   const total = cart.cartItems.reduce((sum, item) => sum + Number(item.subtotal), 0);
   return {
     orderId,
+    orderReference: `PET-${new Date().getFullYear()}-${String(mockOrders.length + 1).padStart(6, "0")}`,
     userId: currentProfile.userId,
     totalPrice: total.toFixed(2),
     recipientName: String(body.recipientName ?? ""),

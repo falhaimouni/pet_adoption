@@ -9,6 +9,9 @@ export class Order {
   @PrimaryGeneratedColumn('uuid', { name: 'order_id' })
   orderId!: string;
 
+  @Column({ name: 'order_reference', type: 'varchar', length: 40, unique: true, default: () => 'next_order_reference()', update: false })
+  orderReference!: string;
+
   @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
 

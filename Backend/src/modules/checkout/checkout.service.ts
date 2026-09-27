@@ -24,6 +24,7 @@ import { OrderStatusEnum } from '@shared/enums/order-status.enum';
 import { SupplyStatusEnum } from '@shared/enums/supply-status.enum';
 import { NotificationTypeEnum, RolesEnum } from '@shared/enums';
 import { NotificationsService } from '../notifications/notifications.service';
+import { listedStoreSupplyForProduct } from '../store/store-availability';
 
 type InventoryAlert = {
   title: string;
@@ -83,12 +84,18 @@ export class CheckoutService {
 
       const cart = await manager.getRepository(Cart).findOne({
         where: { cartId: lockedCart.cartId },
-        relations: ['cartItems', 'cartItems.product'],
+        relations: ['cartItems', 'cartItems.product', 'cartItems.product.supplies'],
       });
 
       if (!cart) {
         throw new NotFoundException('Cart not found');
       }
+
+      // Legacy/unlisted items are hidden by the cart API. Do not include those
+      // invisible rows in the order or let them block the visible cart.
+      cart.cartItems = (cart.cartItems ?? []).filter((item) =>
+        listedStoreSupplyForProduct(item.product) !== undefined,
+      );
 
        //make sure the cart contains items.
 
@@ -203,13 +210,13 @@ export class CheckoutService {
     await this.notificationsService.notifyUsers(
       [userId],
       'Order created',
-      `Your order ${order.orderId} was created.`,
+      `Your order ${order.orderReference} was created.`,
       NotificationTypeEnum.ORDER,
     );
     await this.notificationsService.notifyRoles(
       [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE],
       'New order',
-      `A new order was created for ${order.totalPrice}.`,
+      `Order ${order.orderReference} was created.`,
       NotificationTypeEnum.ORDER,
     );
 
@@ -246,13 +253,13 @@ export class CheckoutService {
     await this.notificationsService.notifyUsers(
       [userId],
       'Order cancelled',
-      `Your order ${order.orderId} was cancelled.`,
+      `Your order ${order.orderReference} was cancelled.`,
       NotificationTypeEnum.ORDER,
     );
     await this.notificationsService.notifyRoles(
       [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE],
       'Order cancelled',
-      `Order ${order.orderId} was cancelled.`,
+      `Order ${order.orderReference} was cancelled.`,
       NotificationTypeEnum.ORDER,
     );
 
@@ -376,13 +383,13 @@ export class CheckoutService {
     await this.notificationsService.notifyUsers(
       [userId],
       'Order completed',
-      `Your order ${order.orderId} was completed.`,
+      `Your order ${order.orderReference} was completed.`,
       NotificationTypeEnum.ORDER,
     );
     await this.notificationsService.notifyRoles(
       [RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.EMPLOYEE],
       'Order completed',
-      `Order ${order.orderId} was paid and completed.`,
+      `Order ${order.orderReference} was paid and completed.`,
       NotificationTypeEnum.ORDER,
     );
 
@@ -421,7 +428,8 @@ export class CheckoutService {
       .createQueryBuilder('supply')
       .where('supply.productId = :productId', { productId })
       .andWhere('supply.isActive = :isActive', { isActive: true })
-      .andWhere('supply.storeListed = :storeListed', { storeListed: true });
+      .andWhere('supply.storeListed = :storeListed', { storeListed: true })
+      .andWhere('supply.status = :status', { status: SupplyStatusEnum.AVAILABLE });
 
     if (lock) {
       query = query.setLock('pessimistic_write');

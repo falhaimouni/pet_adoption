@@ -1,5 +1,5 @@
 import { useText } from "../i18n/useText";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, SlidersHorizontal, X, ChevronDown, ChevronUp, PawPrint } from "lucide-react";
 import Navbar from "../components/Navbar";
 import PetCard from "../components/PetCard";
@@ -132,6 +132,11 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<PetSortValue>("createdAt_DESC");
   const [total, setTotal] = useState(0);
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    resultsRef.current?.scrollTo({ top: 0 });
+  }, [search, filters, page, sort]);
 
   const setSearchQuery = (value: string) => {
     setSearch(value);
@@ -155,8 +160,8 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
     const controller = new AbortController();
     const params = new URLSearchParams();
     if (search.trim()) params.set("search", search.trim());
-    if (filters.species.length === 1) params.set("species", filters.species[0]);
-    if (filters.status.length === 1) params.set("status", filters.status[0]);
+    filters.species.forEach((species) => params.append("species", species));
+    filters.status.forEach((status) => params.append("status", status));
     if (filters.ageRange === "baby") params.set("maxAge", "0");
     if (filters.ageRange === "young") { params.set("minAge", "1"); params.set("maxAge", "2"); }
     if (filters.ageRange === "adult") { params.set("minAge", "3"); params.set("maxAge", "6"); }
@@ -269,25 +274,28 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
   );
 
   return (
-    <div className={embedded ? "" : "min-h-screen bg-[#f0f8f7]"}>
-      {!embedded && <Navbar onNavigate={onNavigate} />}
+    <div className={`flex min-h-0 w-full flex-col overflow-hidden bg-[#f0f8f7] ${embedded ? "h-full rounded-[20px]" : "h-dvh"}`}>
+      {!embedded && <div className="shrink-0"><Navbar activePage="pets" onNavigate={onNavigate} /></div>}
 
       {/* Hero header */}
-      <div className="bg-gradient-to-br from-[#089D97] to-[#047975] text-white py-10 px-5">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="font-['Prata',serif] text-[32px] lg:text-[40px] mb-2">{t("pets_title")}</h1>
-          <p className="font-['Poppins',sans-serif] text-[15px] text-white/80 mb-6">
+      <div className="bg-gradient-to-br from-[#089D97] to-[#047975] text-white shrink-0 px-4 py-3 sm:px-5 sm:py-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-6">
+          <div className="min-w-0">
+          <h1 className="font-['Prata',serif] text-[24px] sm:text-[30px] mb-1">{t("pets_title")}</h1>
+          <p className="font-['Poppins',sans-serif] text-[13px] text-white/80">
             {total} {t("pets_found")}.
           </p>
 
+          </div>
+
           {/* Search bar */}
-          <div className="max-w-xl relative">
+          <div className="relative w-full md:max-w-md">
             <Search size={18} className="absolute start-4 top-1/2 -translate-y-1/2 text-[#089D97]" />
             <input
               placeholder={t("pets_search_placeholder")}
               value={search}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full ps-12 pe-4 py-3.5 rounded-[14px] bg-white text-[#1a2e2d] font-['Poppins',sans-serif] text-[14px] shadow-lg outline-none focus:ring-2 focus:ring-white/50 transition-all placeholder-gray-400"
+              className="w-full ps-12 pe-10 py-3 rounded-[14px] bg-white text-[#1a2e2d] font-['Poppins',sans-serif] text-[14px] shadow-lg outline-none focus:ring-2 focus:ring-white/50 transition-all placeholder-gray-400"
             />
             {search && (
               <button onClick={() => setSearchQuery("")} className="absolute end-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -299,8 +307,8 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
       </div>
 
       {/* Category chips */}
-      <div className="max-w-6xl mx-auto px-5 py-5">
-        <div className="flex flex-wrap gap-3 pb-1">
+      <div className="w-full shrink-0 px-4 py-3 sm:px-5">
+        <div className="flex gap-2 overflow-x-auto pb-1">
           <button
             onClick={() => { setPage(1); setFilters((f) => ({ ...f, species: [] })); }}
             className={`flex shrink-0 items-center gap-2 px-4 py-2 rounded-[20px] font-['Poppins',sans-serif] text-[13px] font-medium whitespace-nowrap transition-all ${filters.species.length === 0 ? "bg-[#089D97] text-white shadow-md" : "bg-white text-[#1a2e2d] hover:bg-[#e0f2f0]"}`}
@@ -319,16 +327,16 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-5 pb-16 flex gap-6">
+      <div className="flex min-h-0 flex-1 gap-4 px-4 pb-4 sm:px-5 sm:pb-5">
         {/* Desktop sidebar */}
-        <div className="hidden lg:block w-[240px] shrink-0">
-          <div className="bg-white rounded-[20px] shadow-sm p-5 sticky top-4">{Sidebar}</div>
+        <div className="hidden lg:block w-[220px] min-h-0 shrink-0 overflow-y-auto overscroll-contain rounded-[20px]">
+          <div className="bg-white rounded-[20px] shadow-sm p-5">{Sidebar}</div>
         </div>
 
         {/* Main content */}
-        <div className="flex-1 min-w-0">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           {/* Mobile filter bar */}
-          <div className="lg:hidden flex items-center justify-between mb-4">
+          <div className="lg:hidden flex shrink-0 items-center justify-between mb-2">
             <p className="font-['Poppins',sans-serif] text-[14px] text-[#5a8a87]">
               <span className="font-semibold text-[#1a2e2d]">{total}</span> {t("pets_found")}
             </p>
@@ -347,11 +355,11 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
           </div>
 
           {/* Desktop results count */}
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-5">
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 mb-3">
             <p className="font-['Poppins',sans-serif] text-[14px] text-[#5a8a87]">
               {t("pets_showing")} <span className="font-semibold text-[#1a2e2d]">{pets.length}</span> {t("pets_of")} <span className="font-semibold text-[#1a2e2d]">{total}</span> {t("pets_found")}
             </p>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               <label className="flex items-center gap-2 font-['Poppins',sans-serif] text-[13px] text-[#5a8a87]">
                 <span className="shrink-0">{t("pets_sort_label")}</span>
                 <select
@@ -372,8 +380,9 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
             </div>
           </div>
 
+          <div ref={resultsRef} role="region" aria-label={t("pets_title")} tabIndex={0} className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-[20px] p-1 [scrollbar-gutter:stable] focus-visible:outline-[#089D97]">
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,240px),1fr))] gap-4">
               {[1, 2, 3, 4, 5, 6].map((n) => <div key={n} className="h-[360px] rounded-[22px] bg-white animate-pulse" />)}
             </div>
           ) : error ? (
@@ -394,7 +403,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
             />
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,240px),1fr))] gap-4">
                 {pets.map((pet) => (
                   <PetCard
                     key={pet.petId}
@@ -410,6 +419,7 @@ export default function PetsListPage({ onNavigate, embedded = false }: PetsListP
               <Pagination page={page} totalPages={totalPages} onPage={setPage} />
             </>
           )}
+          </div>
         </div>
       </div>
 

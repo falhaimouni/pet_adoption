@@ -52,8 +52,8 @@ export class FindPetsQueryDto {
   search?: string;
 
   @IsOptional()
-  @IsIn(Object.values(PET_SPECIES))
-  species?: string;
+  @IsIn(Object.values(PET_SPECIES), { each: true })
+  species?: string | string[];
 
   @IsOptional()
   @IsString()
@@ -62,10 +62,12 @@ export class FindPetsQueryDto {
 
   @IsOptional()
   @Transform(({ value }) =>
-    typeof value === 'string' ? value.toUpperCase() : value,
+    Array.isArray(value)
+      ? value.map((item) => typeof item === 'string' ? item.toUpperCase() : item)
+      : typeof value === 'string' ? value.toUpperCase() : value,
   )
-  @IsIn(Object.values(PET_STATUS))
-  status?: string;
+  @IsIn(Object.values(PET_STATUS), { each: true })
+  status?: string | string[];
 
   @IsOptional()
   @IsString()

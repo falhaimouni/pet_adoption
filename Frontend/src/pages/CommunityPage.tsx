@@ -1,4 +1,5 @@
 import { useText } from "../i18n/useText";
+import { useLanguage } from "../context/LanguageContext";
 import {
   Dialog,
   DialogContent,
@@ -81,11 +82,15 @@ export function PersonIdentity({
 export function PublicProfile({
   id,
   onClose,
+  onFriendshipChange,
 }: {
   id: string;
   onClose: () => void;
+  onFriendshipChange?: () => void;
 }) {
   const tx = useText();
+  const { t } = useLanguage();
+  const { user } = useAuth();
   const [person, setPerson] = useState<Person>();
   const [error, setError] = useState("");
   const [friendState, setFriendState] = useState<FriendActionState>("available");
@@ -93,6 +98,7 @@ export function PublicProfile({
   useEffect(() => {
     let active = true;
     setError("");
+    setPerson(undefined);
     setFriendState("available");
     Promise.all([
       apiFetch<Person>(`/public-profiles/${id}`),
@@ -116,77 +122,77 @@ export function PublicProfile({
     };
   }, [id]);
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={onClose}
-    >
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-label={tx("User profile")}
-        className="relative w-full max-w-md space-y-4 rounded-2xl bg-white p-6 pt-12"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          type="button"
-          autoFocus
-          aria-label={tx("Close profile")}
-          className="absolute end-3 top-3 rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-          onClick={onClose}
-        >
-          <X size={20} aria-hidden="true" />
-        </button>
-        {error && (
-          <p role="alert" className="text-red-700">
-            {error}
-          </p>
-        )}
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-h-[85dvh] overflow-y-auto rounded-2xl sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{tx("User profile")}</DialogTitle>
+          <DialogDescription className="sr-only">{tx("Profile information")}</DialogDescription>
+        </DialogHeader>
+        {error && <p role="alert" className="text-red-700">{error}</p>}
         {person ? (
           <>
-            <PersonIdentity person={person} />
-            <p className="break-all text-sm text-gray-600">{person.email}</p>
-            <div className="flex justify-center pt-4">
-              <button
-                disabled={busy || friendState !== "available"}
-                className={buttonClass}
-                onClick={async () => {
-                  setBusy(true);
-                  setError("");
-                  try {
-                    await apiFetch("/friend-requests", {
-                      method: "POST",
-                      body: JSON.stringify({ userId: id }),
-                    });
-                    setFriendState("sent");
-                  } catch (e) {
-                    if (e instanceof ApiError && e.status === 409) {
-                      const message = e.message.toLowerCase();
-                      setFriendState(message.includes("already friends") ? "friend" : "pending");
-                    } else {
-                      setError((e as Error).message);
-                    }
-                  } finally {
-                    setBusy(false);
-                  }
-                }}
-              >
-                {friendState === "friend"
-                  ? tx("Already friends")
-                  : friendState === "pending"
-                    ? tx("Friend request already pending")
-                    : friendState === "sent"
-                      ? tx("Friend request sent")
-                      : tx("Send friend request")}
-              </button>
+            <div className="flex flex-col items-center gap-3 py-3">
+              <AuthenticatedImage src={person.avatar} fallback={fallback}
+                alt={tx("Profile of {name}", { name: person.name })}
+                className="h-24 w-24 rounded-full object-cover border-4 border-teal-50" />
+              <h2 className="text-xl font-semibold text-center">{person.name}</h2>
+              <span className="rounded-full bg-teal-50 px-3 py-1 text-sm text-teal-800">
+                {t(`role_${person.role.toLowerCase()}`)}
+              </span>
             </div>
+            {person.email && (
+              <dl className="rounded-xl bg-gray-50 p-4 text-sm">
+                <dt className="text-gray-500">{t("profile_email")}</dt>
+                <dd className="mt-1 break-all">{person.email}</dd>
+              </dl>
+            )}
+            {id !== user?.id && (
+              <div className="flex justify-center pt-2">
+                {friendState === "pending" || friendState === "sent" ? (
+                  <p role="status" className="text-sm text-gray-600">
+                    {friendState === "sent" ? tx("Friend request sent") : tx("Friend request already pending")}
+                  </p>
+                ) : (
+                  <button disabled={busy} className={buttonClass}
+                    onClick={async () => {
+                      const removing = friendState === "friend";
+                      if (removing && !window.confirm(tx("Remove {name} from friends?", { name: person.name }))) return;
+                      setBusy(true);
+                      setError("");
+                      try {
+                        if (removing) {
+                          await apiFetch(`/friends/${id}`, { method: "DELETE" });
+                          setFriendState("available");
+                        } else {
+                          await apiFetch("/friend-requests", {
+                            method: "POST", body: JSON.stringify({ userId: id }),
+                          });
+                          setFriendState("sent");
+                        }
+                        onFriendshipChange?.();
+                      } catch (e) {
+                        if (e instanceof ApiError && e.status === 409) {
+                          setFriendState(e.message.toLowerCase().includes("already friends") ? "friend" : "pending");
+                          onFriendshipChange?.();
+                        } else {
+                          setError((e as Error).message);
+                        }
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}>
+                    {friendState === "friend" ? tx("Remove friend") : tx("Send friend request")}
+                  </button>
+                )}
+              </div>
+            )}
           </>
-        ) : (
-          !error && <p>{tx("Loading profile…")}</p>
-        )}
-      </section>
-    </div>
+        ) : !error && <p role="status">{tx("Loading profile…")}</p>}
+      </DialogContent>
+    </Dialog>
   );
 }
+
 export default function CommunityPage({
   onNavigate,
 }: {

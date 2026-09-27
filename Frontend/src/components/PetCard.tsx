@@ -47,9 +47,9 @@ export default function PetCard({ pet, onViewDetails, onAdopt }: PetCardProps) {
   }, [pet.petId, imageUrl]);
 
   return (
-    <article className="bg-white rounded-[22px] shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group border border-transparent hover:border-[rgba(8,157,151,0.12)] flex flex-col">
+    <article className="self-start bg-white rounded-[22px] shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group border border-transparent hover:border-[rgba(8,157,151,0.12)] flex flex-col">
       {/* Image */}
-      <div className="relative h-[210px] bg-[#e8f5f4] overflow-hidden flex-shrink-0">
+      <div className="relative w-full overflow-hidden flex-shrink-0">
         {!imgLoaded && !imgError && (
           <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-secondary via-[#f0f9f8] to-secondary bg-[length:200%_100%]" />
         )}
@@ -59,7 +59,7 @@ export default function PetCard({ pet, onViewDetails, onAdopt }: PetCardProps) {
           alt={pet.name}
           onLoad={() => setImgLoaded(true)}
           onError={() => { setImgLoaded(true); setImgError(true); }}
-          className={`w-full h-full object-contain transition-transform duration-500 group-hover:scale-110 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+          className={`block w-full h-auto transition-opacity duration-300 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
         />
 
         {/* Species pill — top-left */}
@@ -74,7 +74,7 @@ export default function PetCard({ pet, onViewDetails, onAdopt }: PetCardProps) {
       </div>
 
       {/* Content */}
-      <div className="p-4 flex flex-col gap-3 flex-1">
+      <div className="bg-white px-4 pb-4 pt-3 flex flex-col gap-3">
         {/* Name + breed */}
         <div>
           <h3 className="font-['Poppins',sans-serif] font-semibold text-[17px] text-foreground leading-tight">{pet.name}</h3>

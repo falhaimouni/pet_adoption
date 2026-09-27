@@ -37,6 +37,7 @@ interface OrderUser {
 
 interface Order {
   orderId: string;
+  orderReference: string;
   totalPrice: string;
   recipientName: string;
   phoneNumber: string;
@@ -97,7 +98,7 @@ export default function AdminOrdersPage({ onNavigate, role = "admin", activePage
     if (!query) return orders;
     return orders.filter((order) => {
       const haystack = [
-        order.orderId,
+        order.orderReference,
         order.recipientName,
         order.phoneNumber,
         order.city,
@@ -144,7 +145,7 @@ export default function AdminOrdersPage({ onNavigate, role = "admin", activePage
               <tbody>
                 {filtered.map((order) => (
                   <tr key={order.orderId} className="border-b border-gray-50 hover:bg-[rgba(8,157,151,0.03)] transition-colors">
-                    <td className="py-3 px-3 font-['Poppins',sans-serif] font-medium text-[13px] text-black">{order.orderId.slice(0, 8)}</td>
+                    <td className="py-3 px-3 font-['Poppins',sans-serif] font-medium text-[13px] text-black">{order.orderReference}</td>
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{customerName(order)}</td>
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/70">{order.recipientName}</td>
                     <td className="py-3 px-3 font-['Poppins',sans-serif] text-[13px] text-black/60">{order.city}</td>
@@ -168,7 +169,7 @@ export default function AdminOrdersPage({ onNavigate, role = "admin", activePage
         {viewOrder && (
           <div className="space-y-5">
             <div className="grid sm:grid-cols-2 gap-3 font-['Poppins',sans-serif] text-[13px]">
-              <Info label={t("th_order")} value={viewOrder.orderId} />
+              <Info label={t("th_order")} value={viewOrder.orderReference} />
               <Info label={t("th_customer")} value={customerName(viewOrder)} />
               <Info label={t("cart_recipient_name")} value={viewOrder.recipientName} />
               <Info label={t("cart_phone_number")} value={viewOrder.phoneNumber} />

@@ -4,7 +4,7 @@ import { DataSource, Repository } from 'typeorm';
 
 import { Cart } from '../../database/entities/cart.entity';
 import { CartItem } from '../../database/entities/cart-item.entity';
-import { Product } from '../../database/entities/product.entity';
+import { listedStoreSupplyForProduct } from '../store/store-availability';
 import { Supply } from '../../database/entities/supply.entity';
 import { User } from '../../database/entities/user.entity';
 import { AddCartItemDto } from './cart.dto';
@@ -291,11 +291,11 @@ export class CartService {
     if (!cart) return cart;
 
     cart.cartItems = (cart.cartItems ?? []).filter((item) =>
-      this.listedStoreSupplyForProduct(item.product) !== undefined,
+      listedStoreSupplyForProduct(item.product) !== undefined,
     );
 
     for (const item of cart.cartItems ?? []) {
-      const imageFile = this.listedStoreSupplyForProduct(item.product)?.imageFile;
+      const imageFile = listedStoreSupplyForProduct(item.product)?.imageFile;
       item.imageUrl = imageFile
         ? /^https?:\/\//i.test(imageFile.fileUrl)
           ? imageFile.fileUrl
@@ -304,15 +304,6 @@ export class CartService {
     }
 
     return cart;
-  }
-
-  private listedStoreSupplyForProduct(product?: Product | null): Supply | undefined {
-    return product?.supplies?.find((supply) =>
-      supply.isActive === true &&
-      supply.storeListed === true &&
-      supply.status === SupplyStatusEnum.AVAILABLE &&
-      Number(supply.quantity ?? 0) > 0,
-    );
   }
 
   private async findListedStoreSupply(

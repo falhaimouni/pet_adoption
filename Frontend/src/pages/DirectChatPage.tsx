@@ -198,14 +198,18 @@ export default function DirectChatPage({
 
   function conversationRow(friend: Person, chat?: Conversation, isOnline = false) {
     return (
-      <button
+      <div
         key={friend.id}
-        disabled={busy}
-        onClick={() => chat ? onNavigate("chats", { id: chat.id }) : void openChat(friend)}
         className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-gray-50 hover:bg-[rgba(8,157,151,0.04)] transition-colors text-start disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#089D97]"
       >
+        <button type="button" onClick={() => setProfile(friend.id)}
+          aria-label={tx("Profile of {name}", { name: friend.name })}
+          className="shrink-0 rounded-full focus-visible:ring-2 focus-visible:ring-teal-500">
         <AuthenticatedImage src={friend.avatar} fallback={fallback} alt="" className="w-[44px] h-[44px] rounded-full object-cover shrink-0 bg-[#e0f2f0]" />
-        <div className="flex-1 min-w-0">
+        </button>
+        <button type="button" disabled={busy}
+          onClick={() => chat ? onNavigate("chats", { id: chat.id }) : void openChat(friend)}
+          className="flex-1 min-w-0 text-start disabled:opacity-60">
           <div className="flex items-center justify-between gap-2">
             <p className="text-[13px] font-semibold text-black truncate">{friend.name}</p>
             <span className={`flex items-center gap-1.5 text-[10px] shrink-0 ${isOnline ? "text-emerald-600" : "text-black/40"}`}>
@@ -214,8 +218,8 @@ export default function DirectChatPage({
             </span>
           </div>
           <p className="text-[12px] truncate text-black/50">{chat?.lastMessage || tx("Start chatting")}</p>
-        </div>
-      </button>
+        </button>
+      </div>
     );
   }
 
@@ -303,7 +307,7 @@ export default function DirectChatPage({
           </>
         )}
       </div>
-      {profile && <PublicProfile key={profile} id={profile} onClose={() => setProfile(undefined)} />}
+      {profile && <PublicProfile key={profile} id={profile} onFriendshipChange={() => { void refresh(); }} onClose={() => setProfile(undefined)} />}
     </DashboardLayout>
   );
 }
