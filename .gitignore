@@ -21,7 +21,7 @@ Backend/**/*.js.map
 Backend/dist/
 
 Backend/uploads/
-
+backups/uploads/
 Frontend/dist/
 Frontend/build/
 Frontend/.vite/
